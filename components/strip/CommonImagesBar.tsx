@@ -3,12 +3,16 @@
 /**
  * Full-width bottom bar showing images that appear in more than one product (common/shared).
  * Height and padding match the top header bar for visual consistency.
+ * Temporarily shows public/machines sample when no common images exist.
  */
 
 import React from "react";
 import type { Product } from "@/types/product";
 import { getImageUrl } from "@/lib/r2ImageHelper";
 import Image from "next/image";
+
+/** Temporary sample image from public/machines; remove when real images are wired. */
+const TEMP_SAMPLE_IMAGE = "/machines/Sample.jpg";
 
 interface CommonImagesBarProps {
   products: Product[];
@@ -35,14 +39,23 @@ export default function CommonImagesBar({ products }: CommonImagesBarProps) {
   return (
     <footer
       id="divCommonImagesBar"
-      className="flex h-14 shrink-0 items-center border-t border-green-200 bg-green-200 px-5 py-3 shadow-sm"
+      className="flex h-14 shrink-0 items-center border-t-2 border-green-300 bg-green-200 px-4 py-2 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]"
       aria-label="Common images"
     >
-      <div className="scrollbar-hide flex flex-1 items-center gap-2 overflow-x-auto">
+      <div className="scrollbar-hide flex flex-1 items-center gap-3 overflow-x-auto py-1">
         {commonFilenames.length === 0 ? (
-          <span className="text-sm text-slate-500">
-            No images shared across multiple products
-          </span>
+          <div
+            className="h-8 w-10 shrink-0 overflow-hidden rounded-lg border border-green-300 bg-white shadow-sm"
+            title="Sample (temporary)"
+          >
+            <Image
+              src={TEMP_SAMPLE_IMAGE}
+              alt="Sample"
+              width={40}
+              height={32}
+              className="h-full w-full object-cover"
+            />
+          </div>
         ) : (
           commonFilenames.map((filename) => {
             const src = getImageUrl(filename);
