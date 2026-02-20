@@ -11,6 +11,7 @@ import { ALLOWED_CATEGORIES } from "@/types/product";
 import CategoryList from "@/components/sidebar/CategoryList";
 import ProductList from "@/components/sidebar/ProductList";
 import RecentlyViewedList from "@/components/sidebar/RecentlyViewedList";
+import AfOrderedList from "@/components/sidebar/AfOrderedList";
 import ProductViewer from "@/components/viewer/ProductViewer";
 import ProductDetails from "@/components/details/ProductDetails";
 import ProductStrip from "@/components/strip/ProductStrip";
@@ -178,12 +179,17 @@ export default function CatalogLayout({
               onSelect={handleSelectProduct}
             />
           </div>
+          {/* Section 3: fixed list from all products by AF order; uses same catalog data (cache or refetch when db version changes). */}
           <div
             id="divItemPartSection3"
-            className="mt-2 min-h-0 flex-[0_0_20%] shrink-0 rounded-lg border border-green-200 bg-green-50/50 p-2"
-            aria-label="Item part section 3"
+            className="scrollbar-hide mt-2 min-h-0 flex-[0_0_20%] shrink-0 overflow-auto rounded-lg border border-green-200 bg-green-50/50 p-2"
+            aria-label="Items ordered by AF column (number)"
           >
-            {/* Content to be defined later */}
+            <AfOrderedList
+              products={products}
+              selected={selectedProduct}
+              onSelect={handleSelectProduct}
+            />
           </div>
         </div>
 

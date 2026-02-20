@@ -13,6 +13,8 @@ export interface Product {
   imageFilename: string;
   description?: string;
   category: string;
+  /** Optional order number from sheet column AF; used for section-3 list (1, 2, 3, ...). */
+  af?: number;
 }
 
 export type Category = string;

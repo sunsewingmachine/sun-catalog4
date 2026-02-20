@@ -11,6 +11,8 @@ const COL_A = 0;
 const COL_R = 17;
 const COL_S = 18;
 const COL_T = 19;
+/** Column AF = 0-based index 31 (A=0, …, Z=25, AA=26, …, AF=31). */
+const COL_AF = 31;
 
 function parseNum(val: string | number): number {
   if (typeof val === "number" && !Number.isNaN(val)) return val;
@@ -54,6 +56,9 @@ export function mapRowToProduct(row: string[], rowIndex: number): Product | null
   const warranty = String(row[COL_T] ?? "").trim();
   const pCode = buildPCode(row, rowIndex);
   const imageFilename = `${colA} (1).jpg`;
+  const afRaw = row[COL_AF];
+  const af = parseNum(afRaw);
+  const afNum = af > 0 && Number.isInteger(af) ? af : undefined;
 
   return {
     itmGroupName: colA,
@@ -64,6 +69,7 @@ export function mapRowToProduct(row: string[], rowIndex: number): Product | null
     pCode,
     imageFilename,
     category,
+    ...(afNum !== undefined && { af: afNum }),
   };
 }
 
