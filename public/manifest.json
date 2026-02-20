@@ -1,0 +1,10 @@
+{
+  "name": "Sewing Machines Catalog",
+  "short_name": "Catalog",
+  "description": "Product catalog PWA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f4f5",
+  "theme_color": "#2563eb",
+  "icons": []
+}
