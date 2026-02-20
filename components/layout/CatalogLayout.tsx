@@ -111,6 +111,7 @@ export default function CatalogLayout({
             aria-label="Item list"
           >
             <ProductList
+              key={selectedCategory ?? ""}
               products={filteredProducts}
               selected={selectedProduct}
               onSelect={setSelectedProduct}

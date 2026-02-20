@@ -19,8 +19,12 @@ export default function ProductList({
 }: ProductListProps) {
   return (
     <ul id="divProductListScroll" className="flex flex-col gap-1">
-      {products.map((p) => (
-        <li key={p.itmGroupName}>
+      {products.map((p, index) => (
+        <li
+          key={p.itmGroupName}
+          className="catalog-item-in opacity-0"
+          style={{ animationDelay: `${Math.min(index * 20, 100)}ms` }}
+        >
           <button
             type="button"
             onClick={() => onSelect(p)}
