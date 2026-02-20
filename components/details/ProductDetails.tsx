@@ -129,6 +129,21 @@ export default function ProductDetails({
           </footer>
         )}
       </div>
+
+      {product.af != null && product.af > 0 && (
+        <div
+          id="divDetailsBestImage"
+          className="mt-4 flex flex-1 min-h-[8rem] flex-col items-center justify-center rounded-lg border border-green-200 bg-green-50/80 p-4"
+        >
+          <img
+            src="/used/best.png"
+            alt="Best"
+            className="max-h-48 w-auto max-w-full object-contain"
+            width={192}
+            height={192}
+          />
+        </div>
+      )}
     </div>
   );
 }

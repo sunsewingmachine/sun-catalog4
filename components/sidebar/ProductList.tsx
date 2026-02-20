@@ -29,13 +29,23 @@ export default function ProductList({
             type="button"
             onClick={() => onSelect(p)}
             title={p.itmGroupName}
-            className={`w-full rounded px-1.5 py-1 text-left text-sm font-medium transition-colors truncate ${
+            className={`flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-sm font-medium transition-colors ${
               selected?.itmGroupName === p.itmGroupName
                 ? "bg-teal-600 text-white shadow-sm"
                 : "bg-green-100 text-slate-700 hover:bg-green-200"
             }`}
           >
-            {p.itmGroupName}
+            <span className="min-w-0 flex-1 truncate">{p.itmGroupName}</span>
+            {p.af != null && p.af > 0 && (
+              <img
+                src="/used/tick.png"
+                alt=""
+                width={18}
+                height={18}
+                className="h-[18px] w-[18px] shrink-0"
+                aria-hidden
+              />
+            )}
           </button>
         </li>
       ))}
