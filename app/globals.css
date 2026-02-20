@@ -68,6 +68,12 @@ body {
   animation: catalog-item-in 0.2s ease-out forwards;
 }
 
+/* Keep high-warranty tooltip above following list rows when row is hovered. */
+.high-warranty-row:hover {
+  position: relative;
+  z-index: 100;
+}
+
 /* Best button: gentle pulse every 20s to draw attention. */
 @keyframes best-button-blink {
   0%,

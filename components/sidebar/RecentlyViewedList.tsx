@@ -5,6 +5,7 @@
  */
 
 import type { Product } from "@/types/product";
+import HighWarrantyTick from "@/components/sidebar/HighWarrantyTick";
 
 interface RecentlyViewedListProps {
   products: Product[];
@@ -32,7 +33,7 @@ export default function RecentlyViewedList({
       {products.map((p) => {
         const isHighlighted = highlightSelected && selected?.itmGroupName === p.itmGroupName;
         return (
-        <li key={p.itmGroupName}>
+        <li key={p.itmGroupName} className={p.af != null && p.af > 0 ? "high-warranty-row" : ""}>
           <button
             type="button"
             onClick={() => onSelect(p)}
@@ -44,16 +45,7 @@ export default function RecentlyViewedList({
             }`}
           >
             <span className="min-w-0 flex-1 truncate">{p.itmGroupName}</span>
-            {p.af != null && p.af > 0 && (
-              <img
-                src="/used/tick.png"
-                alt=""
-                width={18}
-                height={18}
-                className="h-[18px] w-[18px] shrink-0"
-                aria-hidden
-              />
-            )}
+            {p.af != null && p.af > 0 && <HighWarrantyTick />}
           </button>
         </li>
       );

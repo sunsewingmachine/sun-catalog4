@@ -5,6 +5,7 @@
  */
 
 import type { Product } from "@/types/product";
+import HighWarrantyTick from "@/components/sidebar/HighWarrantyTick";
 
 interface ProductListProps {
   products: Product[];
@@ -22,7 +23,7 @@ export default function ProductList({
       {products.map((p, index) => (
         <li
           key={p.itmGroupName}
-          className="catalog-item-in opacity-0"
+          className={`catalog-item-in opacity-0 ${p.af != null && p.af > 0 ? "high-warranty-row" : ""}`}
           style={{ animationDelay: `${Math.min(index * 20, 100)}ms` }}
         >
           <button
@@ -36,16 +37,7 @@ export default function ProductList({
             }`}
           >
             <span className="min-w-0 flex-1 truncate">{p.itmGroupName}</span>
-            {p.af != null && p.af > 0 && (
-              <img
-                src="/used/tick.png"
-                alt=""
-                width={18}
-                height={18}
-                className="h-[18px] w-[18px] shrink-0"
-                aria-hidden
-              />
-            )}
+            {p.af != null && p.af > 0 && <HighWarrantyTick />}
           </button>
         </li>
       ))}
