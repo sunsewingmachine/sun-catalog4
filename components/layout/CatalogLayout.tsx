@@ -91,7 +91,7 @@ export default function CatalogLayout({
           id="divCategoryStrip"
           className="flex w-14 shrink-0 flex-col border-r border-green-200 bg-green-50/80"
         >
-          <div id="divSidebarCategories" className="flex flex-col gap-0.5 p-1">
+          <div id="divSidebarCategories" className="flex flex-col gap-0.5 p-1 pt-4">
             <CategoryList
               categories={categories}
               selected={selectedCategory}
