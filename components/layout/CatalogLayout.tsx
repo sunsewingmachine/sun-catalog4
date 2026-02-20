@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * Layout: left category strip (vertical buttons) | item part (3 sections) | viewer + strip | details.
+ * Layout: left category strip (vertical buttons) | item part (section 1 + section 2) | viewer + strip | details.
+ * "Best" category shows items ordered by AF column in section 1.
  */
 
 import React from "react";
@@ -11,7 +12,7 @@ import { ALLOWED_CATEGORIES } from "@/types/product";
 import CategoryList from "@/components/sidebar/CategoryList";
 import ProductList from "@/components/sidebar/ProductList";
 import RecentlyViewedList from "@/components/sidebar/RecentlyViewedList";
-import AfOrderedList from "@/components/sidebar/AfOrderedList";
+import { getProductsOrderedByAf } from "@/components/sidebar/AfOrderedList";
 import ProductViewer from "@/components/viewer/ProductViewer";
 import ProductDetails from "@/components/details/ProductDetails";
 import ProductStrip from "@/components/strip/ProductStrip";
@@ -25,6 +26,8 @@ interface CatalogLayoutProps {
 const ACTIVATED_KEY = "catalog_activated";
 const RECENTLY_VIEWED_KEY = "catalog_recently_viewed";
 const RECENTLY_VIEWED_MAX = 5;
+/** Sentinel category: when selected, section 1 shows products ordered by AF column. */
+const BEST_CATEGORY = "Best";
 
 function loadRecentlyViewedFromStorage(products: Product[]): Product[] {
   if (typeof window === "undefined" || products.length === 0) return [];
@@ -94,6 +97,7 @@ export default function CatalogLayout({
 
   const filteredProducts = React.useMemo(() => {
     if (!selectedCategory) return products;
+    if (selectedCategory === BEST_CATEGORY) return getProductsOrderedByAf(products);
     return products.filter((p) => p.category === selectedCategory);
   }, [products, selectedCategory]);
 
@@ -142,16 +146,31 @@ export default function CatalogLayout({
           id="divCategoryStrip"
           className="flex w-14 shrink-0 flex-col border-r border-green-200 bg-green-50/80"
         >
-          <div id="divSidebarCategories" className="flex flex-col gap-0.5 p-1 pt-4">
+          <div id="divSidebarCategories" className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-auto p-1 pt-4">
             <CategoryList
               categories={categories}
               selected={selectedCategory}
               onSelect={setSelectedCategory}
             />
           </div>
+          <div id="divSidebarBest" className="shrink-0 p-1 pb-4">
+            <button
+              type="button"
+              id="btnCategoryBest"
+              onClick={() => setSelectedCategory(BEST_CATEGORY)}
+              title="Best (AF order)"
+              className={`w-full rounded px-1.5 py-1 text-center text-sm font-medium transition-colors truncate ${
+                selectedCategory === BEST_CATEGORY
+                  ? "bg-teal-600 text-white shadow-sm"
+                  : "bg-green-100 text-slate-700 hover:bg-green-200"
+              }`}
+            >
+              Best
+            </button>
+          </div>
         </aside>
 
-        {/* Item part: section 1 = main list (flex), section 2 = 5-row recently viewed, section 3 = 20% */}
+        {/* Item part: section 1 = main list (full height), section 2 = 5-row recently viewed */}
         <div
           id="divItemPart"
           className="flex min-h-0 w-72 shrink-0 flex-col border-r border-green-200 bg-white p-2"
@@ -159,7 +178,7 @@ export default function CatalogLayout({
           <div
             id="divItemPartSection1"
             className="scrollbar-hide min-h-0 flex-1 overflow-auto rounded-lg border border-green-200 bg-green-50/50 p-2"
-            aria-label="Item list"
+            aria-label={selectedCategory === BEST_CATEGORY ? "Items ordered by AF column" : "Item list"}
           >
             <ProductList
               key={selectedCategory ?? ""}
@@ -175,18 +194,6 @@ export default function CatalogLayout({
           >
             <RecentlyViewedList
               products={recentlyViewed}
-              selected={selectedProduct}
-              onSelect={handleSelectProduct}
-            />
-          </div>
-          {/* Section 3: fixed list from all products by AF order; uses same catalog data (cache or refetch when db version changes). */}
-          <div
-            id="divItemPartSection3"
-            className="scrollbar-hide mt-2 min-h-0 flex-[0_0_20%] shrink-0 overflow-auto rounded-lg border border-green-200 bg-green-50/50 p-2"
-            aria-label="Items ordered by AF column (number)"
-          >
-            <AfOrderedList
-              products={products}
               selected={selectedProduct}
               onSelect={handleSelectProduct}
             />

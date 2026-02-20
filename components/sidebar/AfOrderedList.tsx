@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Fixed list of products ordered by column AF (1, 2, 3, …). Used in item part section 3.
- * Uses all products (not category-filtered); populated from catalog cache; refetched only when db version changes.
+ * Fixed list of products ordered by column AF (1, 2, 3, …).
+ * getProductsOrderedByAf is used by CatalogLayout when "Best" category is selected; component used elsewhere if needed.
  */
 
 import type { Product } from "@/types/product";
@@ -13,7 +13,7 @@ interface AfOrderedListProps {
   onSelect: (product: Product) => void;
 }
 
-function getProductsOrderedByAf(products: Product[]): Product[] {
+export function getProductsOrderedByAf(products: Product[]): Product[] {
   const withAf = products.filter((p): p is Product & { af: number } => p.af != null && p.af > 0);
   return [...withAf].sort((a, b) => a.af - b.af);
 }
