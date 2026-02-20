@@ -30,7 +30,7 @@ export default function CategoryList({
           type="button"
           onClick={() => onSelect(cat)}
           title={capitalizeFirstLetter(cat)}
-          className={`w-full rounded px-1.5 py-1 text-center text-xs font-medium transition-colors truncate ${
+          className={`w-full rounded px-1.5 py-1 text-center text-sm font-medium transition-colors truncate ${
             selected === cat
               ? "bg-teal-600 text-white shadow-sm"
               : "bg-green-100 text-slate-700 hover:bg-green-200"

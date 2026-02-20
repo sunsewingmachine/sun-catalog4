@@ -29,7 +29,7 @@ export default function ProductList({
             type="button"
             onClick={() => onSelect(p)}
             title={p.itmGroupName}
-            className={`w-full rounded px-1.5 py-1 text-left text-xs font-medium transition-colors truncate ${
+            className={`w-full rounded px-1.5 py-1 text-left text-sm font-medium transition-colors truncate ${
               selected?.itmGroupName === p.itmGroupName
                 ? "bg-teal-600 text-white shadow-sm"
                 : "bg-green-100 text-slate-700 hover:bg-green-200"

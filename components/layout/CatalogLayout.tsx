@@ -13,6 +13,7 @@ import ProductList from "@/components/sidebar/ProductList";
 import ProductViewer from "@/components/viewer/ProductViewer";
 import ProductDetails from "@/components/details/ProductDetails";
 import ProductStrip from "@/components/strip/ProductStrip";
+import CommonImagesBar from "@/components/strip/CommonImagesBar";
 
 interface CatalogLayoutProps {
   products: Product[];
@@ -61,7 +62,7 @@ export default function CatalogLayout({
       id="divCatalogRoot"
       className="flex h-screen flex-col bg-green-50 text-slate-800"
     >
-      <header className="flex shrink-0 items-center justify-between border-b border-green-200 bg-green-200 px-5 py-3 shadow-sm">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-green-200 bg-green-200 px-5 py-3 shadow-sm">
         <h1 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
           <span className="inline-flex shrink-0 text-slate-700" aria-hidden>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
@@ -159,6 +160,8 @@ export default function CatalogLayout({
           <ProductDetails product={selectedProduct} lastUpdated={lastUpdated} />
         </aside>
       </div>
+
+      <CommonImagesBar products={products} />
     </div>
   );
 }
