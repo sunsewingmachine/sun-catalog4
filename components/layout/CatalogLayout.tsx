@@ -10,6 +10,7 @@ import type { Product } from "@/types/product";
 import { ALLOWED_CATEGORIES } from "@/types/product";
 import CategoryList from "@/components/sidebar/CategoryList";
 import ProductList from "@/components/sidebar/ProductList";
+import RecentlyViewedList from "@/components/sidebar/RecentlyViewedList";
 import ProductViewer from "@/components/viewer/ProductViewer";
 import ProductDetails from "@/components/details/ProductDetails";
 import ProductStrip from "@/components/strip/ProductStrip";
@@ -21,6 +22,35 @@ interface CatalogLayoutProps {
 }
 
 const ACTIVATED_KEY = "catalog_activated";
+const RECENTLY_VIEWED_KEY = "catalog_recently_viewed";
+const RECENTLY_VIEWED_MAX = 5;
+
+function loadRecentlyViewedFromStorage(products: Product[]): Product[] {
+  if (typeof window === "undefined" || products.length === 0) return [];
+  try {
+    const raw = window.localStorage.getItem(RECENTLY_VIEWED_KEY);
+    if (!raw) return [];
+    const ids: unknown = JSON.parse(raw);
+    if (!Array.isArray(ids)) return [];
+    const byName = new Map(products.map((p) => [p.itmGroupName, p]));
+    return (ids as string[])
+      .slice(0, RECENTLY_VIEWED_MAX)
+      .map((id) => byName.get(id))
+      .filter((p): p is Product => p != null);
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentlyViewedToStorage(items: Product[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    const ids = items.slice(0, RECENTLY_VIEWED_MAX).map((p) => p.itmGroupName);
+    window.localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(ids));
+  } catch {
+    // ignore
+  }
+}
 
 export default function CatalogLayout({
   products,
@@ -33,6 +63,25 @@ export default function CatalogLayout({
   const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(
     null
   );
+  const [recentlyViewed, setRecentlyViewed] = React.useState<Product[]>([]);
+  const hasHydratedFromStorage = React.useRef(false);
+
+  React.useEffect(() => {
+    if (products.length === 0 || hasHydratedFromStorage.current) return;
+    hasHydratedFromStorage.current = true;
+    const fromStorage = loadRecentlyViewedFromStorage(products);
+    if (fromStorage.length > 0) setRecentlyViewed(fromStorage);
+  }, [products]);
+
+  const handleSelectProduct = React.useCallback((p: Product) => {
+    setSelectedProduct(p);
+    setRecentlyViewed((prev) => {
+      const without = prev.filter((x) => x.itmGroupName !== p.itmGroupName);
+      const next = [...without, p].slice(-RECENTLY_VIEWED_MAX);
+      saveRecentlyViewedToStorage(next);
+      return next;
+    });
+  }, []);
 
   const categories = React.useMemo(() => {
     const set = new Set<string>();
@@ -101,29 +150,33 @@ export default function CatalogLayout({
           </div>
         </aside>
 
-        {/* Item part: section 1 = 60% (main list), section 2 & 3 = 20% each (to be defined later) */}
+        {/* Item part: section 1 = main list (flex), section 2 = 5-row recently viewed, section 3 = 20% */}
         <div
           id="divItemPart"
           className="flex min-h-0 w-72 shrink-0 flex-col border-r border-green-200 bg-white p-2"
         >
           <div
             id="divItemPartSection1"
-            className="scrollbar-hide min-h-0 flex-[0_0_60%] overflow-auto rounded-lg border border-green-200 bg-green-50/50 p-2"
+            className="scrollbar-hide min-h-0 flex-1 overflow-auto rounded-lg border border-green-200 bg-green-50/50 p-2"
             aria-label="Item list"
           >
             <ProductList
               key={selectedCategory ?? ""}
               products={filteredProducts}
               selected={selectedProduct}
-              onSelect={setSelectedProduct}
+              onSelect={handleSelectProduct}
             />
           </div>
           <div
             id="divItemPartSection2"
-            className="mt-2 min-h-0 flex-[0_0_20%] shrink-0 rounded-lg border border-green-200 bg-green-50/50 p-2"
-            aria-label="Item part section 2"
+            className="mt-2 h-[11rem] shrink-0 rounded-lg border border-green-200 bg-green-50/50 p-2"
+            aria-label="Recently viewed items"
           >
-            {/* Content to be defined later */}
+            <RecentlyViewedList
+              products={recentlyViewed}
+              selected={selectedProduct}
+              onSelect={handleSelectProduct}
+            />
           </div>
           <div
             id="divItemPartSection3"
@@ -150,7 +203,7 @@ export default function CatalogLayout({
             <ProductStrip
               products={products}
               selected={selectedProduct}
-              onSelect={setSelectedProduct}
+              onSelect={handleSelectProduct}
             />
           </div>
         </main>
