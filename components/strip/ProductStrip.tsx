@@ -22,7 +22,7 @@ export default function ProductStrip({
   return (
     <div
       id="divProductStripScroll"
-      className="flex gap-2 overflow-x-auto pb-2"
+      className="scrollbar-hide flex gap-2 overflow-x-auto pb-2"
     >
       {products.slice(0, 50).map((p) => {
         const src = getImageUrl(p.imageFilename);
@@ -32,8 +32,8 @@ export default function ProductStrip({
             key={p.itmGroupName}
             type="button"
             onClick={() => onSelect(p)}
-            className={`h-16 w-20 shrink-0 overflow-hidden rounded border-2 transition-colors ${
-              isSelected ? "border-blue-600" : "border-zinc-200 hover:border-zinc-300"
+            className={`h-16 w-20 shrink-0 overflow-hidden rounded-xl border-2 transition-colors ${
+              isSelected ? "border-teal-600 ring-2 ring-teal-500/20" : "border-green-200 hover:border-green-300"
             }`}
           >
             {src ? (
@@ -46,7 +46,7 @@ export default function ProductStrip({
                 unoptimized={src.startsWith("http")}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-zinc-100 text-xs text-zinc-400">
+              <div className="flex h-full w-full items-center justify-center bg-green-100 text-xs text-slate-500">
                 —
               </div>
             )}

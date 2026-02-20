@@ -18,16 +18,17 @@ export default function ProductList({
   onSelect,
 }: ProductListProps) {
   return (
-    <ul id="divProductListScroll" className="flex flex-col gap-0.5">
+    <ul id="divProductListScroll" className="flex flex-col gap-1">
       {products.map((p) => (
         <li key={p.itmGroupName}>
           <button
             type="button"
             onClick={() => onSelect(p)}
-            className={`w-full rounded px-3 py-1.5 text-left text-sm ${
+            title={p.itmGroupName}
+            className={`w-full rounded px-1.5 py-1 text-left text-xs font-medium transition-colors truncate ${
               selected?.itmGroupName === p.itmGroupName
-                ? "bg-blue-100 font-medium text-blue-800"
-                : "text-zinc-700 hover:bg-zinc-100"
+                ? "bg-teal-600 text-white shadow-sm"
+                : "bg-green-100 text-slate-700 hover:bg-green-200"
             }`}
           >
             {p.itmGroupName}

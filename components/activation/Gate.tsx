@@ -29,14 +29,14 @@ export default function Gate() {
 
   if (!mounted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-100">
+      <div className="flex min-h-screen items-center justify-center bg-green-50">
         <p className="text-zinc-500">Loading…</p>
       </div>
     );
   }
   if (activated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-100">
+      <div className="flex min-h-screen items-center justify-center bg-green-50">
         <p className="text-zinc-500">Redirecting to catalog…</p>
       </div>
     );

@@ -17,7 +17,7 @@ export default function ProductViewer({ product }: ProductViewerProps) {
     return (
       <div
         id="divMainImage"
-        className="flex h-full items-center justify-center bg-zinc-50 text-zinc-400"
+        className="flex h-full items-center justify-center rounded-2xl bg-white/90 text-slate-500 shadow-sm"
       >
         Select a product
       </div>
@@ -26,7 +26,7 @@ export default function ProductViewer({ product }: ProductViewerProps) {
   const src = getImageUrl(product.imageFilename);
   return (
     <div id="divProductViewer" className="flex h-full flex-col">
-      <div className="relative flex-1 min-h-0 bg-zinc-50">
+      <div className="relative flex-1 min-h-0 overflow-hidden rounded-2xl bg-white/90 shadow-sm">
         {src ? (
           <Image
             id="imgMainProduct"
@@ -41,13 +41,13 @@ export default function ProductViewer({ product }: ProductViewerProps) {
             }}
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-zinc-400">
+          <div className="flex h-full items-center justify-center text-slate-500">
             No image
           </div>
         )}
       </div>
-      <div className="mt-2 flex gap-2 overflow-x-auto">
-        <div className="h-16 w-20 shrink-0 overflow-hidden rounded border border-zinc-200 bg-zinc-100">
+      <div className="scrollbar-hide mt-2 flex gap-2 overflow-x-auto">
+        <div className="h-16 w-20 shrink-0 overflow-hidden rounded-xl border border-green-200 bg-white shadow-sm">
           {src && (
             <Image
               src={src}

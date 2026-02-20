@@ -1,8 +1,15 @@
 "use client";
 
 /**
- * Vertical list of category buttons. Active state highlight.
+ * Vertical list of category buttons. Active state highlight. Displays category with first letter capitalized.
  */
+
+function capitalizeFirstLetter(s: string): string {
+  if (!s.length) return s;
+  const c = s[0];
+  if (c >= "a" && c <= "z") return c.toUpperCase() + s.slice(1);
+  return s;
+}
 
 interface CategoryListProps {
   categories: string[];
@@ -22,13 +29,14 @@ export default function CategoryList({
           key={cat}
           type="button"
           onClick={() => onSelect(cat)}
-          className={`rounded px-3 py-2 text-left text-sm font-medium transition-colors ${
+          title={capitalizeFirstLetter(cat)}
+          className={`w-full rounded px-1.5 py-1 text-center text-xs font-medium transition-colors truncate ${
             selected === cat
-              ? "bg-blue-600 text-white"
-              : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
+              ? "bg-teal-600 text-white shadow-sm"
+              : "bg-green-100 text-slate-700 hover:bg-green-200"
           }`}
         >
-          {cat}
+          {capitalizeFirstLetter(cat)}
         </button>
       ))}
     </div>

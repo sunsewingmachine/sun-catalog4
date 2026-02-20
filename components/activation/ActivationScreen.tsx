@@ -1,14 +1,31 @@
 "use client";
 
 /**
- * Single code input; validates prefix (PC name) + time code and sets activated flag. No PC dropdown.
+ * Single code input; validates via API (env codes APP_ACTIVATION_CODE1/2 or time-based code) and sets activated flag.
  */
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { validateActivationCode } from "@/lib/activationValidator";
 
 const ACTIVATED_KEY = "catalog_activated";
+const API_VALIDATE_ACTIVATION = "/api/validate-activation";
+
+interface ValidateActivationResponse {
+  valid: boolean;
+  error?: string;
+  decodedPcName?: string;
+}
+
+async function validateActivationViaApi(enteredCode: string): Promise<ValidateActivationResponse> {
+  const res = await fetch(API_VALIDATE_ACTIVATION, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code: enteredCode }),
+  });
+  const data = (await res.json()) as ValidateActivationResponse;
+  if (!res.ok) return { valid: false, error: data.error ?? "Validation failed" };
+  return data;
+}
 
 export default function ActivationScreen() {
   const router = useRouter();
@@ -16,36 +33,41 @@ export default function ActivationScreen() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-    const result = validateActivationCode(code);
-    setSubmitting(false);
-    if (result.valid) {
-      if (typeof window !== "undefined") {
-        window.sessionStorage.setItem(ACTIVATED_KEY, "1");
+    try {
+      const result = await validateActivationViaApi(code);
+      if (result.valid) {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(ACTIVATED_KEY, "1");
+        }
+        router.push("/catalog");
+        router.refresh();
+      } else {
+        setError(result.error ?? "Invalid code");
       }
-      router.push("/catalog");
-      router.refresh();
-    } else {
-      setError(result.error ?? "Invalid code");
+    } catch {
+      setError("Could not verify code. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <div
       id="divActivationContainer"
-      className="flex min-h-screen items-center justify-center bg-zinc-100 p-4"
+      className="flex min-h-screen items-center justify-center bg-green-50 p-4"
     >
       <div
         id="divActivationCard"
-        className="w-full max-w-md rounded-lg border border-zinc-200 bg-white p-6 shadow-sm"
+        className="w-full max-w-md rounded-2xl border border-green-200 bg-white/95 p-8 shadow-md"
       >
-        <h1 className="mb-2 text-xl font-semibold text-zinc-800">
+        <h1 className="mb-2 text-xl font-semibold text-slate-800">
           Product Catalog
         </h1>
-        <p className="mb-6 text-sm text-zinc-500">
+        <p className="mb-6 text-sm text-slate-500">
           Enter the activation code to continue.
         </p>
         <form onSubmit={handleSubmit}>
@@ -54,11 +76,11 @@ export default function ActivationScreen() {
           </label>
           <input
             id="inputActivationCode"
-            type="text"
+            type="password"
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="Enter code"
-            className="mb-4 w-full rounded border border-zinc-300 px-3 py-2 text-zinc-800 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mb-4 w-full rounded-xl border border-green-200 bg-green-50/80 px-4 py-2.5 text-slate-800 placeholder-slate-400 transition-colors focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
             autoComplete="one-time-code"
             disabled={submitting}
           />
@@ -70,7 +92,7 @@ export default function ActivationScreen() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="w-full rounded-xl bg-teal-600 px-4 py-2.5 font-medium text-white shadow-sm transition-colors hover:bg-teal-700 disabled:opacity-50"
           >
             {submitting ? "Checking…" : "Activate"}
           </button>

@@ -95,16 +95,61 @@ export default function CatalogPageClient() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-100">
-        <p className="text-zinc-500">Loading catalog…</p>
+      <div className="flex min-h-screen items-center justify-center bg-green-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-green-200 border-t-teal-600" aria-hidden />
+          <p className="text-slate-500">Loading catalog…</p>
+        </div>
       </div>
     );
   }
   if (error && products.length === 0) {
+    const is404 = error.includes("404") || error.includes("not found");
+    const itemsSheetUrl =
+      SHEET_ID && ITMGROUP_GID
+        ? `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${ITMGROUP_GID}`
+        : null;
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-100 p-4">
-        <p className="text-red-600">{error}</p>
-        <p className="text-sm text-zinc-500">You may be offline. Connect and refresh.</p>
+      <div
+        id="divCatalogError"
+        className="flex min-h-screen flex-col items-center justify-center gap-4 bg-green-50 p-4"
+      >
+        <p className="text-center text-red-600">{error}</p>
+        <p className="text-center text-sm text-slate-500">
+          {is404
+            ? "Fix the sheet URL or sharing, then refresh."
+            : "You may be offline. Connect and refresh."}
+        </p>
+        {(SHEET_ID || ITMGROUP_GID || DB_GID) && (
+          <div
+            id="divCatalogErrorDiagnostics"
+            className="mt-4 w-full max-w-md rounded-2xl border border-green-200 bg-white p-4 text-left text-xs text-slate-600 shadow-sm"
+          >
+            <p className="mb-1 font-medium text-slate-700">Config in use:</p>
+            <p>NEXT_PUBLIC_SHEET_ID = {SHEET_ID || "(empty)"}</p>
+            <p>NEXT_PUBLIC_ITMGROUP_GID = {ITMGROUP_GID || "(empty)"}</p>
+            <p>NEXT_PUBLIC_DB_GID = {DB_GID || "(empty)"}</p>
+            <p className="mt-2 text-slate-500">
+              Sheet ID is the part in your spreadsheet URL: …/d/<strong>[this]</strong>/edit
+            </p>
+            <p className="text-slate-500">
+              GID is in the tab URL when you click a sheet tab: …#gid=<strong>[number]</strong>
+            </p>
+            {itemsSheetUrl && (
+              <p className="mt-2">
+                <a
+                  href={itemsSheetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-teal-600 underline hover:text-teal-700"
+                >
+                  Open items sheet URL in a new tab
+                </a>{" "}
+                — if it 404s there too, the ID or GID is wrong or that tab isn’t published.
+              </p>
+            )}
+          </div>
+        )}
       </div>
     );
   }
