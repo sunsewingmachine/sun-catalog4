@@ -28,6 +28,25 @@ const RECENTLY_VIEWED_KEY = "catalog_recently_viewed";
 const RECENTLY_VIEWED_MAX = 5;
 /** Sentinel category: when selected, section 1 shows products ordered by AF column. */
 const BEST_CATEGORY = "Best";
+/** Interval (ms) between Best button attention animation (blink + stars). */
+const BEST_ATTENTION_INTERVAL_MS = 20000;
+/** Number of stars that rise from the Best button each cycle. */
+const BEST_STAR_COUNT = 14;
+/** Sparkle particles burst outward (angle in deg, radius ~44px). */
+const BEST_SPARKLE_BURST = [
+  { x: 0, y: -44 },
+  { x: 22, y: -38 },
+  { x: 38, y: -22 },
+  { x: 44, y: 0 },
+  { x: 38, y: 22 },
+  { x: 22, y: 38 },
+  { x: 0, y: 44 },
+  { x: -22, y: 38 },
+  { x: -38, y: 22 },
+  { x: -44, y: 0 },
+  { x: -38, y: -22 },
+  { x: -22, y: -38 },
+];
 
 function loadRecentlyViewedFromStorage(products: Product[]): Product[] {
   if (typeof window === "undefined" || products.length === 0) return [];
@@ -67,8 +86,16 @@ export default function CatalogLayout({
   const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(
     null
   );
+  /** True when current selection was made by clicking in section 2 (recently viewed). Used to avoid highlighting in section 2 when user clicked in section 1. */
+  const [selectionFromRecentList, setSelectionFromRecentList] = React.useState(false);
   const [recentlyViewed, setRecentlyViewed] = React.useState<Product[]>([]);
+  const [bestBurstKey, setBestBurstKey] = React.useState(0);
   const hasHydratedFromStorage = React.useRef(false);
+
+  React.useEffect(() => {
+    const t = setInterval(() => setBestBurstKey((k) => k + 1), BEST_ATTENTION_INTERVAL_MS);
+    return () => clearInterval(t);
+  }, []);
 
   React.useEffect(() => {
     if (products.length === 0 || hasHydratedFromStorage.current) return;
@@ -77,7 +104,19 @@ export default function CatalogLayout({
     if (fromStorage.length > 0) setRecentlyViewed(fromStorage);
   }, [products]);
 
-  const handleSelectProduct = React.useCallback((p: Product) => {
+  const handleSelectProductFromMain = React.useCallback((p: Product) => {
+    setSelectionFromRecentList(false);
+    setSelectedProduct(p);
+    setRecentlyViewed((prev) => {
+      const without = prev.filter((x) => x.itmGroupName !== p.itmGroupName);
+      const next = [...without, p].slice(-RECENTLY_VIEWED_MAX);
+      saveRecentlyViewedToStorage(next);
+      return next;
+    });
+  }, []);
+
+  const handleSelectProductFromRecent = React.useCallback((p: Product) => {
+    setSelectionFromRecentList(true);
     setSelectedProduct(p);
     setRecentlyViewed((prev) => {
       const without = prev.filter((x) => x.itmGroupName !== p.itmGroupName);
@@ -108,7 +147,10 @@ export default function CatalogLayout({
   React.useEffect(() => {
     if (filteredProducts.length === 0) return;
     const currentInList = selectedProduct && filteredProducts.some((p) => p.itmGroupName === selectedProduct.itmGroupName);
-    if (!currentInList) setSelectedProduct(filteredProducts[0] ?? null);
+    if (!currentInList) {
+      setSelectedProduct(filteredProducts[0] ?? null);
+      setSelectionFromRecentList(false);
+    }
   }, [filteredProducts, selectedProduct?.itmGroupName]);
 
   return (
@@ -146,27 +188,74 @@ export default function CatalogLayout({
           id="divCategoryStrip"
           className="flex w-14 shrink-0 flex-col border-r border-green-200 bg-green-50/80"
         >
-          <div id="divSidebarCategories" className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-auto p-1 pt-4">
+          {/* Best button first (top), same position as former first category */}
+          <div id="divSidebarBest" className="relative shrink-0 overflow-visible p-1 pt-4">
+            <div className="relative">
+              {/* Blast flash at burst trigger */}
+              <span
+                key={`blast-${bestBurstKey}`}
+                className="best-blast-flash absolute left-1/2 top-1/2 h-14 w-14 rounded-full bg-amber-300/90"
+                style={{ transform: "translate(-50%, -50%)" }}
+                aria-hidden
+              />
+              {/* Sparkle particles bursting outward */}
+              {BEST_SPARKLE_BURST.map(({ x, y }, i) => (
+                <span
+                  key={`sparkle-${bestBurstKey}-${i}`}
+                  className="best-sparkle absolute left-1/2 bottom-1 inline-block h-2 w-2 rounded-full bg-amber-200 shadow-[0_0_6px_2px_rgba(255,215,0,0.9)]"
+                  style={{
+                    left: "50%",
+                    bottom: "4px",
+                    ["--sparkle-x" as string]: `${x}px`,
+                    ["--sparkle-y" as string]: `${y}px`,
+                    animationDelay: `${i * 0.03}s`,
+                  }}
+                  aria-hidden
+                />
+              ))}
+              {Array.from({ length: BEST_STAR_COUNT }, (_, i) => (
+                <span
+                  key={`${bestBurstKey}-${i}`}
+                  className="best-star absolute inline-block drop-shadow-md"
+                  style={{
+                    animationDelay: `${i * 0.08}s`,
+                    left: "50%",
+                    bottom: "2px",
+                  }}
+                  aria-hidden
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" className="block">
+                    <path
+                      d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                      fill="#b8860b"
+                      stroke="#dc2626"
+                      strokeWidth="1.25"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+              ))}
+              <button
+                type="button"
+                id="btnCategoryBest"
+                onClick={() => setSelectedCategory(BEST_CATEGORY)}
+                title="Best (AF order)"
+                className={`animate-best-blink w-full rounded px-1.5 py-1 text-center text-sm font-medium transition-colors truncate text-black ${
+                  selectedCategory === BEST_CATEGORY
+                    ? "bg-red-600 shadow-sm"
+                    : "bg-red-500 hover:bg-red-600"
+                }`}
+              >
+                Best
+              </button>
+            </div>
+          </div>
+          <div id="divSidebarCategories" className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-auto p-1">
             <CategoryList
               categories={categories}
               selected={selectedCategory}
               onSelect={setSelectedCategory}
             />
-          </div>
-          <div id="divSidebarBest" className="shrink-0 p-1 pb-4">
-            <button
-              type="button"
-              id="btnCategoryBest"
-              onClick={() => setSelectedCategory(BEST_CATEGORY)}
-              title="Best (AF order)"
-              className={`w-full rounded px-1.5 py-1 text-center text-sm font-medium transition-colors truncate ${
-                selectedCategory === BEST_CATEGORY
-                  ? "bg-teal-600 text-white shadow-sm"
-                  : "bg-green-100 text-slate-700 hover:bg-green-200"
-              }`}
-            >
-              Best
-            </button>
           </div>
         </aside>
 
@@ -184,7 +273,7 @@ export default function CatalogLayout({
               key={selectedCategory ?? ""}
               products={filteredProducts}
               selected={selectedProduct}
-              onSelect={handleSelectProduct}
+              onSelect={handleSelectProductFromMain}
             />
           </div>
           <div
@@ -195,7 +284,8 @@ export default function CatalogLayout({
             <RecentlyViewedList
               products={recentlyViewed}
               selected={selectedProduct}
-              onSelect={handleSelectProduct}
+              highlightSelected={selectionFromRecentList}
+              onSelect={handleSelectProductFromRecent}
             />
           </div>
         </div>
@@ -216,7 +306,7 @@ export default function CatalogLayout({
             <ProductStrip
               products={products}
               selected={selectedProduct}
-              onSelect={handleSelectProduct}
+              onSelect={handleSelectProductFromMain}
             />
           </div>
         </main>
