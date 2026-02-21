@@ -37,7 +37,7 @@ interface CatalogLayoutProps {
   onRequestRefresh?: () => Promise<void>;
 }
 
-/** Exchange price submenu keys and separators for "Bybk (Exchange price)" in settings. Row 2 header in sheet uses e.g. C1:Sv:FinalExchangePrice. */
+/** Exchange price submenu keys and separators for "Bybk (Exchange)" in settings. Row 2 header in sheet uses e.g. C1:Sv:FinalExchangePrice. */
 const EXCHANGE_PRICE_SUBMENUS: (string | "---")[] = [
   "C1:Sv",
   "C2:Sv",
@@ -140,7 +140,7 @@ export default function CatalogLayout({
   const settingsDropdownWrapperRef = React.useRef<HTMLDivElement>(null);
   /** When set, details panel shows exchange price table for this key (e.g. C1:Sv); best image moves to main image overlay. */
   const [selectedExchangeMenu, setSelectedExchangeMenu] = React.useState<string | null>(null);
-  /** When true, Bybk (Exchange price) submenus are visible; toggled by hover/click on Bybk header. */
+  /** When true, Bybk (Exchange) submenus are visible; toggled by hover/click on Bybk header. */
   const [bybkSubmenuExpanded, setBybkSubmenuExpanded] = React.useState(false);
   /** Filenames for 3-row area below main image: ForAll and ForGroup (from /api/bar-images). */
   const [barImages, setBarImages] = React.useState<{
@@ -440,10 +440,19 @@ export default function CatalogLayout({
                           onClick={() => setBybkSubmenuExpanded((v) => !v)}
                           className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide rounded ${bybkSubmenuExpanded ? "bg-green-50 text-green-800" : "text-slate-600 hover:bg-green-50"}`}
                         >
-                          <span id="pExchangePriceMenuLabel">Bybk (Exchange price)</span>
+                          <span id="pExchangePriceMenuLabel">Bybk (Exchange)</span>
                           <span className="text-slate-400 shrink-0 ml-1" aria-hidden>›</span>
                         </button>
                       </div>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        id="btnSettingsUltraPrice"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                        onClick={() => setSettingsMenuOpen(false)}
+                      >
+                        <span>Ultra price</span>
+                      </button>
                       <div className="border-t border-green-100 my-1" aria-hidden />
                       <button
                         type="button"
@@ -597,6 +606,7 @@ export default function CatalogLayout({
             exchangePriceMenu={selectedExchangeMenu}
             rawItmGroupRows={rawItmGroupRows}
             onFeatureMediaClick={handleFeatureMediaClick}
+            onExchangePriceClose={() => setSelectedExchangeMenu(null)}
           />
         </aside>
       </div>

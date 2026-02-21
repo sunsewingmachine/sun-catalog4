@@ -23,6 +23,8 @@ interface ProductDetailsProps {
   rawItmGroupRows?: string[][];
   /** When user clicks a feature with url (col C), show that media in main viewer. */
   onFeatureMediaClick?: (mediaUrl: string) => void;
+  /** When user closes/hides the exchange price panel. */
+  onExchangePriceClose?: () => void;
 }
 
 const ICON_CLASS = "size-4 shrink-0 text-slate-600";
@@ -74,6 +76,7 @@ export default function ProductDetails({
   exchangePriceMenu = null,
   rawItmGroupRows,
   onFeatureMediaClick,
+  onExchangePriceClose,
 }: ProductDetailsProps) {
   const hasRawRows = Array.isArray(rawItmGroupRows) && rawItmGroupRows.length > 0;
   const exchangeRows = exchangePriceMenu && hasRawRows ? getExchangePriceRows(rawItmGroupRows, exchangePriceMenu) : [];
@@ -161,18 +164,50 @@ export default function ProductDetails({
       {exchangePriceMenu != null ? (
         <div
           id="divDetailsExchangePrice"
-          className="mt-4 flex flex-1 min-h-[8rem] flex-col rounded-lg border border-green-200 bg-green-50/80 overflow-hidden"
+          className="mt-4 flex flex-1 flex-col rounded-lg border border-green-200 bg-green-50/80 overflow-hidden relative"
         >
-          <div className="overflow-auto max-h-64">
-            <table id="tableExchangePrice" className="w-full min-w-0 border-collapse text-xs" aria-label="Exchange price">
+          {onExchangePriceClose ? (
+            <div className="flex justify-end shrink-0 pr-1 pt-1">
+              <button
+                type="button"
+                id="btnExchangePriceClose"
+                onClick={onExchangePriceClose}
+                className="rounded p-1 text-slate-500 hover:bg-green-200/80 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1"
+                aria-label="Close exchange price"
+                title="Close"
+              >
+                <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ) : null}
+          <div className="min-w-0 shrink-0 pr-1.5 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
+            <table id="tableExchangePriceHeader" className="w-full min-w-0 border-collapse text-xs table-fixed" aria-label="Exchange price column headers">
+              <colgroup>
+                <col style={{ width: "40%" }} />
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "20%" }} />
+              </colgroup>
               <thead>
                 <tr className="border-b border-green-200 bg-green-100/80">
-                  <th className="sticky top-0 z-10 bg-green-100/95 px-1.5 py-1 text-left font-semibold text-slate-800 shadow-[0_1px_0_0_rgba(34,197,94,0.2)]">{exchangeItemHeader}</th>
-                  <th className="sticky top-0 z-10 bg-green-100/95 px-1 py-1 text-right font-semibold text-slate-800 shadow-[0_1px_0_0_rgba(34,197,94,0.2)]">MRP</th>
-                  <th className="sticky top-0 z-10 bg-green-100/95 px-1 py-1 text-right font-semibold text-slate-800 shadow-[0_1px_0_0_rgba(34,197,94,0.2)]">Less</th>
-                  <th className="sticky top-0 z-10 bg-green-100/95 px-1 py-1 text-right font-semibold text-slate-800 shadow-[0_1px_0_0_rgba(34,197,94,0.2)]">Final</th>
+                  <th className="px-1.5 py-1 text-left font-semibold text-slate-800">{exchangeItemHeader}</th>
+                  <th className="px-1 py-1 text-right font-semibold text-slate-800">MRP</th>
+                  <th className="px-1 py-1 text-right font-semibold text-slate-800">Less</th>
+                  <th className="px-1 py-1 text-right font-semibold text-slate-800">Final</th>
                 </tr>
               </thead>
+            </table>
+          </div>
+          <div className="overflow-auto max-h-64 min-h-0 pr-1.5 [scrollbar-gutter:stable]">
+            <table id="tableExchangePrice" className="w-full min-w-0 border-collapse text-xs table-fixed" aria-label="Exchange price">
+              <colgroup>
+                <col style={{ width: "40%" }} />
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "20%" }} />
+              </colgroup>
               <tbody>
                 {exchangeRows.length === 0 ? (
                   <tr>
