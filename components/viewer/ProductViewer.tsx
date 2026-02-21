@@ -2,13 +2,14 @@
 
 /**
  * Main product image and thumbnail strip. Main image: {ItmGroupName}.jpg
- * Single-click other images (e.g. strip) shows them here; double-click opens full-size zoomable lightbox.
+ * Uses cached image from IndexedDB when available; single-click strip shows here; double-click opens lightbox.
  */
 
 import React from "react";
 import type { Product } from "@/types/product";
 import { getImageUrl, getCdnBase } from "@/lib/r2ImageHelper";
 import Image from "next/image";
+import { useImageDisplayUrl } from "@/hooks/useImageDisplayUrl";
 
 /** Fallback when product image is missing or fails to load. */
 const DEFAULT_IMAGE = "/used/default.jpg";
@@ -31,12 +32,19 @@ export default function ProductViewer({
   const displaySrcExact = product ? getImageUrl(product.imageFilename, false) : "";
   const displaySrcLower = product ? getImageUrl(product.imageFilename, true) : "";
   const displaySrc = tryLowercase ? displaySrcLower : displaySrcExact;
+  const { displayUrl: cachedMainUrl } = useImageDisplayUrl(
+    displaySrc?.startsWith("http") ? displaySrc : ""
+  );
   const useSample = !displaySrc || mainImageError;
-  const productMainSrc = useSample ? DEFAULT_IMAGE : displaySrc;
+  const productMainSrc = useSample ? DEFAULT_IMAGE : (cachedMainUrl || displaySrc || DEFAULT_IMAGE);
   const mainSrc =
     mainImageOverride != null && mainImageOverride !== ""
       ? mainImageOverride
       : productMainSrc;
+  const { displayUrl: mainDisplayUrl } = useImageDisplayUrl(
+    mainSrc.startsWith("http") ? mainSrc : ""
+  );
+  const effectiveMainSrc = mainDisplayUrl || mainSrc;
   const mainAlt = product?.itmGroupName ?? "Product";
 
   React.useEffect(() => {
@@ -83,10 +91,10 @@ export default function ProductViewer({
         onKeyDown={(e) => e.key === "Enter" && handleDoubleClickMain()}
         aria-label="Double-click to open full size"
       >
-        {mainSrc.startsWith("http") ? (
+        {effectiveMainSrc.startsWith("http") || effectiveMainSrc.startsWith("blob:") ? (
           <img
             id="imgMainProduct"
-            src={mainSrc}
+            src={effectiveMainSrc}
             alt={mainAlt}
             className="pointer-events-none h-full w-full object-contain"
             loading="eager"
@@ -97,7 +105,7 @@ export default function ProductViewer({
         ) : (
           <Image
             id="imgMainProduct"
-            src={mainSrc}
+            src={effectiveMainSrc}
             alt={mainAlt}
             fill
             className="pointer-events-none object-contain"
@@ -116,39 +124,6 @@ export default function ProductViewer({
           ) : null}
         </p>
       )}
-      <div className="scrollbar-hide mt-2 flex gap-2 overflow-x-auto">
-        <div
-          className="h-16 w-20 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-green-200 bg-white shadow-sm"
-          onDoubleClick={() =>
-            onOpenLightbox?.(
-              displaySrc || DEFAULT_IMAGE,
-              `${product.itmGroupName} thumb`
-            )
-          }
-          role="button"
-          tabIndex={0}
-          aria-label="Double-click to open full size"
-        >
-          {(displaySrc || DEFAULT_IMAGE).startsWith("http") ? (
-            <img
-              src={displaySrc || DEFAULT_IMAGE}
-              alt={`${product.itmGroupName} thumb`}
-              className="h-full w-full object-cover pointer-events-none"
-              referrerPolicy="no-referrer"
-              draggable={false}
-            />
-          ) : (
-            <Image
-              src={displaySrc || DEFAULT_IMAGE}
-              alt={`${product.itmGroupName} thumb`}
-              width={80}
-              height={64}
-              className="h-full w-full object-cover pointer-events-none"
-              draggable={false}
-            />
-          )}
-        </div>
-      </div>
     </div>
   );
 }

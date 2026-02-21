@@ -16,7 +16,7 @@ import { getProductsOrderedByAf } from "@/components/sidebar/AfOrderedList";
 import ProductViewer from "@/components/viewer/ProductViewer";
 import ImageLightbox from "@/components/viewer/ImageLightbox";
 import ProductDetails from "@/components/details/ProductDetails";
-import ProductStrip from "@/components/strip/ProductStrip";
+import AdditionalImagesStrip from "@/components/strip/AdditionalImagesStrip";
 import CommonImagesBar from "@/components/strip/CommonImagesBar";
 
 interface CatalogLayoutProps {
@@ -312,17 +312,11 @@ export default function CatalogLayout({
               />
             </div>
           </div>
-          <div
-            id="divProductStrip"
-            className="scrollbar-hide h-24 shrink-0 overflow-x-auto border-t border-green-200 bg-green-50 p-2"
-          >
-            <ProductStrip
-              products={products}
-              selected={selectedProduct}
-              onSelect={handleSelectProductFromMain}
-              onOpenLightbox={openLightbox}
-            />
-          </div>
+          <AdditionalImagesStrip
+            product={selectedProduct}
+            onSetMainImage={setMainImageOverride}
+            onOpenLightbox={openLightbox}
+          />
         </main>
 
         <aside

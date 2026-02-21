@@ -1,15 +1,14 @@
 "use client";
 
 /**
- * Full-width bottom bar showing images that appear in more than one product (common/shared).
- * Height and padding match the top header bar for visual consistency.
- * Temporarily shows public/machines sample when no common images exist.
+ * Full-width bottom bar showing common images; uses cached images when available.
  */
 
 import React from "react";
 import type { Product } from "@/types/product";
 import { getImageUrl } from "@/lib/r2ImageHelper";
 import Image from "next/image";
+import CachedImage from "@/components/shared/CachedImage";
 
 /** Fallback when no image or common images bar is empty. */
 const DEFAULT_IMAGE = "/used/default.jpg";
@@ -87,26 +86,13 @@ export default function CommonImagesBar({
                 }}
               >
                 {src ? (
-                  src.startsWith("http") ? (
-                    <img
-                      src={src}
-                      alt=""
-                      width={40}
-                      height={32}
-                      className="h-full w-full object-cover pointer-events-none"
-                      referrerPolicy="no-referrer"
-                      draggable={false}
-                    />
-                  ) : (
-                    <Image
-                      src={src}
-                      alt=""
-                      width={40}
-                      height={32}
-                      className="h-full w-full object-cover pointer-events-none"
-                      draggable={false}
-                    />
-                  )
+                  <CachedImage
+                    src={displaySrc}
+                    alt=""
+                    width={40}
+                    height={32}
+                    className="h-full w-full object-cover pointer-events-none"
+                  />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-green-100 text-[10px] text-slate-400">
                     —

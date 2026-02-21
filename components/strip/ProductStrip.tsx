@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * Bottom horizontal strip of product thumbnails; click to select product.
+ * Bottom horizontal strip of product thumbnails; uses cached images when available.
  * Tries exact-case URL first (matches R2), then lowercase on 404.
  */
 
 import React from "react";
 import type { Product } from "@/types/product";
 import { getImageUrl } from "@/lib/r2ImageHelper";
-import Image from "next/image";
+import CachedImage from "@/components/shared/CachedImage";
 
 interface ProductStripProps {
   products: Product[];
@@ -53,31 +53,18 @@ export default function ProductStrip({
             }`}
           >
             {src ? (
-              src.startsWith("http") ? (
-                <img
-                  src={src}
-                  alt={p.itmGroupName}
-                  width={80}
-                  height={64}
-                  className="h-full w-full object-cover pointer-events-none"
-                  referrerPolicy="no-referrer"
-                  draggable={false}
-                  onError={
-                    useLower
-                      ? undefined
-                      : () => setUseLowercaseFor((prev) => new Set(prev).add(p.itmGroupName))
-                  }
-                />
-              ) : (
-                <Image
-                  src={src}
-                  alt={p.itmGroupName}
-                  width={80}
-                  height={64}
-                  className="h-full w-full object-cover pointer-events-none"
-                  draggable={false}
-                />
-              )
+              <CachedImage
+                src={displaySrc}
+                alt={p.itmGroupName}
+                width={80}
+                height={64}
+                className="h-full w-full object-cover pointer-events-none"
+                onError={
+                  useLower
+                    ? undefined
+                    : () => setUseLowercaseFor((prev) => new Set(prev).add(p.itmGroupName))
+                }
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-green-100 text-xs text-slate-500">
                 —

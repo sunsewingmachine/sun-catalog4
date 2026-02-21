@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * Client wrapper: ensures activated (localStorage), loads catalog data (version check + cache/fetch), renders CatalogLayout.
+ * Client wrapper: ensures activated (localStorage), loads catalog (version check + cache/fetch),
+ * syncs images to IndexedDB when catalog changes, renders CatalogLayout.
  */
 
 import { useEffect, useState } from "react";
@@ -12,6 +13,11 @@ import { shouldFetchCatalog } from "@/lib/versionChecker";
 import { getCachedCatalog, setCachedCatalog } from "@/lib/cacheManager";
 import { fetchSheetByGid, getDataRows } from "@/lib/sheetFetcher";
 import { mapRowsToProducts } from "@/lib/productMapper";
+import {
+  syncImages,
+  getUniqueImageUrlsFromProducts,
+  type ImageSyncProgress,
+} from "@/lib/imageSyncService";
 
 const ACTIVATED_KEY = "catalog_activated";
 
@@ -34,6 +40,7 @@ export default function CatalogPageClient() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [syncProgress, setSyncProgress] = useState<ImageSyncProgress | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.localStorage?.getItem(ACTIVATED_KEY) !== "1") {
@@ -65,12 +72,33 @@ export default function CatalogPageClient() {
           if (cancelled) return;
           setProducts(newProducts);
           setLastUpdated(new Date().toISOString());
+          const imageCount = getUniqueImageUrlsFromProducts(newProducts).length;
+          setSyncProgress({
+            current: 0,
+            total: imageCount,
+            message: imageCount > 0 ? "Syncing images…" : "Done",
+          });
+          try {
+            await syncImages(newProducts, {
+              onProgress: (p) => {
+                if (!cancelled) setSyncProgress(p);
+              },
+            });
+          } finally {
+            if (!cancelled) setSyncProgress(null);
+            if (typeof navigator !== "undefined" && navigator.storage?.persist) {
+              navigator.storage.persist().catch(() => {});
+            }
+          }
         } else {
           const cached = await getCachedCatalog();
           if (cancelled) return;
           if (cached) {
             setProducts(cached.products);
             setLastUpdated(cached.meta.lastUpdated);
+            if (typeof navigator !== "undefined" && navigator.storage?.persist) {
+              navigator.storage.persist().catch(() => {});
+            }
           } else {
             setError("No cached data. Connect to the internet to load catalog.");
           }
@@ -95,10 +123,17 @@ export default function CatalogPageClient() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-green-50">
+      <div id="divCatalogLoading" className="flex min-h-screen items-center justify-center bg-green-50">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-green-200 border-t-teal-600" aria-hidden />
           <p className="text-slate-500">Loading catalog…</p>
+          {syncProgress && (
+            <p id="pImageSyncProgress" className="text-sm text-teal-600">
+              {syncProgress.total > 0
+                ? (syncProgress.message ?? `Syncing images ${syncProgress.current}/${syncProgress.total}`)
+                : syncProgress.message}
+            </p>
+          )}
         </div>
       </div>
     );

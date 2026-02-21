@@ -35,7 +35,9 @@ export default function ImageLightbox({
   const previousActiveElement = React.useRef<HTMLElement | null>(null);
 
   const unoptimized =
-    imageSrc.startsWith("http") || imageSrc === DEFAULT_IMAGE;
+    imageSrc.startsWith("http") ||
+    imageSrc.startsWith("blob:") ||
+    imageSrc === DEFAULT_IMAGE;
 
   const clampScale = (s: number) =>
     Math.min(MAX_SCALE, Math.max(MIN_SCALE, s));
