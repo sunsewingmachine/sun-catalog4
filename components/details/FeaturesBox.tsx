@@ -38,7 +38,7 @@ export default function FeaturesBox({ product, features }: FeaturesBoxProps) {
   return (
     <div
       id="divFeaturesBox"
-      className="mt-4 rounded-lg border border-green-200 bg-green-100 p-3"
+      className="mt-4 rounded-lg border border-green-200 bg-white p-3"
     >
       <h3 id="h3FeaturesTitle" className="mb-2 text-sm font-semibold text-slate-800">
         Features
@@ -47,7 +47,7 @@ export default function FeaturesBox({ product, features }: FeaturesBoxProps) {
         <ul id="ulFeaturesList" className="flex flex-col gap-1.5 text-sm text-slate-700">
           {labels.map((label, i) => (
             <li key={`${i}-${label.slice(0, 20)}`} id={`liFeature-${i}`}>
-              <div className="flex w-full items-center gap-2 rounded border border-green-200 bg-green-50 px-2 py-1.5">
+              <div className="flex w-full items-center gap-2 rounded bg-green-100 px-2 py-1.5">
                 <img
                   src="/used/star.jpg"
                   alt=""

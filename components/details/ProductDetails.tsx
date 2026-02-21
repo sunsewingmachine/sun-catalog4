@@ -80,12 +80,18 @@ export default function ProductDetails({
           </p>
         )}
         <div id="divDetailsDisclaimer" className="mt-4" aria-live="polite">
-          <p
-            id="pDisclaimerText"
-            className="rounded-lg border border-green-200 bg-green-100 p-3 text-left text-sm leading-snug text-slate-900"
-          >
-            {DISCLAIMER_TEXT}
-          </p>
+          <div className="flex gap-2 rounded-lg border border-green-200 bg-green-100 p-3">
+            <img
+              src="/used/info.png"
+              alt=""
+              className="size-5 shrink-0 object-contain"
+              width={20}
+              height={20}
+            />
+            <p id="pDisclaimerText" className="min-w-0 flex-1 text-[11px] leading-snug text-slate-900">
+              {DISCLAIMER_TEXT}
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -147,15 +153,6 @@ export default function ProductDetails({
 
       <FeaturesBox product={product} features={features} />
 
-      <div id="divDetailsDisclaimer" className="mt-4" aria-live="polite">
-        <p
-          id="pDisclaimerText"
-          className="rounded-lg border border-green-200 bg-green-100 p-3 text-left text-sm leading-snug text-slate-900"
-        >
-          {DISCLAIMER_TEXT}
-        </p>
-      </div>
-
       {product.af != null && product.af > 0 && (
         <div
           id="divDetailsBestImage"
@@ -170,6 +167,21 @@ export default function ProductDetails({
           />
         </div>
       )}
+
+      <div id="divDetailsDisclaimer" className="mt-4" aria-live="polite">
+        <div className="flex gap-2 rounded-lg border border-green-200 bg-green-100 p-3">
+          <img
+            src="/used/info.png"
+            alt=""
+            className="size-5 shrink-0 object-contain"
+            width={20}
+            height={20}
+          />
+          <p id="pDisclaimerText" className="min-w-0 flex-1 text-[11px] leading-snug text-slate-900">
+            {DISCLAIMER_TEXT}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
