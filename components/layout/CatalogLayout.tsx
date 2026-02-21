@@ -108,6 +108,32 @@ export default function CatalogLayout({
   const [lightboxImage, setLightboxImage] = React.useState<{ src: string; alt: string } | null>(null);
   const [settingsMenuOpen, setSettingsMenuOpen] = React.useState(false);
   const settingsMenuRef = React.useRef<HTMLDivElement>(null);
+  /** Filenames for bottom bar: ForAll and ForGroup folders (from /api/bar-images). */
+  const [barImages, setBarImages] = React.useState<{
+    forAll: string[];
+    forGroup: string[];
+    hint?: "r2_not_configured";
+  }>({ forAll: [], forGroup: [] });
+
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch("/api/bar-images")
+      .then((res) => res.json())
+      .then((data: { forAll?: string[]; forGroup?: string[]; _hint?: "r2_not_configured" }) => {
+        if (cancelled) return;
+        setBarImages({
+          forAll: Array.isArray(data.forAll) ? data.forAll : [],
+          forGroup: Array.isArray(data.forGroup) ? data.forGroup : [],
+          hint: data._hint,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setBarImages({ forAll: [], forGroup: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   React.useEffect(() => {
     if (!settingsMenuOpen) return;
@@ -381,7 +407,7 @@ export default function CatalogLayout({
           </div>
         </div>
 
-        <main className="flex flex-1 min-w-0 flex-col min-h-0">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <div
             id="divMainViewer"
             className="flex shrink-0 flex-col border-b border-green-200 bg-green-50 p-4"
@@ -411,7 +437,10 @@ export default function CatalogLayout({
       </div>
 
       <CommonImagesBar
-        products={products}
+        forAllFilenames={barImages.forAll}
+        forGroupFilenames={barImages.forGroup}
+        selectedProduct={selectedProduct}
+        barImagesHint={barImages.hint}
         onSetMainImage={setMainImageOverride}
         onOpenLightbox={openLightbox}
       />

@@ -34,6 +34,11 @@ const DB_GID =
   typeof process !== "undefined"
     ? (process.env.NEXT_PUBLIC_DB_GID ?? "")
     : "";
+/** Rows to skip before data. 0 = use all rows (mapper skips empty/header/LineGap); 1 = skip first row. API often omits empty row so row 0 = 1stMdm. */
+const DATA_START_ROW =
+  typeof process !== "undefined"
+    ? Math.max(0, parseInt(process.env.NEXT_PUBLIC_ITMGROUP_DATA_START_ROW ?? "0", 10))
+    : 0;
 
 export default function CatalogPageClient() {
   const router = useRouter();
@@ -57,7 +62,7 @@ export default function CatalogPageClient() {
     setError(null);
     try {
       const table = await fetchSheetByGid(SHEET_ID, ITMGROUP_GID);
-      const rows = getDataRows(table, 1);
+      const rows = getDataRows(table, DATA_START_ROW);
       const newProducts = mapRowsToProducts(rows);
       const version = await (await import("@/lib/dbVersionFetcher")).fetchDbVersion(
         SHEET_ID,
@@ -103,7 +108,7 @@ export default function CatalogPageClient() {
         if (cancelled) return;
         if (shouldFetch) {
           const table = await fetchSheetByGid(SHEET_ID, ITMGROUP_GID);
-          const rows = getDataRows(table, 1);
+          const rows = getDataRows(table, DATA_START_ROW);
           const newProducts = mapRowsToProducts(rows);
           const version = await (await import("@/lib/dbVersionFetcher")).fetchDbVersion(
             SHEET_ID,

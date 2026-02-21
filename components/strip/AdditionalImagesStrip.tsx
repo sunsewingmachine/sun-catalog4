@@ -39,56 +39,58 @@ export default function AdditionalImagesStrip({
     [product?.itmGroupName]
   );
 
-  if (!product) {
-    return (
-      <div
-        id="divAdditionalImagesStrip"
-        className="scrollbar-hide flex h-24 shrink-0 items-center gap-2 overflow-x-auto border-t border-green-200 bg-green-50 p-2"
-        aria-label="Additional images for selected product"
-      />
-    );
-  }
+  const stripContent = (
+    <div
+      className="scrollbar-hide flex h-full w-full min-w-0 items-center gap-2 overflow-x-auto overflow-y-hidden py-1"
+      role="region"
+      aria-label="Additional images for selected product"
+    >
+      {product
+        ? filenames.map((filename) => {
+            const src = getImageUrl(filename);
+            const displaySrc = src || DEFAULT_IMAGE;
+            return (
+              <button
+                key={filename}
+                type="button"
+                className="h-16 w-20 shrink-0 overflow-hidden rounded-xl border-2 border-green-200 bg-white shadow-sm transition-colors hover:border-green-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                title="Click to show in main; double-click for full size"
+                onClick={() => onSetMainImage(displaySrc)}
+                onDoubleClick={(e) => {
+                  e.preventDefault();
+                  onOpenLightbox(displaySrc, filename);
+                }}
+              >
+                {src ? (
+                  <CachedImage
+                    src={displaySrc}
+                    alt={filename}
+                    width={80}
+                    height={64}
+                    className="h-full w-full object-cover pointer-events-none"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-green-100 text-xs text-slate-500">
+                    —
+                  </div>
+                )}
+              </button>
+            );
+          })
+        : null}
+    </div>
+  );
 
   return (
     <div
       id="divAdditionalImagesStrip"
-      className="scrollbar-hide flex h-24 shrink-0 items-center gap-2 overflow-x-auto border-t border-green-200 bg-green-50 p-2"
+      className="h-24 min-w-0 shrink-0 overflow-hidden border-t border-green-200 bg-green-50 p-2"
       aria-label="Additional images for selected product"
     >
-      {filenames.map((filename) => {
-        const src = getImageUrl(filename);
-        const displaySrc = src || DEFAULT_IMAGE;
-        return (
-          <button
-            key={filename}
-            type="button"
-            className="h-16 w-20 shrink-0 overflow-hidden rounded-xl border-2 border-green-200 bg-white shadow-sm transition-colors hover:border-green-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            title="Click to show in main; double-click for full size"
-            onClick={() => onSetMainImage(displaySrc)}
-            onDoubleClick={(e) => {
-              e.preventDefault();
-              onOpenLightbox(displaySrc, filename);
-            }}
-          >
-            {src ? (
-              <CachedImage
-                src={displaySrc}
-                alt={filename}
-                width={80}
-                height={64}
-                className="h-full w-full object-cover pointer-events-none"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-green-100 text-xs text-slate-500">
-                —
-              </div>
-            )}
-          </button>
-        );
-      })}
+      {stripContent}
     </div>
   );
 }

@@ -44,9 +44,12 @@ function segmentsFromColA(colA: string): { company: string; model: string } {
   return { company, model };
 }
 
+/** Header value for column A; skip this row so it is never treated as a product. */
+const HEADER_COL_A = "itmgroupname";
+
 export function mapRowToProduct(row: string[], rowIndex: number): Product | null {
   const colA = String(row[COL_A] ?? "").trim();
-  if (!colA || colA.toLowerCase() === "linegap") return null;
+  if (!colA || colA.toLowerCase() === "linegap" || colA.toLowerCase() === HEADER_COL_A) return null;
 
   const category = getCategoryFromItmGroupName(colA);
   if (!isAllowedCategory(category)) return null;
@@ -74,9 +77,28 @@ export function mapRowToProduct(row: string[], rowIndex: number): Product | null
   };
 }
 
+/**
+ * Fill down empty column A from the previous row (handles merged cells in Sheets that return empty for subsequent rows).
+ * Mutates rows in place; only fills when current A is empty and previous A is non-empty.
+ */
+export function fillDownColumnA(rows: string[][]): string[][] {
+  for (let i = 1; i < rows.length; i++) {
+    const prevA = rows[i - 1]?.[COL_A];
+    const curA = rows[i]?.[COL_A];
+    const prevVal = String(prevA ?? "").trim();
+    const curVal = String(curA ?? "").trim();
+    if (curVal === "" && prevVal !== "") {
+      rows[i] = [...(rows[i] ?? [])];
+      rows[i][COL_A] = prevA ?? "";
+    }
+  }
+  return rows;
+}
+
 export function mapRowsToProducts(rows: string[][]): Product[] {
+  const filled = fillDownColumnA(rows.map((r) => [...r]));
   const products: Product[] = [];
-  rows.forEach((row, i) => {
+  filled.forEach((row, i) => {
     const p = mapRowToProduct(row, i);
     if (p) products.push(p);
   });

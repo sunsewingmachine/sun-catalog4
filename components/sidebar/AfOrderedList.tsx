@@ -13,9 +13,15 @@ interface AfOrderedListProps {
   onSelect: (product: Product) => void;
 }
 
+/**
+ * Returns all products with "Best" ordering: those with column AF (order number) first, sorted by AF;
+ * then products without AF, in original array order, so no item is hidden when "Best" is selected.
+ */
 export function getProductsOrderedByAf(products: Product[]): Product[] {
   const withAf = products.filter((p): p is Product & { af: number } => p.af != null && p.af > 0);
-  return [...withAf].sort((a, b) => a.af - b.af);
+  const withoutAf = products.filter((p) => p.af == null || p.af <= 0);
+  const orderedWithAf = [...withAf].sort((a, b) => a.af - b.af);
+  return [...orderedWithAf, ...withoutAf];
 }
 
 export default function AfOrderedList({

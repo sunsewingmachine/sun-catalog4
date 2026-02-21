@@ -29,3 +29,35 @@ export function getImageUrl(imageFilename: string, useLowercase = false): string
   const path = prefix ? `${prefix}/${encodeURIComponent(filenameForPath)}` : encodeURIComponent(filenameForPath);
   return `${base}/${path}`;
 }
+
+/** Server folder name for the bottom bar: ForAll (shared) or ForGroup (category-prefixed). */
+export type BarImageFolder = "ForAll" | "ForGroup";
+
+/** Path prefix where items/ForAll/ForGroup live. Same logic as r2ListHelper (explicit or parent of items prefix). */
+function getBarImagesPathPrefix(): string {
+  if (typeof process === "undefined") return "";
+  const explicit = process.env.NEXT_PUBLIC_CDN_BAR_PATH_PREFIX;
+  if (explicit && typeof explicit === "string") {
+    return explicit.replace(/\/$/, "").replace(/^\//, "");
+  }
+  const itemsPrefix = process.env.NEXT_PUBLIC_CDN_IMAGE_PREFIX;
+  if (!itemsPrefix || typeof itemsPrefix !== "string") return "";
+  const parts = itemsPrefix.replace(/^\//, "").replace(/\/$/, "").split("/").filter(Boolean);
+  if (parts.length < 2) return "";
+  return parts.slice(0, -1).join("/");
+}
+
+/** Builds CDN URL for an image in ForAll or ForGroup server folder. Path: base/[pathPrefix/]folder/filename (same path as items). */
+export function getImageUrlForFolder(
+  imageFilename: string,
+  folder: BarImageFolder
+): string {
+  if (!imageFilename) return "";
+  const base = getCdnBase();
+  if (!base) return `/images/${folder}/${encodeURIComponent(imageFilename)}`;
+  const pathPrefix = getBarImagesPathPrefix();
+  const path = pathPrefix
+    ? `${pathPrefix}/${folder}/${encodeURIComponent(imageFilename)}`
+    : `${folder}/${encodeURIComponent(imageFilename)}`;
+  return `${base}/${path}`;
+}
