@@ -509,14 +509,13 @@ export default function CatalogLayout({
         >
           <ProductDetails
             product={selectedProduct}
-            lastUpdated={lastUpdated}
             features={features}
             onFeatureMediaClick={handleFeatureMediaClick}
           />
         </aside>
       </div>
 
-      <CommonImagesBar purpose="flash" />
+      <CommonImagesBar purpose="flash" lastUpdated={lastUpdated} />
       {lightboxImage && (
         <ImageLightbox
           imageSrc={lightboxImage.src}

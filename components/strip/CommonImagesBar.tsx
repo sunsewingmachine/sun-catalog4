@@ -46,13 +46,29 @@ function AnnounceIcon({ className }: { className?: string }) {
   );
 }
 
+/** Format ISO date as dd/mm/yy hh:mm:ss AM/PM for bottom bar. */
+function formatLastUpdated(iso: string): string {
+  const d = new Date(iso);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yy = String(d.getFullYear()).slice(-2);
+  const h = d.getHours();
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hh = String(h % 12 || 12).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  const ss = String(d.getSeconds()).padStart(2, "0");
+  return `${dd}/${mm}/${yy} ${hh}:${min}:${ss} ${ampm}`;
+}
+
 /** Bottom bar that cycles through display messages one-by-one with fade-out then fade-in. */
 function FlashMessageBar({
   messages,
   intervalMs,
+  lastUpdated,
 }: {
   messages: readonly string[];
   intervalMs: number;
+  lastUpdated: string | null;
 }) {
   const length = messages.length;
   const [currentIndex, setCurrentIndex] = useState(() =>
@@ -98,9 +114,18 @@ function FlashMessageBar({
     return (
       <footer
         id="divCommonImagesBar"
-        className="flex h-14 min-w-0 shrink-0 items-center overflow-hidden border-t border-green-200 bg-green-200 px-2 py-0.5"
+        className="flex h-14 min-w-0 shrink-0 items-center gap-3 overflow-hidden border-t border-green-200 bg-green-200 px-3 py-0.5"
         aria-label="Flash messages"
       >
+        {lastUpdated && (
+          <div
+            id="divBottomBarLastUpdated"
+            className="shrink-0 text-xs text-slate-600"
+            title="Catalog last updated"
+          >
+            Last updated: {formatLastUpdated(lastUpdated)}
+          </div>
+        )}
         <div className="min-w-0 flex-1" role="region" aria-live="polite" />
       </footer>
     );
@@ -116,9 +141,18 @@ function FlashMessageBar({
   return (
     <footer
       id="divCommonImagesBar"
-      className="flex h-14 min-w-0 shrink-0 items-center justify-center overflow-hidden border-t border-green-200 bg-green-200 px-3 py-1"
+      className="flex h-14 min-w-0 shrink-0 items-center gap-3 overflow-hidden border-t border-green-200 bg-green-200 px-3 py-1"
       aria-label="Flash messages"
     >
+      {lastUpdated && (
+        <div
+          id="divBottomBarLastUpdated"
+          className="shrink-0 text-xs text-slate-600"
+          title="Catalog last updated"
+        >
+          Last updated: {formatLastUpdated(lastUpdated)}
+        </div>
+      )}
       <div
         className="relative flex min-w-0 flex-1 items-center justify-center"
         role="region"
@@ -167,6 +201,8 @@ function getCategoryPrefix(itmGroupName: string): string {
 interface CommonImagesBarProps {
   /** "flash" = reserve bar for flash messages only (no images). "images" = show ForAll/ForGroup thumbs (legacy). */
   purpose?: "flash" | "images";
+  /** Catalog last-updated ISO string; when set, shown on the left of the bottom bar (flash purpose only). */
+  lastUpdated?: string | null;
   /** Image filenames in the server ForAll folder (used when purpose is "images"). */
   forAllFilenames?: string[];
   /** Image filenames in the server ForGroup folder (used when purpose is "images"). */
@@ -219,6 +255,7 @@ function renderBarThumb(
 
 export default function CommonImagesBar({
   purpose = "flash",
+  lastUpdated = null,
   forAllFilenames = [],
   forGroupFilenames = [],
   selectedProduct = null,
@@ -244,6 +281,7 @@ export default function CommonImagesBar({
       <FlashMessageBar
         messages={SETTINGS.displayMessages}
         intervalMs={SETTINGS.bottomBarMessageIntervalMs}
+        lastUpdated={lastUpdated ?? null}
       />
     );
   }
