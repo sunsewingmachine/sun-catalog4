@@ -246,7 +246,7 @@ export default function CatalogLayout({
         </div>
       </header>
 
-      <div className="mb-4 flex min-h-0 min-w-0 flex-1 items-start overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 items-start overflow-hidden">
         {/* Left: category buttons only, stacked vertically */}
         <aside
           id="divCategoryStrip"
@@ -413,7 +413,7 @@ export default function CatalogLayout({
         <main className="flex min-h-0 min-w-0 shrink-0 flex-1 flex-col overflow-hidden">
           <div
             id="divMainViewer"
-            className="flex shrink-0 flex-col border-b border-green-200 bg-green-50 p-4"
+            className="flex min-h-0 flex-1 flex-col border-b border-green-200 bg-green-50 p-4"
           >
             <div className="flex shrink-0 flex-col" aria-hidden>
               <ProductViewer
