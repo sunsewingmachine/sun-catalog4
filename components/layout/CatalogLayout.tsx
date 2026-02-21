@@ -683,32 +683,38 @@ export default function CatalogLayout({
             <div id="divBelowMainImageRows" className="flex shrink-0 flex-col min-w-0">
             <div id="divAdditionalImagesRow" className="flex min-w-0 shrink-0 items-stretch">
               <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-100/80 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Etc</span>
-              <AdditionalImagesStrip
-                product={selectedProduct}
-                onSetMainImage={handleSetMainImage}
-                onOpenLightbox={openLightbox}
-                compact
-              />
+              <div id="divAdditionalImagesRowScroll" className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
+                <AdditionalImagesStrip
+                  product={selectedProduct}
+                  onSetMainImage={handleSetMainImage}
+                  onOpenLightbox={openLightbox}
+                  compact
+                />
+              </div>
             </div>
             <div id="divCategoryImagesRow" className="flex min-w-0 shrink-0 items-stretch">
               <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-100/80 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Cat</span>
-              <ServerImagesStrip
-                ariaLabel="Category images (ForGroup)"
-                folder="ForGroup"
-                filenames={forGroupFiltered}
-                onSetMainImage={handleSetMainImage}
-                onOpenLightbox={openLightbox}
-              />
+              <div id="divCategoryImagesRowScroll" className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
+                <ServerImagesStrip
+                  ariaLabel="Category images (ForGroup)"
+                  folder="ForGroup"
+                  filenames={forGroupFiltered}
+                  onSetMainImage={handleSetMainImage}
+                  onOpenLightbox={openLightbox}
+                />
+              </div>
             </div>
             <div id="divCommonImagesRow" className="flex min-w-0 shrink-0 items-stretch">
               <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-100/80 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Gen</span>
-              <ServerImagesStrip
-                ariaLabel="Common images (ForAll)"
-                folder="ForAll"
-                filenames={barImages.forAll}
-                onSetMainImage={handleSetMainImage}
-                onOpenLightbox={openLightbox}
-              />
+              <div id="divCommonImagesRowScroll" className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
+                <ServerImagesStrip
+                  ariaLabel="Common images (ForAll)"
+                  folder="ForAll"
+                  filenames={barImages.forAll}
+                  onSetMainImage={handleSetMainImage}
+                  onOpenLightbox={openLightbox}
+                />
+              </div>
             </div>
             </div>
           </div>

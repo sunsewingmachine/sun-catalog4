@@ -104,7 +104,7 @@ export default function ProductViewer({
   };
 
   const mainImageBoxClassName =
-    "main-image-box-cap relative overflow-hidden bg-green-50 shadow-sm mx-auto";
+    "main-image-box-cap relative overflow-hidden bg-green-50 shadow-sm mx-auto outline-none focus:outline-none focus-visible:ring-0";
 
   if (!product) {
     return (
