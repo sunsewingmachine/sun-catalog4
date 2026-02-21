@@ -18,6 +18,7 @@ import ProductViewer from "@/components/viewer/ProductViewer";
 import ImageLightbox from "@/components/viewer/ImageLightbox";
 import ProductDetails from "@/components/details/ProductDetails";
 import AdditionalImagesStrip from "@/components/strip/AdditionalImagesStrip";
+import ServerImagesStrip from "@/components/strip/ServerImagesStrip";
 import CommonImagesBar from "@/components/strip/CommonImagesBar";
 
 interface CatalogLayoutProps {
@@ -111,7 +112,7 @@ export default function CatalogLayout({
   const [lightboxImage, setLightboxImage] = React.useState<{ src: string; alt: string } | null>(null);
   const [settingsMenuOpen, setSettingsMenuOpen] = React.useState(false);
   const settingsMenuRef = React.useRef<HTMLDivElement>(null);
-  /** Filenames for bottom bar: ForAll and ForGroup folders (from /api/bar-images). */
+  /** Filenames for 3-row area below main image: ForAll and ForGroup (from /api/bar-images). */
   const [barImages, setBarImages] = React.useState<{
     forAll: string[];
     forGroup: string[];
@@ -197,6 +198,23 @@ export default function CatalogLayout({
     if (selectedCategory === BEST_CATEGORY) return getProductsOrderedByAf(products);
     return products.filter((p) => p.category === selectedCategory);
   }, [products, selectedCategory]);
+
+  /** Category prefix from selected product (e.g. "Sv.Happy.1st" → "Sv") for filtering ForGroup images. */
+  const categoryPrefix = React.useMemo(
+    () =>
+      selectedProduct?.itmGroupName
+        ? (() => {
+            const dot = selectedProduct.itmGroupName.indexOf(".");
+            return dot >= 0 ? selectedProduct.itmGroupName.slice(0, dot) : selectedProduct.itmGroupName;
+          })()
+        : "",
+    [selectedProduct?.itmGroupName]
+  );
+  const forGroupFiltered = React.useMemo(() => {
+    if (!categoryPrefix) return [];
+    const lower = categoryPrefix.toLowerCase();
+    return barImages.forGroup.filter((f) => f.toLowerCase().startsWith(lower));
+  }, [barImages.forGroup, categoryPrefix]);
 
   React.useEffect(() => {
     if (categories.length && !selectedCategory) setSelectedCategory(categories[0] ?? null);
@@ -412,22 +430,46 @@ export default function CatalogLayout({
 
         <main className="flex min-h-0 min-w-0 shrink-0 flex-1 flex-col overflow-hidden">
           <div
-            id="divMainViewer"
-            className="flex min-h-0 flex-1 flex-col border-b border-green-200 bg-green-50 p-4"
+            id="divMainViewerScroll"
+            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden"
+            role="region"
+            aria-label="Main image and image strips"
           >
-            <div className="flex shrink-0 flex-col" aria-hidden>
-              <ProductViewer
-                product={selectedProduct}
-                mainImageOverride={mainImageOverride}
-                onOpenLightbox={openLightbox}
-              />
+            <div
+              id="divMainViewer"
+              className="flex shrink-0 flex-col border-b border-green-200 bg-green-50 p-4"
+            >
+              <div className="flex shrink-0 flex-col" aria-hidden>
+                <ProductViewer
+                  product={selectedProduct}
+                  mainImageOverride={mainImageOverride}
+                  onOpenLightbox={openLightbox}
+                />
+              </div>
+            </div>
+            <div id="divBelowMainImageRows" className="flex shrink-0 flex-col min-w-0">
+            <AdditionalImagesStrip
+              product={selectedProduct}
+              onSetMainImage={setMainImageOverride}
+              onOpenLightbox={openLightbox}
+              compact
+            />
+            <ServerImagesStrip
+              ariaLabel="Category images (ForGroup)"
+              folder="ForGroup"
+              filenames={forGroupFiltered}
+              onSetMainImage={setMainImageOverride}
+              onOpenLightbox={openLightbox}
+            />
+            <ServerImagesStrip
+              ariaLabel="Common images (ForAll)"
+              folder="ForAll"
+              filenames={barImages.forAll}
+              onSetMainImage={setMainImageOverride}
+              onOpenLightbox={openLightbox}
+            />
             </div>
           </div>
-          <AdditionalImagesStrip
-            product={selectedProduct}
-            onSetMainImage={setMainImageOverride}
-            onOpenLightbox={openLightbox}
-          />
         </main>
 
         <aside
@@ -438,14 +480,7 @@ export default function CatalogLayout({
         </aside>
       </div>
 
-      <CommonImagesBar
-        forAllFilenames={barImages.forAll}
-        forGroupFilenames={barImages.forGroup}
-        selectedProduct={selectedProduct}
-        barImagesHint={barImages.hint}
-        onSetMainImage={setMainImageOverride}
-        onOpenLightbox={openLightbox}
-      />
+      <CommonImagesBar purpose="flash" />
       {lightboxImage && (
         <ImageLightbox
           imageSrc={lightboxImage.src}

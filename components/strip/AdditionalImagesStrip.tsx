@@ -13,6 +13,10 @@ import CachedImage from "@/components/shared/CachedImage";
 const DEFAULT_IMAGE = "/used/default.jpg";
 const MAX_ADDITIONAL = 5;
 
+/** Compact thumb size (a little smaller than original) for use in 3-row layout below main image. */
+const COMPACT_THUMB = { width: 64, height: 48, class: "h-12 w-16" };
+const DEFAULT_THUMB = { width: 80, height: 64, class: "h-16 w-20" };
+
 function getAdditionalImageFilenames(product: Product | null): string[] {
   if (!product?.imageFilename) return [];
   const base = product.imageFilename.replace(/\.jpg$/i, "");
@@ -27,22 +31,26 @@ interface AdditionalImagesStripProps {
   product: Product | null;
   onSetMainImage: (url: string) => void;
   onOpenLightbox: (imageSrc: string, imageAlt: string) => void;
+  /** When true, use smaller thumbs for 3-row layout below main image. */
+  compact?: boolean;
 }
 
 export default function AdditionalImagesStrip({
   product,
   onSetMainImage,
   onOpenLightbox,
+  compact = false,
 }: AdditionalImagesStripProps) {
   const filenames = React.useMemo(
     () => getAdditionalImageFilenames(product),
     [product?.itmGroupName]
   );
+  const thumb = compact ? COMPACT_THUMB : DEFAULT_THUMB;
 
   return (
     <div
       id="divAdditionalImagesStrip"
-      className="flex h-24 min-w-0 shrink-0 overflow-hidden border-t border-green-200 bg-green-50 p-2"
+      className={`flex min-w-0 shrink-0 overflow-hidden border-t border-green-200 bg-green-50 p-2 ${compact ? "h-16" : "h-24"}`}
       aria-label="Additional images for selected product"
     >
       <div
@@ -51,7 +59,7 @@ export default function AdditionalImagesStrip({
         role="region"
         aria-label="Additional images strip"
       >
-        <div className="flex h-full w-max min-h-full items-center gap-2 py-1">
+        <div className="flex h-full w-max min-h-full items-center gap-1.5 py-1">
           {product
             ? filenames.map((filename) => {
                 const src = getImageUrl(filename);
@@ -60,7 +68,7 @@ export default function AdditionalImagesStrip({
                   <button
                     key={filename}
                     type="button"
-                    className="h-16 w-20 shrink-0 overflow-hidden rounded-xl border-2 border-green-200 bg-white shadow-sm transition-colors hover:border-green-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className={`${thumb.class} shrink-0 overflow-hidden rounded-lg border-2 border-green-200 bg-white shadow-sm transition-colors hover:border-green-300 focus:outline-none focus:ring-2 focus:ring-teal-500`}
                     title="Click to show in main; double-click for full size"
                     onClick={() => onSetMainImage(displaySrc)}
                     onDoubleClick={(e) => {
@@ -72,8 +80,8 @@ export default function AdditionalImagesStrip({
                       <CachedImage
                         src={displaySrc}
                         alt={filename}
-                        width={80}
-                        height={64}
+                        width={thumb.width}
+                        height={thumb.height}
                         className="h-full w-full object-cover pointer-events-none"
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = "none";

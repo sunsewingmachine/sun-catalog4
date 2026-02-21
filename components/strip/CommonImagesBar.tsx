@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Full-width bottom bar: ForAll images first, then ForGroup images filtered by selected item category prefix.
- * Uses getImageUrlForFolder for CDN URLs; uses cached images when available.
+ * Full-width bottom bar. When purpose is "flash", reserves space for flash messages (no images).
+ * When purpose is "images", shows ForAll then ForGroup thumbs (legacy; images now shown in 3-row area below main).
  */
 
 import React from "react";
@@ -22,17 +22,19 @@ function getCategoryPrefix(itmGroupName: string): string {
 }
 
 interface CommonImagesBarProps {
-  /** Image filenames in the server ForAll folder. */
-  forAllFilenames: string[];
-  /** Image filenames in the server ForGroup folder; shown filtered by selected product category prefix. */
-  forGroupFilenames: string[];
-  /** Currently selected product; used to filter ForGroup to filenames starting with category prefix (e.g. Sv). */
-  selectedProduct: Product | null;
-  /** When "r2_not_configured", bar shows a hint to set R2 env vars. */
+  /** "flash" = reserve bar for flash messages only (no images). "images" = show ForAll/ForGroup thumbs (legacy). */
+  purpose?: "flash" | "images";
+  /** Image filenames in the server ForAll folder (used when purpose is "images"). */
+  forAllFilenames?: string[];
+  /** Image filenames in the server ForGroup folder (used when purpose is "images"). */
+  forGroupFilenames?: string[];
+  /** Currently selected product; used to filter ForGroup when purpose is "images". */
+  selectedProduct?: Product | null;
+  /** When "r2_not_configured", bar shows a hint (only when purpose is "images"). */
   barImagesHint?: "r2_not_configured";
-  /** Single-click sets this image as the main viewer image. */
+  /** Single-click sets this image as the main viewer image (when purpose is "images"). */
   onSetMainImage?: (imageUrl: string) => void;
-  /** Double-click opens full-size zoomable lightbox. */
+  /** Double-click opens full-size zoomable lightbox (when purpose is "images"). */
   onOpenLightbox?: (imageSrc: string, imageAlt: string) => void;
 }
 
@@ -73,9 +75,10 @@ function renderBarThumb(
 }
 
 export default function CommonImagesBar({
-  forAllFilenames,
-  forGroupFilenames,
-  selectedProduct,
+  purpose = "flash",
+  forAllFilenames = [],
+  forGroupFilenames = [],
+  selectedProduct = null,
   barImagesHint,
   onSetMainImage,
   onOpenLightbox,
@@ -92,6 +95,18 @@ export default function CommonImagesBar({
   }, [forGroupFilenames, categoryPrefix]);
 
   const hasAny = forAllFilenames.length > 0 || forGroupFiltered.length > 0;
+
+  if (purpose === "flash") {
+    return (
+      <footer
+        id="divCommonImagesBar"
+        className="flex h-12 min-w-0 shrink-0 items-center overflow-hidden border-t border-green-200 bg-green-200 px-2 py-0.5"
+        aria-label="Flash messages"
+      >
+        <div className="min-w-0 flex-1" role="region" aria-live="polite" />
+      </footer>
+    );
+  }
 
   return (
     <footer
