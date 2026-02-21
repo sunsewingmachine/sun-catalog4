@@ -84,9 +84,9 @@ export default function ProductDetails({
             <img
               src="/used/info.png"
               alt=""
-              className="size-5 shrink-0 object-contain"
-              width={20}
-              height={20}
+              className="size-6 shrink-0 object-contain"
+              width={24}
+              height={24}
             />
             <p id="pDisclaimerText" className="min-w-0 flex-1 text-[11px] leading-snug text-slate-900">
               {DISCLAIMER_TEXT}
@@ -173,9 +173,9 @@ export default function ProductDetails({
           <img
             src="/used/info.png"
             alt=""
-            className="size-5 shrink-0 object-contain"
-            width={20}
-            height={20}
+            className="size-6 shrink-0 object-contain"
+            width={24}
+            height={24}
           />
           <p id="pDisclaimerText" className="min-w-0 flex-1 text-[11px] leading-snug text-slate-900">
             {DISCLAIMER_TEXT}
