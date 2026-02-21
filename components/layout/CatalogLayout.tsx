@@ -17,6 +17,7 @@ import { getProductsOrderedByAf } from "@/components/sidebar/AfOrderedList";
 import ProductViewer from "@/components/viewer/ProductViewer";
 import ImageLightbox from "@/components/viewer/ImageLightbox";
 import ProductDetails from "@/components/details/ProductDetails";
+import { isVideoMediaUrl } from "@/components/details/FeaturesBox";
 import AdditionalImagesStrip from "@/components/strip/AdditionalImagesStrip";
 import ServerImagesStrip from "@/components/strip/ServerImagesStrip";
 import CommonImagesBar from "@/components/strip/CommonImagesBar";
@@ -106,8 +107,10 @@ export default function CatalogLayout({
   const [recentlyViewed, setRecentlyViewed] = React.useState<Product[]>([]);
   const [bestBurstKey, setBestBurstKey] = React.useState(0);
   const hasHydratedFromStorage = React.useRef(false);
-  /** When set, main viewer shows this image URL (e.g. after single-click in common images bar). */
+  /** When set, main viewer shows this image URL (e.g. after single-click in common images bar or feature). */
   const [mainImageOverride, setMainImageOverride] = React.useState<string | null>(null);
+  /** When set, main viewer shows this video URL (e.g. after clicking a feature with video in col C). */
+  const [mainVideoOverride, setMainVideoOverride] = React.useState<string | null>(null);
   /** When set, full-size zoomable lightbox is open with this image. */
   const [lightboxImage, setLightboxImage] = React.useState<{ src: string; alt: string } | null>(null);
   const [settingsMenuOpen, setSettingsMenuOpen] = React.useState(false);
@@ -162,9 +165,25 @@ export default function CatalogLayout({
     if (fromStorage.length > 0) setRecentlyViewed(fromStorage);
   }, [products]);
 
+  const handleFeatureMediaClick = React.useCallback((mediaUrl: string) => {
+    if (isVideoMediaUrl(mediaUrl)) {
+      setMainVideoOverride(mediaUrl);
+      setMainImageOverride(null);
+    } else {
+      setMainImageOverride(mediaUrl);
+      setMainVideoOverride(null);
+    }
+  }, []);
+
+  const handleSetMainImage = React.useCallback((url: string) => {
+    setMainImageOverride(url);
+    setMainVideoOverride(null);
+  }, []);
+
   const handleSelectProductFromMain = React.useCallback((p: Product) => {
     setSelectionFromRecentList(false);
     setMainImageOverride(null);
+    setMainVideoOverride(null);
     setSelectedProduct(p);
     setRecentlyViewed((prev) => {
       const without = prev.filter((x) => x.itmGroupName !== p.itmGroupName);
@@ -177,6 +196,7 @@ export default function CatalogLayout({
   const handleSelectProductFromRecent = React.useCallback((p: Product) => {
     setSelectionFromRecentList(true);
     setMainImageOverride(null);
+    setMainVideoOverride(null);
     setSelectedProduct(p);
     // Do not reorder recently viewed when clicking an item already in the list.
   }, []);
@@ -228,6 +248,7 @@ export default function CatalogLayout({
     if (!currentInList) {
       setSelectedProduct(filteredProducts[0] ?? null);
       setMainImageOverride(null);
+      setMainVideoOverride(null);
       setSelectionFromRecentList(false);
     }
   }, [filteredProducts, selectedProduct?.itmGroupName, selectionFromRecentList]);
@@ -443,6 +464,7 @@ export default function CatalogLayout({
                 <ProductViewer
                   product={selectedProduct}
                   mainImageOverride={mainImageOverride}
+                  mainVideoOverride={mainVideoOverride}
                   onOpenLightbox={openLightbox}
                 />
               </div>
@@ -452,7 +474,7 @@ export default function CatalogLayout({
               <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-100/80 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Etc</span>
               <AdditionalImagesStrip
                 product={selectedProduct}
-                onSetMainImage={setMainImageOverride}
+                onSetMainImage={handleSetMainImage}
                 onOpenLightbox={openLightbox}
                 compact
               />
@@ -463,7 +485,7 @@ export default function CatalogLayout({
                 ariaLabel="Category images (ForGroup)"
                 folder="ForGroup"
                 filenames={forGroupFiltered}
-                onSetMainImage={setMainImageOverride}
+                onSetMainImage={handleSetMainImage}
                 onOpenLightbox={openLightbox}
               />
             </div>
@@ -473,7 +495,7 @@ export default function CatalogLayout({
                 ariaLabel="Common images (ForAll)"
                 folder="ForAll"
                 filenames={barImages.forAll}
-                onSetMainImage={setMainImageOverride}
+                onSetMainImage={handleSetMainImage}
                 onOpenLightbox={openLightbox}
               />
             </div>
@@ -483,9 +505,14 @@ export default function CatalogLayout({
 
         <aside
           id="divDetailsPanel"
-          className="flex w-80 shrink-0 flex-col self-stretch overflow-hidden border-l border-green-200 bg-green-50"
+          className="flex w-[25rem] shrink-0 flex-col self-stretch overflow-hidden border-l border-green-200 bg-green-50"
         >
-          <ProductDetails product={selectedProduct} lastUpdated={lastUpdated} features={features} />
+          <ProductDetails
+            product={selectedProduct}
+            lastUpdated={lastUpdated}
+            features={features}
+            onFeatureMediaClick={handleFeatureMediaClick}
+          />
         </aside>
       </div>
 

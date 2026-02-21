@@ -17,6 +17,8 @@ interface ProductDetailsProps {
   product: Product | null;
   lastUpdated: string | null;
   features?: FeatureRecord[];
+  /** When user clicks a feature with url (col C), show that media in main viewer. */
+  onFeatureMediaClick?: (mediaUrl: string) => void;
 }
 
 const ICON_CLASS = "size-4 shrink-0 text-slate-600";
@@ -80,6 +82,7 @@ export default function ProductDetails({
   product,
   lastUpdated,
   features = [],
+  onFeatureMediaClick,
 }: ProductDetailsProps) {
   if (!product) {
     return (
@@ -158,7 +161,7 @@ export default function ProductDetails({
         </dl>
       </div>
 
-      <FeaturesBox product={product} features={features} />
+      <FeaturesBox product={product} features={features} onFeatureMediaClick={onFeatureMediaClick} />
 
       {product.af != null && product.af > 0 && (
         <div

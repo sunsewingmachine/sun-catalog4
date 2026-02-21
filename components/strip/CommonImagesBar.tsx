@@ -1,18 +1,161 @@
 "use client";
 
 /**
- * Full-width bottom bar. When purpose is "flash", reserves space for flash messages (no images).
+ * Full-width bottom bar. When purpose is "flash", shows rotating display messages (from settings) with 5s interval and smooth animation.
  * When purpose is "images", shows ForAll then ForGroup thumbs (legacy; images now shown in 3-row area below main).
  */
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { Product } from "@/types/product";
 import { getImageUrlForFolder } from "@/lib/r2ImageHelper";
 import Image from "next/image";
 import CachedImage from "@/components/shared/CachedImage";
+import { SETTINGS } from "@/lib/settings";
 
 /** Fallback when no image or bar is empty. */
 const DEFAULT_IMAGE = "/used/default.jpg";
+
+/** Duration for current message to fade out (ms). */
+const FLASH_FADE_OUT_MS = 3000;
+/** Duration for new message to fade in (ms). */
+const FLASH_FADE_IN_MS = 3000;
+const FLASH_TOTAL_TRANSITION_MS = FLASH_FADE_OUT_MS + FLASH_FADE_IN_MS;
+
+/** Icon before flash message: uses announce.png from public; falls back to megaphone SVG if image missing. */
+function AnnounceIcon({ className }: { className?: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <span className={className} aria-hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-full w-full text-slate-700">
+          <path d="M3 11l18-5v12L3 14v-3z" />
+          <path d="M11 6v12" />
+          <path d="M18 6v3" />
+        </svg>
+      </span>
+    );
+  }
+  return (
+    <img
+      src="/announce.png"
+      alt=""
+      className={className}
+      aria-hidden
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+/** Bottom bar that cycles through display messages one-by-one with fade-out then fade-in. */
+function FlashMessageBar({
+  messages,
+  intervalMs,
+}: {
+  messages: readonly string[];
+  intervalMs: number;
+}) {
+  const length = messages.length;
+  const [currentIndex, setCurrentIndex] = useState(() =>
+    length > 0 ? Math.floor(Math.random() * length) : 0
+  );
+  const [nextIndex, setNextIndex] = useState<number | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  /** When true, fade-out is done; incoming message is fading in over FLASH_FADE_IN_MS. */
+  const [fadeOutComplete, setFadeOutComplete] = useState(false);
+  const currentIndexRef = useRef(currentIndex);
+  currentIndexRef.current = currentIndex;
+
+  useEffect(() => {
+    if (length <= 1) return;
+    const id = setInterval(() => {
+      const next = (currentIndexRef.current + 1) % length;
+      setNextIndex(next);
+      setFadeOutComplete(false);
+      setIsTransitioning(true);
+    }, intervalMs);
+    return () => clearInterval(id);
+  }, [length, intervalMs]);
+
+  useEffect(() => {
+    if (!isTransitioning || nextIndex === null) return;
+    const t1 = setTimeout(() => setFadeOutComplete(true), FLASH_FADE_OUT_MS);
+    const t2 = setTimeout(() => {
+      setCurrentIndex(nextIndex);
+      setNextIndex(null);
+      setIsTransitioning(false);
+      setFadeOutComplete(false);
+    }, FLASH_TOTAL_TRANSITION_MS);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [isTransitioning, nextIndex]);
+
+  const showTwoLayers = isTransitioning && nextIndex !== null;
+  const incomingIndex = nextIndex ?? 0;
+
+  if (length === 0) {
+    return (
+      <footer
+        id="divCommonImagesBar"
+        className="flex h-14 min-w-0 shrink-0 items-center overflow-hidden border-t border-green-200 bg-green-200 px-2 py-0.5"
+        aria-label="Flash messages"
+      >
+        <div className="min-w-0 flex-1" role="region" aria-live="polite" />
+      </footer>
+    );
+  }
+
+  const messageContent = (msg: string) => (
+    <>
+      <AnnounceIcon className="mr-2 h-6 w-6 shrink-0" />
+      <span className="min-w-0 truncate">{msg}</span>
+    </>
+  );
+
+  return (
+    <footer
+      id="divCommonImagesBar"
+      className="flex h-14 min-w-0 shrink-0 items-center justify-center overflow-hidden border-t border-green-200 bg-green-200 px-3 py-1"
+      aria-label="Flash messages"
+    >
+      <div
+        className="relative flex min-w-0 flex-1 items-center justify-center"
+        role="region"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {showTwoLayers ? (
+          <>
+            <div
+              className="absolute inset-0 flex items-center justify-center text-lg font-semibold text-slate-800 transition-opacity ease-out"
+              style={{
+                opacity: isTransitioning ? 0 : 1,
+                transitionDuration: `${FLASH_FADE_OUT_MS}ms`,
+              }}
+              aria-hidden
+            >
+              {messageContent(messages[currentIndex])}
+            </div>
+            <div
+              className="flex min-w-0 flex-1 items-center justify-center text-lg font-semibold text-slate-800 transition-opacity ease-out"
+              style={{
+                opacity: fadeOutComplete ? 1 : 0,
+                transitionDuration: `${FLASH_FADE_IN_MS}ms`,
+              }}
+            >
+              {messageContent(messages[incomingIndex])}
+            </div>
+          </>
+        ) : (
+          <div className="flex min-w-0 flex-1 items-center justify-center text-lg font-semibold text-slate-800">
+            {messageContent(messages[currentIndex])}
+          </div>
+        )}
+      </div>
+    </footer>
+  );
+}
 
 /** Derives category prefix from itmGroupName (e.g. "Sv.Happy.1st" → "Sv"). Used to filter ForGroup images. */
 function getCategoryPrefix(itmGroupName: string): string {
@@ -98,13 +241,10 @@ export default function CommonImagesBar({
 
   if (purpose === "flash") {
     return (
-      <footer
-        id="divCommonImagesBar"
-        className="flex h-12 min-w-0 shrink-0 items-center overflow-hidden border-t border-green-200 bg-green-200 px-2 py-0.5"
-        aria-label="Flash messages"
-      >
-        <div className="min-w-0 flex-1" role="region" aria-live="polite" />
-      </footer>
+      <FlashMessageBar
+        messages={SETTINGS.displayMessages}
+        intervalMs={SETTINGS.bottomBarMessageIntervalMs}
+      />
     );
   }
 

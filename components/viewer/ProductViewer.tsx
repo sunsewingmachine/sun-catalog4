@@ -17,8 +17,10 @@ const DEFAULT_IMAGE = "/used/default.jpg";
 
 interface ProductViewerProps {
   product: Product | null;
-  /** When set, main area shows this URL instead of product image (e.g. after single-click in strip). */
+  /** When set, main area shows this URL instead of product image (e.g. after single-click in strip or feature). */
   mainImageOverride?: string | null;
+  /** When set, main area shows this video URL (e.g. after clicking a feature with video in col C). */
+  mainVideoOverride?: string | null;
   /** Called when user double-clicks an image to open full-size lightbox. */
   onOpenLightbox?: (imageSrc: string, imageAlt: string) => void;
 }
@@ -26,6 +28,7 @@ interface ProductViewerProps {
 export default function ProductViewer({
   product,
   mainImageOverride = null,
+  mainVideoOverride = null,
   onOpenLightbox,
 }: ProductViewerProps) {
   const [mainImageError, setMainImageError] = React.useState(false);
@@ -43,15 +46,55 @@ export default function ProductViewer({
       ? mainImageOverride
       : productMainSrc;
   const { displayUrl: mainDisplayUrl } = useImageDisplayUrl(
-    mainSrc.startsWith("http") ? mainSrc : ""
+    mainSrc.startsWith("http") || mainSrc.startsWith("blob:") ? mainSrc : ""
   );
   const effectiveMainSrc = mainDisplayUrl || mainSrc;
   const mainAlt = product?.itmGroupName ?? "Product";
+  const { displayUrl: videoDisplayUrl } = useImageDisplayUrl(
+    mainVideoOverride?.startsWith("http") ? mainVideoOverride : ""
+  );
+  const effectiveVideoSrc = videoDisplayUrl || mainVideoOverride || "";
+  const showVideo = mainVideoOverride != null && mainVideoOverride !== "";
+  const [videoLoading, setVideoLoading] = React.useState(false);
+  const [videoError, setVideoError] = React.useState(false);
 
   React.useEffect(() => {
     setMainImageError(false);
     setTryLowercase(false);
   }, [product?.itmGroupName, displaySrcExact]);
+
+  React.useEffect(() => {
+    if (!showVideo) {
+      setVideoLoading(false);
+      setVideoError(false);
+      return;
+    }
+    setVideoLoading(true);
+    setVideoError(false);
+  }, [showVideo, effectiveVideoSrc]);
+
+  const handleVideoLoadStart = React.useCallback(() => {
+    setVideoLoading(true);
+    setVideoError(false);
+  }, []);
+
+  const handleVideoCanPlay = React.useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
+    setVideoLoading(false);
+    setVideoError(false);
+    const el = e.currentTarget;
+    el.play().catch(() => {});
+  }, []);
+
+  const handleVideoError = React.useCallback(() => {
+    setVideoLoading(false);
+    setVideoError(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (!mainVideoOverride) return;
+    const el = document.getElementById("videoMainProduct");
+    if (el && el instanceof HTMLVideoElement) el.load();
+  }, [mainVideoOverride, effectiveVideoSrc]);
 
   const handleDoubleClickMain = () => {
     onOpenLightbox?.(mainSrc, mainAlt);
@@ -91,13 +134,68 @@ export default function ProductViewer({
       <div
         id="divMainImageBackgroundBox"
         className={mainImageBoxClassName}
-        onDoubleClick={handleDoubleClickMain}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === "Enter" && handleDoubleClickMain()}
-        aria-label="Double-click to open full size"
+        onDoubleClick={showVideo ? undefined : handleDoubleClickMain}
+        role={showVideo ? undefined : "button"}
+        tabIndex={showVideo ? undefined : 0}
+        onKeyDown={showVideo ? undefined : (e) => e.key === "Enter" && handleDoubleClickMain()}
+        aria-label={showVideo ? undefined : "Double-click to open full size"}
       >
-        {effectiveMainSrc.startsWith("http") || effectiveMainSrc.startsWith("blob:") ? (
+        {showVideo ? (
+          <div className="relative h-full w-full rounded-2xl bg-slate-900">
+            <video
+              id="videoMainProduct"
+              src={effectiveVideoSrc || undefined}
+              controls
+              playsInline
+              className="pointer-events-auto h-full w-full object-contain rounded-2xl"
+              aria-label={`Video: ${mainAlt}`}
+              onLoadStart={handleVideoLoadStart}
+              onCanPlay={handleVideoCanPlay}
+              onError={handleVideoError}
+            />
+            {videoLoading && (
+              <div
+                id="divVideoLoading"
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl bg-slate-900/90 text-white"
+                aria-live="polite"
+              >
+                <div className="h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden />
+                <span className="text-sm font-medium">Loading video…</span>
+              </div>
+            )}
+            {videoError && !videoLoading && (
+              <div
+                id="divVideoError"
+                className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl bg-slate-900/95 p-4 text-center text-white overflow-auto"
+                aria-live="polite"
+              >
+                <span className="text-sm font-medium">Video could not load.</span>
+                <span className="text-xs text-slate-300">
+                  Column C in the Features sheet must be the <strong>exact filename</strong> (e.g. <code className="bg-slate-700 px-1 rounded">Ol.Happy.1st.mp4</code>), nothing else. The file must exist at <code className="bg-slate-700 px-1 rounded break-all">CatelogPicturesVideos/</code> in the bucket.
+                </span>
+                {/\.(avi|mov)(\?|$)/i.test(effectiveVideoSrc) && (
+                  <span className="text-xs text-amber-200">
+                    AVI and MOV are often not supported in browsers. Re-encode to <strong>MP4</strong> or WebM for reliable playback.
+                  </span>
+                )}
+                {effectiveVideoSrc && (
+                  <a
+                    id="linkVideoOpenNewTab"
+                    href={effectiveVideoSrc}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs underline text-teal-300 hover:text-teal-200 shrink-0"
+                  >
+                    Open video URL in new tab
+                  </a>
+                )}
+                <code className="max-h-20 w-full overflow-auto break-all text-[10px] text-slate-400 text-left px-2 py-1 rounded bg-slate-800" title="Full URL">
+                  {effectiveVideoSrc || ""}
+                </code>
+              </div>
+            )}
+          </div>
+        ) : effectiveMainSrc.startsWith("http") || effectiveMainSrc.startsWith("blob:") ? (
           <img
             id="imgMainProduct"
             src={effectiveMainSrc}

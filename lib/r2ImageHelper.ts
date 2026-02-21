@@ -19,6 +19,35 @@ export function getCdnImagePrefix(): string {
   return p.replace(/\/$/, "").replace(/^\//, "");
 }
 
+/** Default bucket path for feature media (col C). Must match R2 public URL (no sun-catalog-assets/ in path). Override with NEXT_PUBLIC_CDN_FEATURES_PREFIX. */
+const DEFAULT_FEATURES_PREFIX = "CatelogPicturesVideos";
+
+/** Base URL for feature media. If NEXT_PUBLIC_CDN_FEATURES_BASE_URL is set, use it (different bucket); else same as product images. */
+function getCdnFeaturesBase(): string {
+  if (typeof process === "undefined") return "";
+  const u = process.env.NEXT_PUBLIC_CDN_FEATURES_BASE_URL;
+  if (u && typeof u === "string") return u.replace(/\/$/, "");
+  return getCdnBase();
+}
+
+/** Path prefix for feature media (images/videos). Uses NEXT_PUBLIC_CDN_FEATURES_PREFIX if set, else CatelogPicturesVideos. */
+function getCdnFeaturesPrefix(): string {
+  if (typeof process === "undefined") return "";
+  const p = process.env.NEXT_PUBLIC_CDN_FEATURES_PREFIX;
+  if (p && typeof p === "string") return p.replace(/\/$/, "").replace(/^\//, "");
+  return DEFAULT_FEATURES_PREFIX;
+}
+
+/** Builds full CDN URL for feature media (col C): image or video filename in bucket. Fetched and cached like product images. */
+export function getFeatureMediaUrl(filename: string): string {
+  if (!filename || !filename.trim()) return "";
+  const base = getCdnFeaturesBase();
+  if (!base) return "";
+  const prefix = getCdnFeaturesPrefix();
+  const path = prefix ? `${prefix}/${encodeURIComponent(filename.trim())}` : encodeURIComponent(filename.trim());
+  return `${base}/${path}`;
+}
+
 /** useLowercase: when true, returns URL with lowercase filename (for fallback after exact-case 404). R2 keys are case-sensitive. */
 export function getImageUrl(imageFilename: string, useLowercase = false): string {
   if (!imageFilename) return "";

@@ -51,8 +51,14 @@ export async function getCachedLastModified(
   return entry?.lastModified ?? null;
 }
 
-/** Returns object URL if cached, otherwise the original imageUrl (browser will fetch). */
+/** True if URL looks like a video file; we skip cache for video so the browser can use Range requests and correct MIME type. */
+function isVideoUrl(url: string): boolean {
+  return /\.(mp4|webm|mov|ogg|m4v|avi|mn4)(\?|$)/i.test(url);
+}
+
+/** Returns object URL if cached, otherwise the original imageUrl (browser will fetch). For video URLs we skip cache so playback works. */
 export async function getImageDisplayUrl(imageUrl: string): Promise<string> {
+  if (isVideoUrl(imageUrl)) return imageUrl;
   const entry = await getCachedImageEntry(imageUrl);
   if (entry?.blob) return URL.createObjectURL(entry.blob);
   return imageUrl;

@@ -18,6 +18,7 @@ import type { FeatureRecord } from "@/types/feature";
 import {
   syncImages,
   getUniqueImageUrlsFromProducts,
+  getUniqueFeatureMediaUrls,
   type ImageSyncProgress,
 } from "@/lib/imageSyncService";
 import { APP_VERSION } from "@/lib/appVersion";
@@ -94,13 +95,16 @@ export default function CatalogPageClient() {
       setDbVersion(version);
       setLastUpdated(new Date().toISOString());
       const imageCount = getUniqueImageUrlsFromProducts(newProducts).length;
+      const featureMediaCount = getUniqueFeatureMediaUrls(newFeatures).length;
+      const totalSync = imageCount + featureMediaCount;
       setSyncProgress({
         current: 0,
-        total: imageCount,
-        message: imageCount > 0 ? "Syncing images…" : "Done",
+        total: totalSync,
+        message: totalSync > 0 ? "Syncing images…" : "Done",
       });
       try {
         await syncImages(newProducts, {
+          features: newFeatures,
           onProgress: (p) => setSyncProgress(p),
         });
       } finally {
@@ -152,13 +156,16 @@ export default function CatalogPageClient() {
           setDbVersion(version);
           setLastUpdated(new Date().toISOString());
           const imageCount = getUniqueImageUrlsFromProducts(newProducts).length;
+          const featureMediaCount = getUniqueFeatureMediaUrls(newFeatures).length;
+          const totalSync = imageCount + featureMediaCount;
           setSyncProgress({
             current: 0,
-            total: imageCount,
-            message: imageCount > 0 ? "Syncing images…" : "Done",
+            total: totalSync,
+            message: totalSync > 0 ? "Syncing images…" : "Done",
           });
           try {
             await syncImages(newProducts, {
+              features: newFeatures,
               onProgress: (p) => {
                 if (!cancelled) setSyncProgress(p);
               },

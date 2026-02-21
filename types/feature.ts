@@ -1,5 +1,5 @@
 /**
- * Feature lookup: key (col A from Features sheet) and label (col B) for display in product features box.
+ * Feature lookup: key (col A), label (col B), url (col C) for optional media in main viewer.
  */
 
 export interface FeatureRecord {
@@ -7,4 +7,6 @@ export interface FeatureRecord {
   key: string;
   /** Display text from sheet column B; shown in the features box. */
   label: string;
+  /** Optional media URL/filename from sheet column C; shown in main area when feature is clicked (image or video). */
+  url?: string;
 }

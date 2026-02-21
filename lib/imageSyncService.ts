@@ -1,9 +1,10 @@
 /**
- * Syncs catalog images to IndexedDB: full download on first run, then only images newer on server (Last-Modified).
+ * Syncs catalog images and feature media to IndexedDB: full download on first run, then only when server is newer (Last-Modified).
  */
 
 import type { Product } from "@/types/product";
-import { getImageUrl } from "./r2ImageHelper";
+import type { FeatureRecord } from "@/types/feature";
+import { getImageUrl, getFeatureMediaUrl } from "./r2ImageHelper";
 import { getCachedLastModified, setCachedImage } from "./imageCacheManager";
 
 const CONCURRENCY = 5;
@@ -26,6 +27,17 @@ export function getUniqueImageUrlsFromProducts(
     const urlLower = getImageUrl(p.imageFilename, true);
     if (urlLower.startsWith("http") && urlLower !== url && !seen.has(urlLower))
       seen.add(urlLower);
+  }
+  return Array.from(seen);
+}
+
+/** Returns unique feature media URLs (col C) as full CDN URLs for sync. */
+export function getUniqueFeatureMediaUrls(features: FeatureRecord[]): string[] {
+  const seen = new Set<string>();
+  for (const f of features ?? []) {
+    if (!f?.url?.trim()) continue;
+    const url = getFeatureMediaUrl(f.url);
+    if (url.startsWith("http") && !seen.has(url)) seen.add(url);
   }
   return Array.from(seen);
 }
@@ -96,16 +108,22 @@ async function runWithConcurrency<T>(
 }
 
 /**
- * Syncs all catalog images: for each URL, compare server Last-Modified with local;
+ * Syncs catalog images and optional feature media: for each URL, compare server Last-Modified with local;
  * download only if missing or server is newer. Runs with limited concurrency.
  */
 export async function syncImages(
   products: Product[],
   options?: {
+    features?: FeatureRecord[];
     onProgress?: (progress: ImageSyncProgress) => void;
   }
 ): Promise<void> {
-  const urls = getUniqueImageUrlsFromProducts(products);
+  const productUrls = getUniqueImageUrlsFromProducts(products);
+  const featureUrls = options?.features ? getUniqueFeatureMediaUrls(options.features) : [];
+  const urls = [...productUrls];
+  for (const u of featureUrls) {
+    if (!urls.includes(u)) urls.push(u);
+  }
   if (urls.length === 0) {
     options?.onProgress?.({ current: 0, total: 0, message: "No images to sync" });
     return;
