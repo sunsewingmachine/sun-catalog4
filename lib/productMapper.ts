@@ -13,8 +13,8 @@ const COL_S = 18;
 const COL_T = 19;
 /** Column AF = 0-based index 31 (A=0, …, Z=25, AA=26, …, AF=31). */
 const COL_AF = 31;
-/** Column EY = 0-based index 128 (E=4, Y=24 → 4*26+24=128). */
-const COL_EY = 128;
+/** Column EY = 1-based col 155, 0-based index 154 (A=0,…, Z=25, AA=26,…, EY=154). */
+const COL_EY = 154;
 
 function parseNum(val: string | number): number {
   if (typeof val === "number" && !Number.isNaN(val)) return val;
