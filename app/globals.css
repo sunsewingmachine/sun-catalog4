@@ -61,6 +61,20 @@ body {
   display: none;
 }
 
+/* Horizontal scroll area: constrained width, scrollable content, no visible scrollbar.
+   Works in Chrome (desktop + touch), Firefox, Safari. */
+.horizontal-scroll {
+  overflow-x: scroll;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.horizontal-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 /* Fast stagger when product list updates after category change. */
 @keyframes catalog-item-in {
   from {

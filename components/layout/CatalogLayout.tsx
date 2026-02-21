@@ -214,7 +214,7 @@ export default function CatalogLayout({
   return (
     <div
       id="divCatalogRoot"
-      className="flex h-screen flex-col bg-green-50 text-slate-800"
+      className="flex h-screen min-w-0 flex-col overflow-x-hidden bg-green-50 text-slate-800"
     >
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-green-200 bg-green-200 px-5 py-3 shadow-sm">
         <h1 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
@@ -243,7 +243,7 @@ export default function CatalogLayout({
         </div>
       </header>
 
-      <div className="mb-4 flex flex-1 min-h-0">
+      <div className="mb-4 flex min-h-0 min-w-0 flex-1 overflow-hidden">
         {/* Left: category buttons only, stacked vertically */}
         <aside
           id="divCategoryStrip"

@@ -47,7 +47,7 @@ function renderBarThumb(
     <button
       key={filename}
       type="button"
-      className="h-8 w-10 shrink-0 overflow-hidden rounded-lg border border-green-300 bg-white shadow-sm cursor-pointer"
+      className="h-10 w-12 shrink-0 overflow-hidden rounded-lg border border-green-300 bg-white shadow-sm cursor-pointer"
       title="Click to show in main; double-click for full size"
       onClick={() => onSetMainImage?.(displaySrc)}
       onDoubleClick={(e) => {
@@ -59,8 +59,8 @@ function renderBarThumb(
         <CachedImage
           src={displaySrc}
           alt=""
-          width={40}
-          height={32}
+          width={48}
+          height={40}
           className="h-full w-full object-cover pointer-events-none"
         />
       ) : (
@@ -96,50 +96,55 @@ export default function CommonImagesBar({
   return (
     <footer
       id="divCommonImagesBar"
-      className="flex h-14 shrink-0 items-center border-t-2 border-green-300 bg-green-200 px-4 py-2 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]"
+      className="flex h-18 min-w-0 shrink-0 items-center overflow-hidden border-t-2 border-green-300 bg-green-200 px-2 py-0.5 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]"
       aria-label="ForAll and ForGroup images"
     >
-      <div className="scrollbar-hide flex flex-1 items-center gap-3 overflow-x-auto py-1">
-        {!hasAny ? (
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              className="h-8 w-10 shrink-0 overflow-hidden rounded-lg border border-green-300 bg-white shadow-sm cursor-pointer"
-              title="Default image. Click to show in main; double-click for full size."
-              onClick={() => onSetMainImage?.(DEFAULT_IMAGE)}
-              onDoubleClick={(e) => {
-                e.preventDefault();
-                onOpenLightbox?.(DEFAULT_IMAGE, "Default");
-              }}
-            >
-              <Image
-                src={DEFAULT_IMAGE}
-                alt="Default"
-                width={40}
-                height={32}
-                className="h-full w-full object-cover pointer-events-none"
-              />
-            </button>
-            {barImagesHint === "r2_not_configured" && (
-              <span className="text-xs text-amber-800" title="Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME to list ForAll/ForGroup images">
-                No bar images — set R2 env to list server folders
-              </span>
-            )}
-          </div>
-        ) : (
-          <>
-            {forAllFilenames.map((filename) => {
-              const src = getImageUrlForFolder(filename, "ForAll");
-              const displaySrc = src || DEFAULT_IMAGE;
-              return renderBarThumb(filename, src, displaySrc, onSetMainImage, onOpenLightbox);
-            })}
-            {forGroupFiltered.map((filename) => {
-              const src = getImageUrlForFolder(filename, "ForGroup");
-              const displaySrc = src || DEFAULT_IMAGE;
-              return renderBarThumb(filename, src, displaySrc, onSetMainImage, onOpenLightbox);
-            })}
-          </>
-        )}
+      <div
+        className="horizontal-scroll min-w-0 flex-1 basis-0 overflow-x-scroll"
+        style={{ width: "100%", maxWidth: "100%" }}
+      >
+        <div className="flex w-max items-center gap-1.5">
+          {!hasAny ? (
+            <>
+              <button
+                type="button"
+                className="h-10 w-12 shrink-0 overflow-hidden rounded-lg border border-green-300 bg-white shadow-sm cursor-pointer"
+                title="Default image. Click to show in main; double-click for full size."
+                onClick={() => onSetMainImage?.(DEFAULT_IMAGE)}
+                onDoubleClick={(e) => {
+                  e.preventDefault();
+                  onOpenLightbox?.(DEFAULT_IMAGE, "Default");
+                }}
+              >
+                <Image
+                  src={DEFAULT_IMAGE}
+                  alt="Default"
+                  width={48}
+                  height={40}
+                  className="h-full w-full object-cover pointer-events-none"
+                />
+              </button>
+              {barImagesHint === "r2_not_configured" && (
+                <span className="text-xs text-amber-800" title="Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME to list ForAll/ForGroup images">
+                  No bar images — set R2 env to list server folders
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              {forAllFilenames.map((filename) => {
+                const src = getImageUrlForFolder(filename, "ForAll");
+                const displaySrc = src || DEFAULT_IMAGE;
+                return renderBarThumb(filename, src, displaySrc, onSetMainImage, onOpenLightbox);
+              })}
+              {forGroupFiltered.map((filename) => {
+                const src = getImageUrlForFolder(filename, "ForGroup");
+                const displaySrc = src || DEFAULT_IMAGE;
+                return renderBarThumb(filename, src, displaySrc, onSetMainImage, onOpenLightbox);
+              })}
+            </>
+          )}
+        </div>
       </div>
     </footer>
   );
