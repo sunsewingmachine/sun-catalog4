@@ -18,10 +18,15 @@ import ImageLightbox from "@/components/viewer/ImageLightbox";
 import ProductDetails from "@/components/details/ProductDetails";
 import AdditionalImagesStrip from "@/components/strip/AdditionalImagesStrip";
 import CommonImagesBar from "@/components/strip/CommonImagesBar";
+import TestimonialsSection from "@/components/testimonials/TestimonialsSection";
 
 interface CatalogLayoutProps {
   products: Product[];
   lastUpdated: string | null;
+  /** Version from Google Sheets db tab (cell B1). */
+  dbVersion: string;
+  /** App version shown in UI (e.g. 1.0). */
+  appVersion: string;
 }
 
 const ACTIVATED_KEY = "catalog_activated";
@@ -79,6 +84,8 @@ function saveRecentlyViewedToStorage(items: Product[]): void {
 export default function CatalogLayout({
   products,
   lastUpdated,
+  dbVersion,
+  appVersion,
 }: CatalogLayoutProps) {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(
@@ -266,6 +273,14 @@ export default function CatalogLayout({
               onSelect={setSelectedCategory}
             />
           </div>
+          <div
+            id="divSidebarVersion"
+            className="shrink-0 border-t border-green-200 px-1 py-1.5 text-[10px] leading-tight text-slate-500"
+            aria-label="Database and app version"
+          >
+            <div>VerDb:{dbVersion || "—"}</div>
+            <div>VerApp:{appVersion}</div>
+          </div>
         </aside>
 
         {/* Item part: section 1 = main list (full height), section 2 = 5-row recently viewed */}
@@ -299,12 +314,12 @@ export default function CatalogLayout({
           </div>
         </div>
 
-        <main className="flex flex-1 min-w-0 flex-col">
+        <main className="flex flex-1 min-w-0 flex-col min-h-0">
           <div
             id="divMainViewer"
-            className="flex min-h-0 flex-1 flex-col border-b border-green-200 bg-green-50 p-4"
+            className="flex shrink-0 flex-col border-b border-green-200 bg-green-50 p-4"
           >
-            <div className="flex min-h-0 flex-1 flex-col" aria-hidden>
+            <div className="flex shrink-0 flex-col" aria-hidden>
               <ProductViewer
                 product={selectedProduct}
                 mainImageOverride={mainImageOverride}
@@ -317,6 +332,7 @@ export default function CatalogLayout({
             onSetMainImage={setMainImageOverride}
             onOpenLightbox={openLightbox}
           />
+          <TestimonialsSection />
         </main>
 
         <aside

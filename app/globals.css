@@ -43,6 +43,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Main image box: always 16:9 so 1920×1080 fills; cap by viewport on large screens; rounded corners clip content. */
+.main-image-box-cap {
+  width: min(1520px, 100%, calc(min(1080px, 72vh) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  max-height: min(1080px, 72vh);
+  isolation: isolate;
+  border-radius: 1rem;
+}
+
 /* Hide scrollbar while keeping mouse/touch scroll. */
 .scrollbar-hide {
   -ms-overflow-style: none;

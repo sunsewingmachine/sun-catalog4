@@ -13,6 +13,7 @@ import { useImageDisplayUrl } from "@/hooks/useImageDisplayUrl";
 
 /** Fallback when product image is missing or fails to load. */
 const DEFAULT_IMAGE = "/used/default.jpg";
+/** Main image backbox: 16:9, max 1520px wide, height capped in .main-image-box-cap (globals.css). */
 
 interface ProductViewerProps {
   product: Product | null;
@@ -56,11 +57,15 @@ export default function ProductViewer({
     onOpenLightbox?.(mainSrc, mainAlt);
   };
 
+  const mainImageBoxClassName =
+    "main-image-box-cap relative overflow-hidden bg-green-50 shadow-sm mx-auto";
+
   if (!product) {
     return (
-      <div id="divProductViewer" className="flex min-h-0 flex-1 flex-col">
+      <div id="divProductViewer" className="flex shrink-0 flex-col">
         <div
-          className="relative min-h-0 flex-1 overflow-hidden rounded-2xl bg-white/90 shadow-sm"
+          id="divMainImageBackgroundBox"
+          className={mainImageBoxClassName}
           onDoubleClick={handleDoubleClickMain}
           role="button"
           tabIndex={0}
@@ -72,7 +77,7 @@ export default function ProductViewer({
             src={DEFAULT_IMAGE}
             alt="Default"
             fill
-            className="pointer-events-none object-contain"
+            className="pointer-events-none object-contain rounded-2xl"
             sizes="(max-width: 800px) 100vw, 50vw"
             loading="eager"
           />
@@ -82,9 +87,10 @@ export default function ProductViewer({
   }
 
   return (
-    <div id="divProductViewer" className="flex min-h-0 flex-1 flex-col">
+    <div id="divProductViewer" className="flex shrink-0 flex-col">
       <div
-        className="relative min-h-0 flex-1 overflow-hidden rounded-2xl bg-white/90 shadow-sm"
+        id="divMainImageBackgroundBox"
+        className={mainImageBoxClassName}
         onDoubleClick={handleDoubleClickMain}
         role="button"
         tabIndex={0}
@@ -96,7 +102,7 @@ export default function ProductViewer({
             id="imgMainProduct"
             src={effectiveMainSrc}
             alt={mainAlt}
-            className="pointer-events-none h-full w-full object-contain"
+            className="pointer-events-none h-full w-full object-contain rounded-2xl"
             loading="eager"
             referrerPolicy="no-referrer"
             onError={() => (tryLowercase ? setMainImageError(true) : setTryLowercase(true))}
@@ -108,7 +114,7 @@ export default function ProductViewer({
             src={effectiveMainSrc}
             alt={mainAlt}
             fill
-            className="pointer-events-none object-contain"
+            className="pointer-events-none object-contain rounded-2xl"
             sizes="(max-width: 800px) 100vw, 50vw"
             loading="eager"
             onError={() => (tryLowercase ? setMainImageError(true) : setTryLowercase(true))}

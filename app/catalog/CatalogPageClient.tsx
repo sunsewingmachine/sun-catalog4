@@ -18,6 +18,7 @@ import {
   getUniqueImageUrlsFromProducts,
   type ImageSyncProgress,
 } from "@/lib/imageSyncService";
+import { APP_VERSION } from "@/lib/appVersion";
 
 const ACTIVATED_KEY = "catalog_activated";
 
@@ -38,6 +39,7 @@ export default function CatalogPageClient() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [dbVersion, setDbVersion] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [syncProgress, setSyncProgress] = useState<ImageSyncProgress | null>(null);
@@ -71,6 +73,7 @@ export default function CatalogPageClient() {
           await setCachedCatalog(newProducts, version);
           if (cancelled) return;
           setProducts(newProducts);
+          setDbVersion(version);
           setLastUpdated(new Date().toISOString());
           const imageCount = getUniqueImageUrlsFromProducts(newProducts).length;
           setSyncProgress({
@@ -95,6 +98,7 @@ export default function CatalogPageClient() {
           if (cancelled) return;
           if (cached) {
             setProducts(cached.products);
+            setDbVersion(cached.meta.version);
             setLastUpdated(cached.meta.lastUpdated);
             if (typeof navigator !== "undefined" && navigator.storage?.persist) {
               navigator.storage.persist().catch(() => {});
@@ -107,6 +111,7 @@ export default function CatalogPageClient() {
         const cached = await getCachedCatalog();
         if (cached) {
           setProducts(cached.products);
+          setDbVersion(cached.meta.version);
           setLastUpdated(cached.meta.lastUpdated);
         } else {
           setError(e instanceof Error ? e.message : "Failed to load catalog");
@@ -192,6 +197,8 @@ export default function CatalogPageClient() {
     <CatalogLayout
       products={products}
       lastUpdated={lastUpdated}
+      dbVersion={dbVersion}
+      appVersion={APP_VERSION}
     />
   );
 }
