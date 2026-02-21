@@ -13,6 +13,8 @@ import { shouldFetchCatalog } from "@/lib/versionChecker";
 import { getCachedCatalog, setCachedCatalog } from "@/lib/cacheManager";
 import { fetchSheetByGid, getDataRows } from "@/lib/sheetFetcher";
 import { mapRowsToProducts } from "@/lib/productMapper";
+import { mapRowsToFeatureRecords } from "@/lib/featuresMapper";
+import type { FeatureRecord } from "@/types/feature";
 import {
   syncImages,
   getUniqueImageUrlsFromProducts,
@@ -34,15 +36,23 @@ const DB_GID =
   typeof process !== "undefined"
     ? (process.env.NEXT_PUBLIC_DB_GID ?? "")
     : "";
+const FEATURES_GID =
+  typeof process !== "undefined"
+    ? (process.env.NEXT_PUBLIC_FEATURES_GID ?? "")
+    : "";
 /** Rows to skip before data. 0 = use all rows (mapper skips empty/header/LineGap); 1 = skip first row. API often omits empty row so row 0 = 1stMdm. */
 const DATA_START_ROW =
   typeof process !== "undefined"
     ? Math.max(0, parseInt(process.env.NEXT_PUBLIC_ITMGROUP_DATA_START_ROW ?? "0", 10))
     : 0;
 
+/** Features sheet typically has one header row then data. */
+const FEATURES_DATA_START_ROW = 1;
+
 export default function CatalogPageClient() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
+  const [features, setFeatures] = useState<FeatureRecord[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [dbVersion, setDbVersion] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -68,8 +78,19 @@ export default function CatalogPageClient() {
         SHEET_ID,
         DB_GID
       );
-      await setCachedCatalog(newProducts, version);
+      let newFeatures: FeatureRecord[] = [];
+      if (SHEET_ID && FEATURES_GID) {
+        try {
+          const featuresTable = await fetchSheetByGid(SHEET_ID, FEATURES_GID);
+          const featuresRows = getDataRows(featuresTable, FEATURES_DATA_START_ROW);
+          newFeatures = mapRowsToFeatureRecords(featuresRows);
+        } catch {
+          // Features sheet optional; continue without
+        }
+      }
+      await setCachedCatalog(newProducts, version, newFeatures);
       setProducts(newProducts);
+      setFeatures(newFeatures);
       setDbVersion(version);
       setLastUpdated(new Date().toISOString());
       const imageCount = getUniqueImageUrlsFromProducts(newProducts).length;
@@ -114,9 +135,20 @@ export default function CatalogPageClient() {
             SHEET_ID,
             DB_GID
           );
-          await setCachedCatalog(newProducts, version);
+          let newFeatures: FeatureRecord[] = [];
+          if (SHEET_ID && FEATURES_GID) {
+            try {
+              const featuresTable = await fetchSheetByGid(SHEET_ID, FEATURES_GID);
+              const featuresRows = getDataRows(featuresTable, FEATURES_DATA_START_ROW);
+              newFeatures = mapRowsToFeatureRecords(featuresRows);
+            } catch {
+              // Features sheet optional
+            }
+          }
+          await setCachedCatalog(newProducts, version, newFeatures);
           if (cancelled) return;
           setProducts(newProducts);
+          setFeatures(newFeatures);
           setDbVersion(version);
           setLastUpdated(new Date().toISOString());
           const imageCount = getUniqueImageUrlsFromProducts(newProducts).length;
@@ -142,6 +174,7 @@ export default function CatalogPageClient() {
           if (cancelled) return;
           if (cached) {
             setProducts(cached.products);
+            setFeatures(cached.features ?? []);
             setDbVersion(cached.meta.version);
             setLastUpdated(cached.meta.lastUpdated);
             if (typeof navigator !== "undefined" && navigator.storage?.persist) {
@@ -155,6 +188,7 @@ export default function CatalogPageClient() {
         const cached = await getCachedCatalog();
         if (cached) {
           setProducts(cached.products);
+          setFeatures(cached.features ?? []);
           setDbVersion(cached.meta.version);
           setLastUpdated(cached.meta.lastUpdated);
         } else {
@@ -241,6 +275,7 @@ export default function CatalogPageClient() {
   return (
     <CatalogLayout
       products={products}
+      features={features}
       lastUpdated={lastUpdated}
       dbVersion={dbVersion}
       appVersion={APP_VERSION}

@@ -28,6 +28,7 @@ export function openDb(): Promise<IDBDatabase> {
 export async function getCatalogFromDb(): Promise<{
   products: unknown[];
   meta: { version: string; lastUpdated: string };
+  features?: unknown[];
 } | null> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
@@ -35,13 +36,15 @@ export async function getCatalogFromDb(): Promise<{
     const store = tx.objectStore(STORE_CATALOG);
     const productsReq = store.get("products");
     const metaReq = store.get("meta");
+    const featuresReq = store.get("features");
     let done = 0;
     let products: unknown[] | null = null;
     let meta: { version: string; lastUpdated: string } | null = null;
+    let features: unknown[] | undefined;
     const check = () => {
-      if (done < 2) return;
+      if (done < 3) return;
       db.close();
-      if (products && meta && Array.isArray(products)) resolve({ products, meta });
+      if (products && meta && Array.isArray(products)) resolve({ products, meta, features });
       else resolve(null);
     };
     productsReq.onsuccess = () => {
@@ -54,13 +57,20 @@ export async function getCatalogFromDb(): Promise<{
       done++;
       check();
     };
+    featuresReq.onsuccess = () => {
+      const raw = featuresReq.result;
+      features = Array.isArray(raw) ? raw : undefined;
+      done++;
+      check();
+    };
     tx.onerror = () => reject(tx.error);
   });
 }
 
 export async function setCatalogInDb(
   products: unknown[],
-  meta: { version: string; lastUpdated: string }
+  meta: { version: string; lastUpdated: string },
+  features?: unknown[]
 ): Promise<void> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
@@ -68,6 +78,7 @@ export async function setCatalogInDb(
     const store = tx.objectStore(STORE_CATALOG);
     store.put(products, "products");
     store.put(meta, "meta");
+    if (features !== undefined) store.put(features, "features");
     tx.oncomplete = () => {
       db.close();
       resolve();
@@ -84,6 +95,7 @@ export async function clearCatalogCache(): Promise<void> {
     const store = tx.objectStore(STORE_CATALOG);
     store.delete("products");
     store.delete("meta");
+    store.delete("features");
     tx.oncomplete = () => {
       db.close();
       resolve();

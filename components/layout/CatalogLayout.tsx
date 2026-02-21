@@ -8,6 +8,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types/product";
+import type { FeatureRecord } from "@/types/feature";
 import { ALLOWED_CATEGORIES } from "@/types/product";
 import CategoryList from "@/components/sidebar/CategoryList";
 import ProductList from "@/components/sidebar/ProductList";
@@ -18,10 +19,11 @@ import ImageLightbox from "@/components/viewer/ImageLightbox";
 import ProductDetails from "@/components/details/ProductDetails";
 import AdditionalImagesStrip from "@/components/strip/AdditionalImagesStrip";
 import CommonImagesBar from "@/components/strip/CommonImagesBar";
-import TestimonialsSection from "@/components/testimonials/TestimonialsSection";
 
 interface CatalogLayoutProps {
   products: Product[];
+  /** Features table (col A = key, col B = label) from Features sheet for EY lookup. */
+  features: FeatureRecord[];
   lastUpdated: string | null;
   /** Version from Google Sheets db tab (cell B1). */
   dbVersion: string;
@@ -85,6 +87,7 @@ function saveRecentlyViewedToStorage(items: Product[]): void {
 
 export default function CatalogLayout({
   products,
+  features,
   lastUpdated,
   dbVersion,
   appVersion,
@@ -243,11 +246,11 @@ export default function CatalogLayout({
         </div>
       </header>
 
-      <div className="mb-4 flex min-h-0 min-w-0 flex-1 overflow-hidden">
+      <div className="mb-4 flex min-h-0 min-w-0 flex-1 items-start overflow-hidden">
         {/* Left: category buttons only, stacked vertically */}
         <aside
           id="divCategoryStrip"
-          className="flex w-14 shrink-0 flex-col border-r border-green-200 bg-green-50/80"
+          className="flex w-14 shrink-0 flex-col self-stretch border-r border-green-200 bg-green-50/80"
         >
           {/* Best button first (top), same position as former first category */}
           <div id="divSidebarBest" className="relative shrink-0 overflow-visible p-1 pt-4">
@@ -379,7 +382,7 @@ export default function CatalogLayout({
         {/* Item part: section 1 = main list (full height), section 2 = 5-row recently viewed */}
         <div
           id="divItemPart"
-          className="flex min-h-0 w-72 shrink-0 flex-col border-r border-green-200 bg-white p-2"
+          className="flex min-h-0 w-72 shrink-0 flex-col self-stretch border-r border-green-200 bg-white p-2"
         >
           <div
             id="divItemPartSection1"
@@ -407,7 +410,7 @@ export default function CatalogLayout({
           </div>
         </div>
 
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <main className="flex min-h-0 min-w-0 shrink-0 flex-1 flex-col overflow-hidden">
           <div
             id="divMainViewer"
             className="flex shrink-0 flex-col border-b border-green-200 bg-green-50 p-4"
@@ -425,14 +428,13 @@ export default function CatalogLayout({
             onSetMainImage={setMainImageOverride}
             onOpenLightbox={openLightbox}
           />
-          <TestimonialsSection />
         </main>
 
         <aside
           id="divDetailsPanel"
-          className="flex w-80 shrink-0 flex-col overflow-hidden border-l border-green-200 bg-green-50"
+          className="flex w-80 shrink-0 flex-col self-stretch overflow-hidden border-l border-green-200 bg-green-50"
         >
-          <ProductDetails product={selectedProduct} lastUpdated={lastUpdated} />
+          <ProductDetails product={selectedProduct} lastUpdated={lastUpdated} features={features} />
         </aside>
       </div>
 

@@ -15,6 +15,8 @@ export interface Product {
   category: string;
   /** Optional order number from sheet column AF; used for section-3 list (1, 2, 3, ...). */
   af?: number;
+  /** Optional feature keys from sheet column EY; split by "::" e.g. "Gen.Perfect threading:: Sv.Happy Stitch". */
+  ey?: string;
 }
 
 export type Category = string;

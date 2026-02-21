@@ -13,6 +13,8 @@ const COL_S = 18;
 const COL_T = 19;
 /** Column AF = 0-based index 31 (A=0, …, Z=25, AA=26, …, AF=31). */
 const COL_AF = 31;
+/** Column EY = 0-based index 128 (E=4, Y=24 → 4*26+24=128). */
+const COL_EY = 128;
 
 function parseNum(val: string | number): number {
   if (typeof val === "number" && !Number.isNaN(val)) return val;
@@ -63,6 +65,8 @@ export function mapRowToProduct(row: string[], rowIndex: number): Product | null
   const afRaw = row[COL_AF];
   const af = parseNum(afRaw);
   const afNum = af > 0 && Number.isInteger(af) ? af : undefined;
+  const eyRaw = String(row[COL_EY] ?? "").trim();
+  const ey = eyRaw || undefined;
 
   return {
     itmGroupName: colA,
@@ -74,6 +78,7 @@ export function mapRowToProduct(row: string[], rowIndex: number): Product | null
     imageFilename,
     category,
     ...(afNum !== undefined && { af: afNum }),
+    ...(ey !== undefined && { ey }),
   };
 }
 

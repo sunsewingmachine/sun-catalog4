@@ -1,9 +1,10 @@
 /**
- * Catalog cache: read/write products and meta (version, lastUpdated) via IndexedDB.
+ * Catalog cache: read/write products, meta (version, lastUpdated), and features via IndexedDB.
  * Used by version checker to decide whether to re-fetch ItmGroup.
  */
 
 import type { Product } from "@/types/product";
+import type { FeatureRecord } from "@/types/feature";
 import { getCatalogFromDb, setCatalogInDb } from "./indexedDb";
 
 export interface CatalogMeta {
@@ -14,22 +15,25 @@ export interface CatalogMeta {
 export async function getCachedCatalog(): Promise<{
   products: Product[];
   meta: CatalogMeta;
+  features?: FeatureRecord[];
 } | null> {
   const raw = await getCatalogFromDb();
   if (!raw || !raw.meta) return null;
   return {
     products: (raw.products as Product[]) ?? [],
     meta: raw.meta,
+    features: Array.isArray(raw.features) ? (raw.features as FeatureRecord[]) : undefined,
   };
 }
 
 export async function setCachedCatalog(
   products: Product[],
-  version: string
+  version: string,
+  features?: FeatureRecord[]
 ): Promise<void> {
   const meta: CatalogMeta = {
     version,
     lastUpdated: new Date().toISOString(),
   };
-  await setCatalogInDb(products, meta);
+  await setCatalogInDb(products, meta, features);
 }

@@ -1,16 +1,22 @@
 "use client";
 
 /**
- * Right panel: Company, Model, Price, Warranty, PCode, Description. Scrollable.
- * Key-value rows with icons before titles and colons vertically aligned. Single background.
+ * Right panel (last column): product info, Features box, and disclaimer.
+ * All product-related content lives here; key-value rows with icons.
  */
+
+const DISCLAIMER_TEXT =
+  "படத்தில் உள்ளவைகள் சேம்பிள் மட்டுமே. பொருட்களின் கலர், அளவு, லேபிள்கள், விலை என அனைத்தும் மாற்றத்திற்கு உரியது. GST Applicable. Cover, Scissor Extra.";
 
 import React from "react";
 import type { Product } from "@/types/product";
+import type { FeatureRecord } from "@/types/feature";
+import FeaturesBox from "./FeaturesBox";
 
 interface ProductDetailsProps {
   product: Product | null;
   lastUpdated: string | null;
+  features?: FeatureRecord[];
 }
 
 const ICON_CLASS = "size-4 shrink-0 text-slate-600";
@@ -59,6 +65,7 @@ const FIELDS = [
 export default function ProductDetails({
   product,
   lastUpdated,
+  features = [],
 }: ProductDetailsProps) {
   if (!product) {
     return (
@@ -72,6 +79,14 @@ export default function ProductDetails({
             Last updated: {new Date(lastUpdated).toLocaleString()}
           </p>
         )}
+        <div id="divDetailsDisclaimer" className="mt-4" aria-live="polite">
+          <p
+            id="pDisclaimerText"
+            className="rounded-lg border border-green-200 bg-green-100 p-3 text-left text-sm leading-snug text-slate-900"
+          >
+            {DISCLAIMER_TEXT}
+          </p>
+        </div>
       </div>
     );
   }
@@ -128,6 +143,17 @@ export default function ProductDetails({
             </p>
           </footer>
         )}
+      </div>
+
+      <FeaturesBox product={product} features={features} />
+
+      <div id="divDetailsDisclaimer" className="mt-4" aria-live="polite">
+        <p
+          id="pDisclaimerText"
+          className="rounded-lg border border-green-200 bg-green-100 p-3 text-left text-sm leading-snug text-slate-900"
+        >
+          {DISCLAIMER_TEXT}
+        </p>
       </div>
 
       {product.af != null && product.af > 0 && (
