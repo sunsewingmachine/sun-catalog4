@@ -41,6 +41,10 @@ const FEATURES_GID =
   typeof process !== "undefined"
     ? (process.env.NEXT_PUBLIC_FEATURES_GID ?? "")
     : "";
+const ULTRA_GID =
+  typeof process !== "undefined"
+    ? (process.env.NEXT_PUBLIC_ULTRA_GID ?? "")
+    : "";
 /** Rows to skip before data. 0 = use all rows (mapper skips empty/header/LineGap); 1 = skip first row. API often omits empty row so row 0 = 1stMdm. */
 const DATA_START_ROW =
   typeof process !== "undefined"
@@ -305,6 +309,8 @@ export default function CatalogPageClient() {
       lastUpdated={lastUpdated}
       dbVersion={dbVersion}
       appVersion={APP_VERSION}
+      sheetId={SHEET_ID}
+      ultraGid={ULTRA_GID}
       onRequestRefresh={performForceRefresh}
     />
   );

@@ -142,7 +142,7 @@ function FlashMessageBar({
 
   const messageContent = (msg: string) => (
     <>
-      <AnnounceIcon className="mr-2 h-6 w-6 shrink-0" />
+      <AnnounceIcon className="mr-2 h-16 w-16 shrink-0" />
       <span className="min-w-0 truncate">{msg}</span>
     </>
   );

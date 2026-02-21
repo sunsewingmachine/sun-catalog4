@@ -95,6 +95,9 @@ export default function FeaturesBox({ product, features, onFeatureMediaClick }: 
   const matches = getFeatureMatchesForProductEy(product.ey, features);
   const hasEy = product.ey != null && product.ey.trim() !== "";
 
+  // Hide the box when product has no EY (no features listed for this product).
+  if (matches.length === 0 && !hasEy) return null;
+
   return (
     <div
       id="divFeaturesBox"

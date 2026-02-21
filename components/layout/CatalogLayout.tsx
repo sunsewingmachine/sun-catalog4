@@ -8,6 +8,8 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types/product";
+import { fetchSheetByGid, getAllRows } from "@/lib/sheetFetcher";
+import type { UltraRow } from "@/lib/ultraPriceHelper";
 import type { FeatureRecord } from "@/types/feature";
 import { ALLOWED_CATEGORIES } from "@/types/product";
 import CategoryList from "@/components/sidebar/CategoryList";
@@ -33,6 +35,10 @@ interface CatalogLayoutProps {
   dbVersion: string;
   /** App version shown in UI (e.g. 1.0). */
   appVersion: string;
+  /** Sheet ID for fetching Ultra price tab (NEXT_PUBLIC_ULTRA_GID). */
+  sheetId?: string;
+  /** GID of Ultra price sheet; column A is listed in the Ultra price box. */
+  ultraGid?: string;
   /** When provided, settings menu shows Refresh; on confirm, this fetches catalog and images from server. */
   onRequestRefresh?: () => Promise<void>;
 }
@@ -114,6 +120,8 @@ export default function CatalogLayout({
   lastUpdated,
   dbVersion,
   appVersion,
+  sheetId = "",
+  ultraGid = "",
   onRequestRefresh,
 }: CatalogLayoutProps) {
   const router = useRouter();
@@ -142,6 +150,12 @@ export default function CatalogLayout({
   const [selectedExchangeMenu, setSelectedExchangeMenu] = React.useState<string | null>(null);
   /** When true, Bybk (Exchange) submenus are visible; toggled by hover/click on Bybk header. */
   const [bybkSubmenuExpanded, setBybkSubmenuExpanded] = React.useState(false);
+  /** When true, details panel shows Ultra price box with column A from sheet NEXT_PUBLIC_ULTRA_GID. */
+  const [ultraPriceBoxOpen, setUltraPriceBoxOpen] = React.useState(false);
+  /** Ultra sheet rows (cols A,B,C,D); populated when ultraPriceBoxOpen is true and sheet is fetched. */
+  const [ultraRows, setUltraRows] = React.useState<UltraRow[]>([]);
+  const [ultraPriceLoading, setUltraPriceLoading] = React.useState(false);
+  const [ultraPriceError, setUltraPriceError] = React.useState<string | null>(null);
   /** Filenames for 3-row area below main image: ForAll and ForGroup (from /api/bar-images). */
   const [barImages, setBarImages] = React.useState<{
     forAll: string[];
@@ -168,6 +182,47 @@ export default function CatalogLayout({
       cancelled = true;
     };
   }, []);
+
+  React.useEffect(() => {
+    if (!ultraPriceBoxOpen) {
+      setUltraRows([]);
+      setUltraPriceError(null);
+      return;
+    }
+    if (!sheetId || !ultraGid) {
+      setUltraPriceError("Missing NEXT_PUBLIC_SHEET_ID or NEXT_PUBLIC_ULTRA_GID.");
+      setUltraRows([]);
+      setUltraPriceLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setUltraPriceLoading(true);
+    setUltraPriceError(null);
+    fetchSheetByGid(sheetId, ultraGid)
+      .then((table) => {
+        if (cancelled) return;
+        const allRows = getAllRows(table);
+        const rows: UltraRow[] = allRows.map((row) => [
+          String((row[0] ?? "")).trim(),
+          String((row[1] ?? "")).trim(),
+          String((row[2] ?? "")).trim(),
+          String((row[3] ?? "")).trim(),
+        ] as UltraRow);
+        setUltraRows(rows);
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setUltraPriceError(e instanceof Error ? e.message : "Failed to load Ultra sheet");
+          setUltraRows([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setUltraPriceLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [ultraPriceBoxOpen, sheetId, ultraGid]);
 
   React.useEffect(() => {
     if (!settingsMenuOpen) return;
@@ -411,7 +466,7 @@ export default function CatalogLayout({
                 {settingsMenuOpen && (
                   <div
                     ref={settingsDropdownWrapperRef}
-                    className="absolute left-full bottom-0 z-50 ml-1 flex"
+                    className="absolute left-full bottom-0 z-50 ml-1 flex items-end"
                     onMouseLeave={(e) => {
                       const wrapper = settingsDropdownWrapperRef.current;
                       const related = e.relatedTarget as Node | null;
@@ -449,7 +504,11 @@ export default function CatalogLayout({
                         role="menuitem"
                         id="btnSettingsUltraPrice"
                         className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
-                        onClick={() => setSettingsMenuOpen(false)}
+                        onClick={() => {
+                          setSelectedExchangeMenu(null);
+                          setUltraPriceBoxOpen(true);
+                          setSettingsMenuOpen(false);
+                        }}
                       >
                         <span>Ultra price</span>
                       </button>
@@ -480,7 +539,7 @@ export default function CatalogLayout({
                         id="divBybkSubmenuFlyout"
                         role="menu"
                         aria-label="Exchange price options"
-                        className="min-w-[8rem] max-h-[70vh] overflow-y-auto rounded-r-lg border border-green-200 border-l-0 bg-white py-1 shadow-lg"
+                        className="min-w-[8rem] max-h-[70vh] overflow-y-auto overflow-x-hidden rounded-r-lg border border-green-200 border-l-0 bg-white py-1 shadow-lg"
                       >
                         {EXCHANGE_PRICE_SUBMENUS.map((item, idx) =>
                           item === "---" ? (
@@ -493,6 +552,7 @@ export default function CatalogLayout({
                               id={`btnExchangePrice_${item.replace(/:/g, "_")}`}
                               className={`flex w-full items-center px-3 py-1.5 text-left text-sm rounded mx-0.5 ${selectedExchangeMenu === item ? "bg-green-100 text-green-900 font-medium" : "text-slate-700 hover:bg-green-50"}`}
                               onClick={() => {
+                                setUltraPriceBoxOpen(false);
                                 setSelectedExchangeMenu((prev) => (prev === item ? null : item));
                                 setSettingsMenuOpen(false);
                               }}
@@ -558,7 +618,7 @@ export default function CatalogLayout({
                   mainImageOverride={mainImageOverride}
                   mainVideoOverride={mainVideoOverride}
                   onOpenLightbox={openLightbox}
-                  showBestBadgeOverlay={selectedExchangeMenu != null}
+                  showBestBadgeOverlay={selectedExchangeMenu != null || ultraPriceBoxOpen}
                 />
               </div>
             </div>
@@ -607,6 +667,11 @@ export default function CatalogLayout({
             rawItmGroupRows={rawItmGroupRows}
             onFeatureMediaClick={handleFeatureMediaClick}
             onExchangePriceClose={() => setSelectedExchangeMenu(null)}
+            ultraPriceOpen={ultraPriceBoxOpen}
+            ultraRows={ultraRows}
+            ultraPriceLoading={ultraPriceLoading}
+            ultraPriceError={ultraPriceError}
+            onUltraPriceClose={() => setUltraPriceBoxOpen(false)}
           />
         </aside>
       </div>

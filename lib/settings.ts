@@ -18,8 +18,8 @@ export const SETTINGS = {
   /** Messages shown one-by-one in the bottom bar (5s interval, smooth animation). Add more as needed. */
   displayMessages: [
     "We are No.1 in Tamilnadu",
-    "We have 8 branches",
-    "We are serving from 1988",
+    "We have 8 branches all over Tamilnadu",
+    "We are serving Since 1988 (38 years)",
     "We have 100+ products",
     "We are serving 50000+ customers",
     "We have 40+ years of experience",
@@ -45,6 +45,8 @@ export const ENV = {
   itmGroupGid: getEnv("NEXT_PUBLIC_ITMGROUP_GID"),
   dbGid: getEnv("NEXT_PUBLIC_DB_GID"),
   featuresGid: getEnv("NEXT_PUBLIC_FEATURES_GID"),
+  /** GID of the Ultra price sheet; column A is listed in the Ultra price exchange box. */
+  ultraGid: getEnv("NEXT_PUBLIC_ULTRA_GID"),
   dataStartRow: getEnvNumber("NEXT_PUBLIC_ITMGROUP_DATA_START_ROW", SETTINGS.dataStartRowDefault),
   cdnBaseUrl: getEnv("NEXT_PUBLIC_CDN_BASE_URL"),
   cdnImagePrefix: getEnv("NEXT_PUBLIC_CDN_IMAGE_PREFIX"),

@@ -13,6 +13,7 @@ import type { Product } from "@/types/product";
 import type { FeatureRecord } from "@/types/feature";
 import FeaturesBox from "./FeaturesBox";
 import { getExchangePriceRows, getExchangePriceItemHeaderLabel } from "@/lib/exchangePriceHelper";
+import { getUltraRowWithPrices, type UltraRow } from "@/lib/ultraPriceHelper";
 
 interface ProductDetailsProps {
   product: Product | null;
@@ -25,6 +26,16 @@ interface ProductDetailsProps {
   onFeatureMediaClick?: (mediaUrl: string) => void;
   /** When user closes/hides the exchange price panel. */
   onExchangePriceClose?: () => void;
+  /** When true, show Ultra price box listing column A from sheet NEXT_PUBLIC_ULTRA_GID. */
+  ultraPriceOpen?: boolean;
+  /** Ultra sheet rows (cols A,B,C,D); used to show items and MRP/parts total from main DB. */
+  ultraRows?: UltraRow[];
+  /** True while Ultra sheet is being fetched. */
+  ultraPriceLoading?: boolean;
+  /** Error message if Ultra sheet fetch failed. */
+  ultraPriceError?: string | null;
+  /** When user closes the Ultra price panel. */
+  onUltraPriceClose?: () => void;
 }
 
 const ICON_CLASS = "size-4 shrink-0 text-slate-600";
@@ -77,6 +88,11 @@ export default function ProductDetails({
   rawItmGroupRows,
   onFeatureMediaClick,
   onExchangePriceClose,
+  ultraPriceOpen = false,
+  ultraRows = [],
+  ultraPriceLoading = false,
+  ultraPriceError = null,
+  onUltraPriceClose,
 }: ProductDetailsProps) {
   const hasRawRows = Array.isArray(rawItmGroupRows) && rawItmGroupRows.length > 0;
   const exchangeRows = exchangePriceMenu && hasRawRows ? getExchangePriceRows(rawItmGroupRows, exchangePriceMenu) : [];
@@ -111,53 +127,165 @@ export default function ProductDetails({
       </div>
     );
   }
+  const disclaimerBlock = (
+    <div id="divDetailsDisclaimer" className="mt-4 shrink-0" aria-live="polite">
+      <div className="flex gap-2 rounded-lg border border-green-200 bg-green-100 p-3">
+        <img
+          src="/used/info.png"
+          alt=""
+          className="size-6 shrink-0 object-contain"
+          width={24}
+          height={24}
+        />
+        <p id="pDisclaimerText" className="min-w-0 flex-1 text-[11px] leading-snug text-slate-900">
+          {DISCLAIMER_TEXT}
+        </p>
+      </div>
+    </div>
+  );
+
+  if (ultraPriceOpen) {
+    return (
+      <div
+        id="divDetailsContent"
+        className="scrollbar-hide flex flex-1 flex-col overflow-hidden p-4 min-h-0"
+      >
+        <div
+          id="divDetailsUltraPrice"
+          className="flex flex-1 flex-col min-h-0 rounded-lg border border-green-200 bg-green-50/80 overflow-hidden"
+          aria-label="Ultra price"
+        >
+          <div className="flex shrink-0 items-center justify-between gap-2 px-2 py-1 border-b border-teal-700 bg-teal-600">
+            <h3 id="h3UltraPriceTitle" className="text-xs font-semibold text-white">Ultra price</h3>
+            {onUltraPriceClose ? (
+              <button
+                type="button"
+                id="btnUltraPriceClose"
+                onClick={onUltraPriceClose}
+                className="rounded p-1 text-white hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-1"
+                aria-label="Close Ultra price"
+                title="Close"
+              >
+                <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            ) : null}
+          </div>
+          <div className="scrollbar-hide flex flex-1 min-h-0 overflow-auto px-2 py-1">
+            {ultraPriceLoading ? (
+              <p id="pUltraPriceLoading" className="py-2 text-sm text-slate-500">Loading…</p>
+            ) : ultraPriceError ? (
+              <p id="pUltraPriceError" className="py-2 text-sm text-red-600">{ultraPriceError}</p>
+            ) : ultraRows.length === 0 ? (
+              <p id="pUltraPriceEmpty" className="py-2 text-sm text-slate-500">No rows in Ultra sheet. Set NEXT_PUBLIC_ULTRA_GID to the sheet tab GID.</p>
+            ) : (() => {
+              const groups = ultraRows.reduce<UltraRow[][]>((acc, row) => {
+                const isLineGap = (row[0] ?? "").trim().toLowerCase() === "linegap";
+                if (isLineGap) {
+                  acc.push([]);
+                } else {
+                  if (acc.length === 0) acc.push([]);
+                  acc[acc.length - 1].push(row);
+                }
+                return acc;
+              }, []).filter((g) => g.length > 0);
+              const hasRawRows = Array.isArray(rawItmGroupRows) && rawItmGroupRows.length > 0;
+              return (
+                <div id="listUltraPriceColA" className="flex flex-col gap-2 w-full" aria-label="Ultra price items and MRP">
+                  {groups.map((group, gi) => (
+                    <div
+                      key={`ultra-group-${gi}`}
+                      id={`divUltraGroup_${gi}`}
+                      className="rounded-lg border border-green-200 bg-green-50/80 p-2"
+                    >
+                      <ul className="list-none flex flex-col gap-1">
+                        {group.map((row, ii) => {
+                          const withPrices = getUltraRowWithPrices(row, hasRawRows ? rawItmGroupRows : undefined);
+                          const mainLabel = withPrices.colA;
+                          const mainMrp = withPrices.mainMrp;
+                          const partsTotal = withPrices.partsTotalMrp;
+                          return (
+                            <li key={`ultra-a-${gi}-${ii}`} id={`liUltraColA_${gi}_${ii}`}>
+                              <div
+                                title={`${mainLabel} | MRP: ${mainMrp} | Parts (B+C+D): ${partsTotal}`}
+                                className="flex w-full flex-col gap-0.5 rounded px-1.5 py-1 text-left text-sm font-medium bg-green-100 text-slate-700 hover:bg-green-200 transition-colors"
+                              >
+                                <span className="min-w-0 flex-1 truncate">{mainLabel}</span>
+                                {hasRawRows && (
+                                  <span className="text-xs text-slate-600">
+                                    MRP: {mainMrp > 0 ? String(Math.round(mainMrp)) : "—"} | Parts: {partsTotal > 0 ? String(Math.round(partsTotal)) : "—"}
+                                  </span>
+                                )}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+        <div className="mt-4 shrink-0">
+          <FeaturesBox product={product} features={features} onFeatureMediaClick={onFeatureMediaClick} />
+        </div>
+        {disclaimerBlock}
+      </div>
+    );
+  }
+
   return (
     <div
       id="divDetailsContent"
       className="scrollbar-hide flex flex-1 flex-col overflow-auto p-4"
     >
-      <div
-        id="divDetailsBox"
-        className="rounded-lg border border-green-200 bg-green-100 p-3"
-      >
-        <dl
-          id="dlProductDetails"
-          className="grid grid-cols-[max-content_1ch_1fr] gap-x-2 gap-y-1.5 text-lg"
+      {!ultraPriceOpen && (
+        <div
+          id="divDetailsBox"
+          className="rounded-lg border border-green-200 bg-green-100 p-3"
         >
-        {FIELDS.map(({ term, fieldKey, mono }) => (
-          <React.Fragment key={term}>
-            <dt className="flex items-center gap-1.5 text-slate-900">
-              <span className="flex shrink-0" aria-hidden>
-                {fieldIcons[term]}
+          <dl
+            id="dlProductDetails"
+            className="grid grid-cols-[max-content_1ch_1fr] gap-x-2 gap-y-1.5 text-lg"
+          >
+          {FIELDS.map(({ term, fieldKey, mono }) => (
+            <React.Fragment key={term}>
+              <dt className="flex items-center gap-1.5 text-slate-900">
+                <span className="flex shrink-0" aria-hidden>
+                  {fieldIcons[term]}
+                </span>
+                {term}
+              </dt>
+              <span className="text-slate-900" aria-hidden>
+                :
               </span>
-              {term}
-            </dt>
-            <span className="text-slate-900" aria-hidden>
-              :
-            </span>
-            <dd
-              className={mono ? "font-mono text-slate-900" : "text-slate-900"}
-            >
-              {product[fieldKey]}
-            </dd>
-          </React.Fragment>
-        ))}
-        {product.description && (
-          <>
-            <dt className="flex items-center gap-1.5 text-slate-900">
-              <span className="flex shrink-0" aria-hidden>
-                {fieldIcons.Description}
+              <dd
+                className={mono ? "font-mono text-slate-900" : "text-slate-900"}
+              >
+                {product[fieldKey]}
+              </dd>
+            </React.Fragment>
+          ))}
+          {product.description && (
+            <>
+              <dt className="flex items-center gap-1.5 text-slate-900">
+                <span className="flex shrink-0" aria-hidden>
+                  {fieldIcons.Description}
+                </span>
+                Description
+              </dt>
+              <span className="text-slate-900" aria-hidden>
+                :
               </span>
-              Description
-            </dt>
-            <span className="text-slate-900" aria-hidden>
-              :
-            </span>
-            <dd className="text-slate-900">{product.description}</dd>
-          </>
-        )}
-        </dl>
-      </div>
+              <dd className="text-slate-900">{product.description}</dd>
+            </>
+          )}
+          </dl>
+        </div>
+      )}
 
       <FeaturesBox product={product} features={features} onFeatureMediaClick={onFeatureMediaClick} />
 
