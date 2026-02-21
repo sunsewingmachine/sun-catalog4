@@ -37,7 +37,7 @@ interface ProductDetailsProps {
   onSelectProductByItmGroupName?: (itmGroupName: string) => void;
 }
 
-const ICON_CLASS = "size-4 shrink-0 text-slate-600";
+const ICON_CLASS = "size-4 shrink-0 text-slate-700";
 
 const fieldIcons: Record<string, React.ReactNode> = {
   Company: (
@@ -243,21 +243,21 @@ export default function ProductDetails({
         >
           <dl
             id="dlProductDetails"
-            className="grid grid-cols-[max-content_1ch_1fr] gap-x-2 gap-y-1.5 text-lg"
+            className="grid grid-cols-[max-content_1ch_1fr] gap-x-2 gap-y-1.5 text-lg font-medium text-slate-700"
           >
           {FIELDS.map(({ term, fieldKey, mono }) => (
             <React.Fragment key={term}>
-              <dt className="flex items-center gap-1.5 text-slate-900">
+              <dt className="flex items-center gap-1.5">
                 <span className="flex shrink-0" aria-hidden>
                   {fieldIcons[term]}
                 </span>
                 {term}
               </dt>
-              <span className="text-slate-900" aria-hidden>
+              <span aria-hidden>
                 :
               </span>
               <dd
-                className={mono ? "font-mono text-slate-900" : "text-slate-900"}
+                className={mono ? "font-mono" : ""}
               >
                 {product[fieldKey]}
               </dd>
@@ -265,16 +265,16 @@ export default function ProductDetails({
           ))}
           {product.description && (
             <>
-              <dt className="flex items-center gap-1.5 text-slate-900">
+              <dt className="flex items-center gap-1.5">
                 <span className="flex shrink-0" aria-hidden>
                   {fieldIcons.Description}
                 </span>
                 Description
               </dt>
-              <span className="text-slate-900" aria-hidden>
+              <span aria-hidden>
                 :
               </span>
-              <dd className="text-slate-900">{product.description}</dd>
+              <dd>{product.description}</dd>
             </>
           )}
           </dl>
