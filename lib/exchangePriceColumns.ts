@@ -1,6 +1,6 @@
 /**
  * Column indices for exchange price (from ItmGroup sheet header list). All indices are 0-based.
- * Update these if columns are inserted in the sheet. Item names = col 1, MRP = col 19, FinalExchangePrice per menu.
+ * Rule: 0-based index = sheet column (1-based) − 1. Update if columns are inserted in the sheet.
  */
 
 /** 0-based column index for ItmGroupName (sheet column 1). */
@@ -10,14 +10,13 @@ export const COL_ITM_GROUP_NAME = 0;
 export const COL_MRP = 18;
 
 /**
- * 0-based column index for each menu's FinalExchangePrice (Less column).
- * Key = menu key as used in UI (e.g. C1:Sv, C1:Motor). Sheet uses C1:Mot for Motor; both map to same column.
+ * 0-based column index for each menu's FinalExchangePrice (Less column). Index = sheet col − 1.
  */
 export const COL_FINAL_EXCHANGE_PRICE_BY_MENU: Record<string, number> = {
-  "C1:Sv": 84,   // sheet col 85
-  "C2:Sv": 90,   // sheet col 91
-  "C3:Sv": 95,   // sheet col 97
-  "C4:Sv": 102,  // sheet col 103
+  "C1:Sv": 84,   // sheet col 85 → 85−1
+  "C2:Sv": 90,   // sheet col 91 → 91−1
+  "C3:Sv": 96,   // sheet col 97 → 97−1 (was 95, wrong)
+  "C4:Sv": 102,  // sheet col 103 → 103−1
   "C1:Ta1": 108, // sheet col 109
   "C2:Ta1": 113, // sheet col 115
   "C3:Ta1": 118, // sheet col 121

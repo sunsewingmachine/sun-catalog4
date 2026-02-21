@@ -181,14 +181,24 @@ export default function ProductDetails({
                     </td>
                   </tr>
                 ) : (
-                  exchangeRows.map((row, i) => (
-                    <tr key={`${row.item}-${i}`} className="border-b border-green-100 hover:bg-green-50/50">
-                      <td id={`cellExchangeItem_${i}`} className="max-w-[8rem] truncate px-1.5 py-1 text-slate-900 font-medium" title={row.item}>{row.item}</td>
-                      <td id={`cellExchangePrice_${i}`} className="whitespace-nowrap px-1 py-1 text-right text-slate-800">{row.price || "—"}</td>
-                      <td id={`cellExchangeLess_${i}`} className="whitespace-nowrap px-1 py-1 text-right text-slate-800">{row.less || "—"}</td>
-                      <td id={`cellExchangeFinal_${i}`} className="whitespace-nowrap px-1 py-1 text-right text-slate-900 font-medium">{row.final || "—"}</td>
-                    </tr>
-                  ))
+                  exchangeRows.map((row, i) => {
+                    const isLineGap = row.item.trim().toLowerCase() === "linegap";
+                    if (isLineGap) {
+                      return (
+                        <tr key={`linegap-${i}`} id={`rowExchangeLineGap_${i}`} className="border-b border-green-200 bg-green-100/80" aria-hidden>
+                          <td colSpan={4} className="px-1.5 py-1" />
+                        </tr>
+                      );
+                    }
+                    return (
+                      <tr key={`${row.item}-${i}`} className="border-b border-green-100 hover:bg-green-50/50">
+                        <td id={`cellExchangeItem_${i}`} className="max-w-[8rem] truncate px-1.5 py-1 text-slate-900 font-medium" title={row.item}>{row.item}</td>
+                        <td id={`cellExchangePrice_${i}`} className="whitespace-nowrap px-1 py-1 text-right text-slate-800">{row.price || "—"}</td>
+                        <td id={`cellExchangeLess_${i}`} className="whitespace-nowrap px-1 py-1 text-right text-slate-800">{row.less || "—"}</td>
+                        <td id={`cellExchangeFinal_${i}`} className="whitespace-nowrap px-1 py-1 text-right text-slate-900 font-medium">{row.final || "—"}</td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
