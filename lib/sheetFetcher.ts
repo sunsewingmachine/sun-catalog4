@@ -1,6 +1,6 @@
 /**
  * Fetches a Google Sheet tab by gid and parses the gviz JSONP response into table rows.
- * Sheet structure: row 1 empty, row 2 headers, row 3+ data. Data rows start at table.rows[2].
+ * Call getDataRows(table, 1) to skip one header row; use 2 if sheet has empty row 1 then header.
  */
 
 const GVIZ_JSONP_REGEX = /google\.visualization\.Query\.setResponse\((.*)\);?\s*$/s;
@@ -61,10 +61,11 @@ export async function fetchSheetByGid(
 }
 
 /**
- * Return data rows as array of column arrays. Row 0 = sheet row 1, row 1 = sheet row 2, row 2 = sheet row 3 (first data row).
- * So data rows start at index 2.
+ * Return data rows as array of column arrays. Skips rows before dataStartRowIndex (typically 1 = header only).
+ * Use 1 when sheet has one header row then data (or when gviz omits empty row 1 so index 0 = header).
+ * Use 2 when sheet has row 1 empty, row 2 header, row 3+ data.
  */
-export function getDataRows(table: GvizTable, dataStartRowIndex: number = 2): string[][] {
+export function getDataRows(table: GvizTable, dataStartRowIndex: number = 1): string[][] {
   const rows: string[][] = [];
   for (let i = dataStartRowIndex; i < table.rows.length; i++) {
     const row = table.rows[i];

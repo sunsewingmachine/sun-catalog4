@@ -5,7 +5,7 @@
  * syncs images to IndexedDB when catalog changes, renders CatalogLayout.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types/product";
 import CatalogLayout from "@/components/layout/CatalogLayout";
@@ -51,6 +51,45 @@ export default function CatalogPageClient() {
     }
   }, [router]);
 
+  const performForceRefresh = useCallback(async () => {
+    if (!SHEET_ID || !ITMGROUP_GID || !DB_GID) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const table = await fetchSheetByGid(SHEET_ID, ITMGROUP_GID);
+      const rows = getDataRows(table, 1);
+      const newProducts = mapRowsToProducts(rows);
+      const version = await (await import("@/lib/dbVersionFetcher")).fetchDbVersion(
+        SHEET_ID,
+        DB_GID
+      );
+      await setCachedCatalog(newProducts, version);
+      setProducts(newProducts);
+      setDbVersion(version);
+      setLastUpdated(new Date().toISOString());
+      const imageCount = getUniqueImageUrlsFromProducts(newProducts).length;
+      setSyncProgress({
+        current: 0,
+        total: imageCount,
+        message: imageCount > 0 ? "Syncing images…" : "Done",
+      });
+      try {
+        await syncImages(newProducts, {
+          onProgress: (p) => setSyncProgress(p),
+        });
+      } finally {
+        setSyncProgress(null);
+        if (typeof navigator !== "undefined" && navigator.storage?.persist) {
+          navigator.storage.persist().catch(() => {});
+        }
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to refresh catalog");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -64,7 +103,7 @@ export default function CatalogPageClient() {
         if (cancelled) return;
         if (shouldFetch) {
           const table = await fetchSheetByGid(SHEET_ID, ITMGROUP_GID);
-          const rows = getDataRows(table, 2);
+          const rows = getDataRows(table, 1);
           const newProducts = mapRowsToProducts(rows);
           const version = await (await import("@/lib/dbVersionFetcher")).fetchDbVersion(
             SHEET_ID,
@@ -125,6 +164,7 @@ export default function CatalogPageClient() {
       cancelled = true;
     };
   }, []);
+
 
   if (loading) {
     return (
@@ -199,6 +239,7 @@ export default function CatalogPageClient() {
       lastUpdated={lastUpdated}
       dbVersion={dbVersion}
       appVersion={APP_VERSION}
+      onRequestRefresh={performForceRefresh}
     />
   );
 }

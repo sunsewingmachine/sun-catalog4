@@ -27,6 +27,8 @@ interface CatalogLayoutProps {
   dbVersion: string;
   /** App version shown in UI (e.g. 1.0). */
   appVersion: string;
+  /** When provided, settings menu shows Refresh; on confirm, this fetches catalog and images from server. */
+  onRequestRefresh?: () => Promise<void>;
 }
 
 const ACTIVATED_KEY = "catalog_activated";
@@ -86,6 +88,7 @@ export default function CatalogLayout({
   lastUpdated,
   dbVersion,
   appVersion,
+  onRequestRefresh,
 }: CatalogLayoutProps) {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(
@@ -103,6 +106,19 @@ export default function CatalogLayout({
   const [mainImageOverride, setMainImageOverride] = React.useState<string | null>(null);
   /** When set, full-size zoomable lightbox is open with this image. */
   const [lightboxImage, setLightboxImage] = React.useState<{ src: string; alt: string } | null>(null);
+  const [settingsMenuOpen, setSettingsMenuOpen] = React.useState(false);
+  const settingsMenuRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!settingsMenuOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (settingsMenuRef.current && !settingsMenuRef.current.contains(e.target as Node)) {
+        setSettingsMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [settingsMenuOpen]);
 
   React.useEffect(() => {
     const t = setInterval(() => setBestBurstKey((k) => k + 1), BEST_ATTENTION_INTERVAL_MS);
@@ -186,16 +202,19 @@ export default function CatalogLayout({
           </span>
           Catalog
         </h1>
-        <button
-          type="button"
-          onClick={() => {
-            if (typeof window !== "undefined") window.sessionStorage.removeItem(ACTIVATED_KEY);
-            router.push("/");
-          }}
-          className="rounded-lg px-3 py-1.5 text-sm text-slate-500 transition-colors hover:bg-green-100 hover:text-slate-700"
-        >
-          Deactivate
-        </button>
+        <div id="divHeaderActions" className="flex items-center gap-2">
+          <button
+            type="button"
+            id="btnDeactivateHeader"
+            onClick={() => {
+              if (typeof window !== "undefined") window.sessionStorage.removeItem(ACTIVATED_KEY);
+              router.push("/");
+            }}
+            className="rounded-lg px-3 py-1.5 text-sm text-slate-500 transition-colors hover:bg-green-100 hover:text-slate-700"
+          >
+            Deactivate
+          </button>
+        </div>
       </header>
 
       <div className="mb-4 flex flex-1 min-h-0">
@@ -273,6 +292,54 @@ export default function CatalogLayout({
               onSelect={setSelectedCategory}
             />
           </div>
+          {onRequestRefresh != null && (
+            <div id="divSidebarSettings" className="shrink-0 border-t border-green-200 p-1" ref={settingsMenuRef}>
+              <div id="divSettingsMenuContainer" className="relative">
+                <button
+                  type="button"
+                  id="btnSettingsSidebar"
+                  onClick={() => setSettingsMenuOpen((open) => !open)}
+                  className="flex w-full items-center justify-center rounded p-2 text-slate-600 transition-colors hover:bg-green-100 hover:text-slate-800"
+                  title="Settings"
+                  aria-expanded={settingsMenuOpen}
+                  aria-haspopup="true"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+                {settingsMenuOpen && (
+                  <div
+                    id="divSettingsDropdown"
+                    role="menu"
+                    className="absolute left-full bottom-0 z-50 ml-1 min-w-[10rem] rounded-lg border border-green-200 bg-white py-1 shadow-lg"
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      id="btnSettingsRefresh"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                      onClick={async () => {
+                        const ok = typeof window !== "undefined" && window.confirm("Refresh catalog and images from server? This may take a moment.");
+                        if (!ok) return;
+                        setSettingsMenuOpen(false);
+                        await onRequestRefresh();
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0">
+                        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                        <path d="M3 3v5h5" />
+                        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                        <path d="M16 21h5v-5" />
+                      </svg>
+                      Refresh
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <div
             id="divSidebarVersion"
             className="shrink-0 border-t border-green-200 px-1 py-1.5 text-[10px] leading-tight text-slate-500"
