@@ -21,8 +21,8 @@ export const COL_FINAL_EXCHANGE_PRICE_BY_MENU: Record<string, number> = {
   "C3:Sv": 96,   // sheet col 97 → 97−1 (was 95, wrong)
   "C4:Sv": 102,  // sheet col 103 → 103−1
   "C1:Ta1": 108, // sheet col 109
-  "C2:Ta1": 113, // sheet col 115
-  "C3:Ta1": 118, // sheet col 121
+  "C2:Ta1": 114, // sheet col 115
+  "C3:Ta1": 120, // sheet col 121
   "C4:Ta1": 126, // sheet col 127
   "C1:Mot": 132, // sheet col 133
   "C2:Mot": 138, // sheet col 139

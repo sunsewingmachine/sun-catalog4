@@ -7,7 +7,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import type { Product } from "@/types/product";
+import type { Product, WholesalePrices } from "@/types/product";
 import { fetchSheetByGid, getAllRows } from "@/lib/sheetFetcher";
 import type { UltraRow } from "@/lib/ultraPriceHelper";
 import type { FeatureRecord } from "@/types/feature";
@@ -63,6 +63,17 @@ const EXCHANGE_PRICE_SUBMENUS: (string | "---")[] = [
 
 const ACTIVATED_KEY = "catalog_activated";
 const RECENTLY_VIEWED_KEY = "catalog_recently_viewed";
+/** LocalStorage key for "Show W/s" (wholesale prices) toggle. */
+const SHOW_WS_KEY = "catalog_show_ws";
+/** Default wholesale values when product has no wholesale data (sample: Partial/Set × Open-Fitting, Packing, Mech). */
+const DEFAULT_WHOLESALE: WholesalePrices = {
+  opPar: 39,
+  opSet: 42,
+  packPar: 46,
+  packSet: 49,
+  mechPar: 53,
+  mechSet: 56,
+};
 const RECENTLY_VIEWED_MAX = 5;
 /** Sentinel category: when selected, section 1 shows products ordered by AF column. */
 const BEST_CATEGORY = "Best";
@@ -85,6 +96,13 @@ const BEST_SPARKLE_BURST = [
   { x: -38, y: -22 },
   { x: -22, y: -38 },
 ];
+
+/** Format wholesale prices as OpPar39/OpSet42/PackPar46/... for display above bottom bar. */
+function formatWholesaleString(product: Product | null): string {
+  if (!product) return "";
+  const w = product.wholesale ?? DEFAULT_WHOLESALE;
+  return `OpPar${w.opPar}/OpSet${w.opSet}/PackPar${w.packPar}/PackSet${w.packSet}/MechPar${w.mechPar}/MechSet${w.mechSet}`;
+}
 
 function loadRecentlyViewedFromStorage(products: Product[]): Product[] {
   if (typeof window === "undefined" || products.length === 0) return [];
@@ -162,6 +180,35 @@ export default function CatalogLayout({
     forGroup: string[];
     hint?: "r2_not_configured";
   }>({ forAll: [], forGroup: [] });
+  /** Show wholesale prices above bottom bar; persisted in localStorage. */
+  const [showWs, setShowWs] = React.useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const v = window.localStorage.getItem(SHOW_WS_KEY);
+      return v === "1" || v === "true";
+    } catch {
+      return false;
+    }
+  });
+  const hasHydratedShowWs = React.useRef(false);
+  React.useEffect(() => {
+    if (hasHydratedShowWs.current) return;
+    hasHydratedShowWs.current = true;
+    try {
+      const v = window.localStorage.getItem(SHOW_WS_KEY);
+      setShowWs(v === "1" || v === "true");
+    } catch {
+      // ignore
+    }
+  }, []);
+  const setShowWsAndPersist = React.useCallback((value: boolean) => {
+    setShowWs(value);
+    try {
+      window.localStorage.setItem(SHOW_WS_KEY, value ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  }, []);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -499,6 +546,28 @@ export default function CatalogLayout({
                           <span className="text-slate-400 shrink-0 ml-1" aria-hidden>›</span>
                         </button>
                       </div>
+                      <div
+                        role="menuitem"
+                        id="divSettingsShowWs"
+                        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                        aria-label="Show wholesale prices"
+                      >
+                        <span>Show W/s</span>
+                        <button
+                          type="button"
+                          id="btnShowWsToggle"
+                          role="switch"
+                          aria-checked={showWs}
+                          onClick={() => setShowWsAndPersist(!showWs)}
+                          className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border border-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${showWs ? "bg-green-600" : "bg-slate-200"}`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${showWs ? "translate-x-5" : "translate-x-0.5"}`}
+                            style={{ marginTop: "2px" }}
+                            aria-hidden
+                          />
+                        </button>
+                      </div>
                       <button
                         type="button"
                         role="menuitem"
@@ -676,6 +745,15 @@ export default function CatalogLayout({
         </aside>
       </div>
 
+      {showWs && selectedProduct && (
+        <div
+          id="divWholesalePriceLine"
+          className="flex shrink-0 justify-end border-t border-green-200 bg-white px-3 py-1 text-sm text-slate-800"
+          aria-label="Wholesale prices"
+        >
+          <span className="font-medium">{formatWholesaleString(selectedProduct)}</span>
+        </div>
+      )}
       <CommonImagesBar purpose="flash" lastUpdated={lastUpdated} dbVersion={dbVersion} appVersion={appVersion} />
       {lightboxImage && (
         <ImageLightbox

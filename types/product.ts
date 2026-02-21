@@ -3,6 +3,22 @@
  * Maps sheet columns to product display and category grouping.
  */
 
+/** Wholesale prices by item type (Partial/Set) and delivery (Open/Fitting, Packing, Mech). Shown when "Show W/s" is on. */
+export interface WholesalePrices {
+  /** Partial, Open/Fitting */
+  opPar: number;
+  /** Set, Open/Fitting */
+  opSet: number;
+  /** Partial, Packing */
+  packPar: number;
+  /** Set, Packing */
+  packSet: number;
+  /** Partial, Mech */
+  mechPar: number;
+  /** Set, Mech */
+  mechSet: number;
+}
+
 export interface Product {
   itmGroupName: string;
   company: string;
@@ -17,6 +33,8 @@ export interface Product {
   af?: number;
   /** Optional feature keys from sheet column EY; split by "::" e.g. "Gen.Perfect threading:: Sv.Happy Stitch". */
   ey?: string;
+  /** Optional wholesale prices; when set and "Show W/s" is on, shown above bottom bar. */
+  wholesale?: WholesalePrices;
 }
 
 export type Category = string;
