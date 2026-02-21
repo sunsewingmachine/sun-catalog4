@@ -15,6 +15,10 @@ import { SETTINGS } from "@/lib/settings";
 /** Fallback when no image or bar is empty. */
 const DEFAULT_IMAGE = "/used/default.jpg";
 
+/** Disclaimer text shown in the bottom bar (compact). */
+const DISCLAIMER_TEXT =
+  "படத்தில் உள்ளவைகள் சேம்பிள் மட்டுமே. பொருட்களின் கலர்,\nஅளவு, லேபிள்கள், விலை என அனைத்தும் மாற்றத்திற்கு\nஉரியது. GST Applicable. Cover, Scissor Extra.";
+
 /** Duration for current message to fade out (ms). */
 const FLASH_FADE_OUT_MS = 3000;
 /** Duration for new message to fade in (ms). */
@@ -127,6 +131,23 @@ function FlashMessageBar({
   const showTwoLayers = isTransitioning && nextIndex !== null;
   const incomingIndex = nextIndex ?? 0;
 
+  const disclaimerBlock = (
+    <div id="divBottomBarDisclaimer" className="shrink-0 max-w-[42%] min-w-0" aria-live="polite">
+      <div className="flex items-center gap-1 rounded border border-green-200 bg-green-200 px-1.5 py-1">
+        <img
+          src="/used/info.png"
+          alt=""
+          className="size-5 shrink-0 object-contain self-center"
+          width={20}
+          height={20}
+        />
+        <p id="pDisclaimerText" className="min-w-0 flex-1 text-[10px] leading-tight text-slate-900 whitespace-pre-line">
+          {DISCLAIMER_TEXT}
+        </p>
+      </div>
+    </div>
+  );
+
   if (length === 0) {
     return (
       <footer
@@ -136,6 +157,7 @@ function FlashMessageBar({
       >
         {versionBlock}
         <div className="min-w-0 flex-1" role="region" aria-live="polite" />
+        {disclaimerBlock}
       </footer>
     );
   }
@@ -188,6 +210,7 @@ function FlashMessageBar({
           </div>
         )}
       </div>
+      {disclaimerBlock}
     </footer>
   );
 }

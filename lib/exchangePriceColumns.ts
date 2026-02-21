@@ -6,7 +6,10 @@
 /** 0-based column index for ItmGroupName (sheet column 1). */
 export const COL_ITM_GROUP_NAME = 0;
 
-/** 0-based column index for MRP (sheet column 19). */
+/** 0-based column index for R (sheet column 18); discount = S − R. */
+export const COL_R = 17;
+
+/** 0-based column index for MRP (sheet column 19, column S). */
 export const COL_MRP = 18;
 
 /**

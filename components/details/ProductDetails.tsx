@@ -1,19 +1,16 @@
 "use client";
 
 /**
- * Right panel (last column): product info, Features box, exchange price table (when menu selected), and disclaimer.
- * All product-related content lives here; key-value rows with icons.
+ * Right panel (last column): product info, Features box, exchange price table (when menu selected).
+ * Disclaimer is shown in the bottom bar (CommonImagesBar).
  */
-
-const DISCLAIMER_TEXT =
-  "படத்தில் உள்ளவைகள் சேம்பிள் மட்டுமே. பொருட்களின் கலர், அளவு, லேபிள்கள், விலை என அனைத்தும் மாற்றத்திற்கு உரியது. GST Applicable. Cover, Scissor Extra.";
 
 import React from "react";
 import type { Product } from "@/types/product";
 import type { FeatureRecord } from "@/types/feature";
 import FeaturesBox from "./FeaturesBox";
 import { getExchangePriceRows, getExchangePriceItemHeaderLabel } from "@/lib/exchangePriceHelper";
-import { getUltraRowWithPrices, type UltraRow } from "@/lib/ultraPriceHelper";
+import { getUltraRowWithPrices, getMrpByItmGroupName, getDiscountByItmGroupName, type UltraRow } from "@/lib/ultraPriceHelper";
 
 interface ProductDetailsProps {
   product: Product | null;
@@ -110,40 +107,9 @@ export default function ProductDetails({
         className="scrollbar-hide flex flex-1 flex-col overflow-auto p-4 text-slate-500"
       >
         <p>Select a product</p>
-        <div id="divDetailsDisclaimer" className="mt-4" aria-live="polite">
-          <div className="flex gap-2 rounded-lg border border-green-200 bg-green-100 p-3">
-            <img
-              src="/used/info.png"
-              alt=""
-              className="size-6 shrink-0 object-contain"
-              width={24}
-              height={24}
-            />
-            <p id="pDisclaimerText" className="min-w-0 flex-1 text-[11px] leading-snug text-slate-900">
-              {DISCLAIMER_TEXT}
-            </p>
-          </div>
-        </div>
       </div>
     );
   }
-  const disclaimerBlock = (
-    <div id="divDetailsDisclaimer" className="mt-4 shrink-0" aria-live="polite">
-      <div className="flex gap-2 rounded-lg border border-green-200 bg-green-100 p-3">
-        <img
-          src="/used/info.png"
-          alt=""
-          className="size-6 shrink-0 object-contain"
-          width={24}
-          height={24}
-        />
-        <p id="pDisclaimerText" className="min-w-0 flex-1 text-[11px] leading-snug text-slate-900">
-          {DISCLAIMER_TEXT}
-        </p>
-      </div>
-    </div>
-  );
-
   if (ultraPriceOpen) {
     return (
       <div
@@ -156,7 +122,9 @@ export default function ProductDetails({
           aria-label="Ultra price"
         >
           <div className="flex shrink-0 items-center justify-between gap-2 px-2 py-1 border-b border-teal-700 bg-teal-600">
-            <h3 id="h3UltraPriceTitle" className="text-xs font-semibold text-white">Ultra price</h3>
+            <h3 id="h3UltraPriceTitle" className="text-xs font-semibold text-white">
+              Ultra price{product?.itmGroupName ? ` (${product.itmGroupName})` : ""}
+            </h3>
             {onUltraPriceClose ? (
               <button
                 type="button"
@@ -191,6 +159,8 @@ export default function ProductDetails({
                 return acc;
               }, []).filter((g) => g.length > 0);
               const hasRawRows = Array.isArray(rawItmGroupRows) && rawItmGroupRows.length > 0;
+              const selectedItemMrp = product && hasRawRows ? getMrpByItmGroupName(rawItmGroupRows, product.itmGroupName) : 0;
+              const lessSvStandTableMrp = hasRawRows ? getMrpByItmGroupName(rawItmGroupRows, "less.svstandtable") : 0;
               return (
                 <div id="listUltraPriceColA" className="flex flex-col gap-2 w-full" aria-label="Ultra price items and MRP">
                   {groups.map((group, gi) => (
@@ -199,23 +169,45 @@ export default function ProductDetails({
                       id={`divUltraGroup_${gi}`}
                       className="rounded-lg border border-green-200 bg-green-50/80 p-2"
                     >
+                      <div
+                        id={`divUltraGroupHeader_${gi}`}
+                        className="flex w-full flex-row items-center gap-2 rounded px-1.5 py-1 text-xs font-semibold text-slate-600"
+                      >
+                        <span className="min-w-0 flex-1 truncate">Model</span>
+                        <span className="shrink-0 w-14 text-right">MRP</span>
+                        <span className="shrink-0 w-14 text-right">Discount</span>
+                        <span className="shrink-0 w-14 text-right">Price</span>
+                      </div>
                       <ul className="list-none flex flex-col gap-1">
                         {group.map((row, ii) => {
                           const withPrices = getUltraRowWithPrices(row, hasRawRows ? rawItmGroupRows : undefined);
                           const mainLabel = withPrices.colA;
-                          const mainMrp = withPrices.mainMrp;
                           const partsTotal = withPrices.partsTotalMrp;
+                          const threePlusSelected = partsTotal + selectedItemMrp - lessSvStandTableMrp;
+                          const discountB = hasRawRows ? getDiscountByItmGroupName(rawItmGroupRows, withPrices.colB) : 0;
+                          const discountC = hasRawRows ? getDiscountByItmGroupName(rawItmGroupRows, withPrices.colC) : 0;
+                          const discountD = hasRawRows ? getDiscountByItmGroupName(rawItmGroupRows, withPrices.colD) : 0;
+                          const selectedDiscount = product && hasRawRows ? getDiscountByItmGroupName(rawItmGroupRows, product.itmGroupName) : 0;
+                          const totalDiscount = discountB + discountC + discountD + selectedDiscount;
+                          const price = threePlusSelected - totalDiscount;
+                          const mrpStr = hasRawRows ? (threePlusSelected > 0 ? String(Math.round(threePlusSelected)) : "—") : null;
+                          const discountStr = hasRawRows ? (totalDiscount > 0 ? String(Math.round(totalDiscount)) : "—") : null;
+                          const priceStr = hasRawRows ? String(Math.round(price)) : null;
                           return (
                             <li key={`ultra-a-${gi}-${ii}`} id={`liUltraColA_${gi}_${ii}`}>
                               <div
-                                title={`${mainLabel} | MRP: ${mainMrp} | Parts (B+C+D): ${partsTotal}`}
-                                className="flex w-full flex-col gap-0.5 rounded px-1.5 py-1 text-left text-sm font-medium bg-green-100 text-slate-700 hover:bg-green-200 transition-colors"
+                                title={`${mainLabel} | MRP: ${threePlusSelected} | Discount: ${totalDiscount} (B+C+D+selected) | Price: ${price}`}
+                                className="flex w-full flex-row items-center gap-2 rounded px-1.5 py-1 text-left text-sm font-medium bg-green-100 text-slate-700 hover:bg-green-200 transition-colors"
                               >
                                 <span className="min-w-0 flex-1 truncate">{mainLabel}</span>
-                                {hasRawRows && (
-                                  <span className="text-xs text-slate-600">
-                                    MRP: {mainMrp > 0 ? String(Math.round(mainMrp)) : "—"} | Parts: {partsTotal > 0 ? String(Math.round(partsTotal)) : "—"}
-                                  </span>
+                                {mrpStr != null && (
+                                  <span className="shrink-0 w-14 text-right text-xs text-slate-600 tabular-nums">{mrpStr}</span>
+                                )}
+                                {discountStr != null && (
+                                  <span className="shrink-0 w-14 text-right text-xs text-slate-600 tabular-nums">{discountStr}</span>
+                                )}
+                                {priceStr != null && (
+                                  <span className="shrink-0 w-14 text-right text-xs text-slate-600 tabular-nums">{priceStr}</span>
                                 )}
                               </div>
                             </li>
@@ -232,7 +224,6 @@ export default function ProductDetails({
         <div className="mt-4 shrink-0">
           <FeaturesBox product={product} features={features} onFeatureMediaClick={onFeatureMediaClick} />
         </div>
-        {disclaimerBlock}
       </div>
     );
   }
@@ -382,20 +373,6 @@ export default function ProductDetails({
         </div>
       ) : null}
 
-      <div id="divDetailsDisclaimer" className="mt-4" aria-live="polite">
-        <div className="flex gap-2 rounded-lg border border-green-200 bg-green-100 p-3">
-          <img
-            src="/used/info.png"
-            alt=""
-            className="size-6 shrink-0 object-contain"
-            width={24}
-            height={24}
-          />
-          <p id="pDisclaimerText" className="min-w-0 flex-1 text-[11px] leading-snug text-slate-900">
-            {DISCLAIMER_TEXT}
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

@@ -3,7 +3,7 @@
  * Used to show main item MRP and sum of parts (cols B,C,D) MRP in the Ultra box.
  */
 
-import { COL_ITM_GROUP_NAME, COL_MRP } from "@/lib/exchangePriceColumns";
+import { COL_ITM_GROUP_NAME, COL_MRP, COL_R } from "@/lib/exchangePriceColumns";
 
 /** ItmGroup: row 2 = header (index 1). Data rows = index 2+. */
 const DATA_START_ROW_INDEX = 2;
@@ -15,7 +15,7 @@ function parseNum(val: string | number): number {
 }
 
 /**
- * Find MRP (column S, 0-based index 18) for the row where column A matches name.
+ * Find MRP (column S) for the row where column A matches name.
  * Returns 0 if not found or name is empty.
  */
 export function getMrpByItmGroupName(
@@ -32,6 +32,30 @@ export function getMrpByItmGroupName(
     if (colA.toLowerCase() === keyLower) {
       const mrp = row[COL_MRP] ?? "";
       return parseNum(mrp);
+    }
+  }
+  return 0;
+}
+
+/**
+ * Find discount (column S − column R) for the row where column A matches name.
+ * Returns 0 if not found or name is empty.
+ */
+export function getDiscountByItmGroupName(
+  rawItmGroupRows: string[][] | undefined,
+  name: string
+): number {
+  if (!rawItmGroupRows || rawItmGroupRows.length <= DATA_START_ROW_INDEX) return 0;
+  const key = String(name ?? "").trim();
+  if (!key) return 0;
+  const keyLower = key.toLowerCase();
+  for (let r = DATA_START_ROW_INDEX; r < rawItmGroupRows.length; r++) {
+    const row = rawItmGroupRows[r] ?? [];
+    const colA = String(row[COL_ITM_GROUP_NAME] ?? "").trim();
+    if (colA.toLowerCase() === keyLower) {
+      const s = parseNum(row[COL_MRP] ?? "");
+      const rVal = parseNum(row[COL_R] ?? "");
+      return Math.max(0, s - rVal);
     }
   }
   return 0;
