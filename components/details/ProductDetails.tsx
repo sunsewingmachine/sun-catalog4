@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Right panel (last column): product info, Features box, and disclaimer.
+ * Right panel (last column): product info, Features box, exchange price table (when menu selected), and disclaimer.
  * All product-related content lives here; key-value rows with icons.
  */
 
@@ -12,10 +12,15 @@ import React from "react";
 import type { Product } from "@/types/product";
 import type { FeatureRecord } from "@/types/feature";
 import FeaturesBox from "./FeaturesBox";
+import { getExchangePriceRows, getExchangePriceItemHeaderLabel } from "@/lib/exchangePriceHelper";
 
 interface ProductDetailsProps {
   product: Product | null;
   features?: FeatureRecord[];
+  /** When set (e.g. C1:Sv), show exchange price table instead of best quality box; data from cache only (rawItmGroupRows). */
+  exchangePriceMenu?: string | null;
+  /** Raw ItmGroup rows from cache (IndexedDB); row index 1 = header. No server fetch for exchange price. */
+  rawItmGroupRows?: string[][];
   /** When user clicks a feature with url (col C), show that media in main viewer. */
   onFeatureMediaClick?: (mediaUrl: string) => void;
 }
@@ -66,8 +71,19 @@ const FIELDS = [
 export default function ProductDetails({
   product,
   features = [],
+  exchangePriceMenu = null,
+  rawItmGroupRows,
   onFeatureMediaClick,
 }: ProductDetailsProps) {
+  const hasRawRows = Array.isArray(rawItmGroupRows) && rawItmGroupRows.length > 0;
+  const exchangeRows = exchangePriceMenu && hasRawRows ? getExchangePriceRows(rawItmGroupRows, exchangePriceMenu) : [];
+  const exchangeItemHeader = exchangePriceMenu ? getExchangePriceItemHeaderLabel(exchangePriceMenu) : "Item";
+  if (exchangePriceMenu && typeof console !== "undefined" && console.warn) {
+    console.warn("[ExchangePrice] ProductDetails: rawItmGroupRows =", rawItmGroupRows == null ? "undefined" : Array.isArray(rawItmGroupRows) ? `array length ${rawItmGroupRows.length}` : typeof rawItmGroupRows, "hasRawRows =", hasRawRows, "exchangeRows.length =", exchangeRows.length, "exchangePriceMenu =", exchangePriceMenu);
+  }
+  const exchangeNoDataReason = !hasRawRows
+    ? "Exchange price data is not in cache. Use Settings → Refresh to load the sheet (including row 2 headers), then try again."
+    : `No item names found. Check that row 2 has a header "ItmGroupName" and that data rows (row 3+) have values in that column.`;
   if (!product) {
     return (
       <div
@@ -142,7 +158,39 @@ export default function ProductDetails({
 
       <FeaturesBox product={product} features={features} onFeatureMediaClick={onFeatureMediaClick} />
 
-      {product.af != null && product.af > 0 && (
+      {exchangePriceMenu != null ? (
+        <div
+          id="divDetailsExchangePrice"
+          className="mt-4 flex flex-1 min-h-[8rem] flex-col rounded-lg border border-green-200 bg-green-50/80 overflow-hidden"
+        >
+          <div className="overflow-auto max-h-64">
+            <table id="tableExchangePrice" className="w-full border-collapse text-sm" aria-label="Exchange price">
+              <thead>
+                <tr className="border-b border-green-200 bg-green-100/80">
+                  <th className="sticky top-0 z-10 bg-green-100/95 px-2 py-1.5 text-left font-semibold text-slate-800 shadow-[0_1px_0_0_rgba(34,197,94,0.2)]">{exchangeItemHeader}</th>
+                  <th className="sticky top-0 z-10 bg-green-100/95 px-2 py-1.5 text-right font-semibold text-slate-800 shadow-[0_1px_0_0_rgba(34,197,94,0.2)]">MRP</th>
+                </tr>
+              </thead>
+              <tbody>
+                {exchangeRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={2} className="px-2 py-2 text-slate-500 text-center text-xs">
+                      {exchangeNoDataReason}
+                    </td>
+                  </tr>
+                ) : (
+                  exchangeRows.map((row, i) => (
+                    <tr key={`${row.item}-${i}`} className="border-b border-green-100 hover:bg-green-50/50">
+                      <td id={`cellExchangeItem_${i}`} className="px-2 py-1.5 text-slate-900 font-medium">{row.item}</td>
+                      <td id={`cellExchangePrice_${i}`} className="px-2 py-1.5 text-right text-slate-800">{row.price || "—"}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : product.af != null && product.af > 0 ? (
         <div
           id="divDetailsBestImage"
           className="mt-4 flex flex-1 min-h-[8rem] flex-col items-center justify-center rounded-lg border border-green-200 bg-green-50/80 p-4"
@@ -155,7 +203,7 @@ export default function ProductDetails({
             height={192}
           />
         </div>
-      )}
+      ) : null}
 
       <div id="divDetailsDisclaimer" className="mt-4" aria-live="polite">
         <div className="flex gap-2 rounded-lg border border-green-200 bg-green-100 p-3">

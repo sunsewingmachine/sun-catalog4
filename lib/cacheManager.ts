@@ -16,6 +16,7 @@ export async function getCachedCatalog(): Promise<{
   products: Product[];
   meta: CatalogMeta;
   features?: FeatureRecord[];
+  rawItmGroupRows?: string[][];
 } | null> {
   const raw = await getCatalogFromDb();
   if (!raw || !raw.meta) return null;
@@ -23,17 +24,19 @@ export async function getCachedCatalog(): Promise<{
     products: (raw.products as Product[]) ?? [],
     meta: raw.meta,
     features: Array.isArray(raw.features) ? (raw.features as FeatureRecord[]) : undefined,
+    rawItmGroupRows: raw.rawItmGroupRows,
   };
 }
 
 export async function setCachedCatalog(
   products: Product[],
   version: string,
-  features?: FeatureRecord[]
+  features?: FeatureRecord[],
+  rawItmGroupRows?: string[][]
 ): Promise<void> {
   const meta: CatalogMeta = {
     version,
     lastUpdated: new Date().toISOString(),
   };
-  await setCatalogInDb(products, meta, features);
+  await setCatalogInDb(products, meta, features, rawItmGroupRows);
 }

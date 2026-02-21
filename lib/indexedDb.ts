@@ -29,6 +29,7 @@ export async function getCatalogFromDb(): Promise<{
   products: unknown[];
   meta: { version: string; lastUpdated: string };
   features?: unknown[];
+  rawItmGroupRows?: string[][];
 } | null> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
@@ -37,14 +38,16 @@ export async function getCatalogFromDb(): Promise<{
     const productsReq = store.get("products");
     const metaReq = store.get("meta");
     const featuresReq = store.get("features");
+    const rawRowsReq = store.get("rawItmGroupRows");
     let done = 0;
     let products: unknown[] | null = null;
     let meta: { version: string; lastUpdated: string } | null = null;
     let features: unknown[] | undefined;
+    let rawItmGroupRows: string[][] | undefined;
     const check = () => {
-      if (done < 3) return;
+      if (done < 4) return;
       db.close();
-      if (products && meta && Array.isArray(products)) resolve({ products, meta, features });
+      if (products && meta && Array.isArray(products)) resolve({ products, meta, features, rawItmGroupRows });
       else resolve(null);
     };
     productsReq.onsuccess = () => {
@@ -63,6 +66,33 @@ export async function getCatalogFromDb(): Promise<{
       done++;
       check();
     };
+    rawRowsReq.onsuccess = () => {
+      const raw = rawRowsReq.result;
+      if (raw != null) {
+        if (typeof raw === "string") {
+          try {
+            const parsed = JSON.parse(raw) as unknown;
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              rawItmGroupRows = parsed.map((r) => (Array.isArray(r) ? (r as string[]) : []));
+              console.warn("[ExchangePrice] IDB read: rawItmGroupRows from JSON string, length =", rawItmGroupRows.length);
+            } else {
+              console.warn("[ExchangePrice] IDB read: JSON parsed but not non-empty array", parsed?.constructor?.name, Array.isArray(parsed) ? parsed.length : "n/a");
+            }
+          } catch (e) {
+            console.warn("[ExchangePrice] IDB read: JSON.parse failed", e);
+          }
+        } else if (Array.isArray(raw) && raw.length > 0) {
+          rawItmGroupRows = raw.map((r) => (Array.isArray(r) ? r : [])) as string[][];
+          console.warn("[ExchangePrice] IDB read: rawItmGroupRows from array (legacy), length =", rawItmGroupRows.length);
+        } else {
+          console.warn("[ExchangePrice] IDB read: raw type =", typeof raw, Array.isArray(raw) ? "array length " + raw.length : "");
+        }
+      } else {
+        console.warn("[ExchangePrice] IDB read: rawItmGroupRows key missing or null");
+      }
+      done++;
+      check();
+    };
     tx.onerror = () => reject(tx.error);
   });
 }
@@ -70,7 +100,8 @@ export async function getCatalogFromDb(): Promise<{
 export async function setCatalogInDb(
   products: unknown[],
   meta: { version: string; lastUpdated: string },
-  features?: unknown[]
+  features?: unknown[],
+  rawItmGroupRows?: string[][]
 ): Promise<void> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
@@ -79,6 +110,7 @@ export async function setCatalogInDb(
     store.put(products, "products");
     store.put(meta, "meta");
     if (features !== undefined) store.put(features, "features");
+    if (rawItmGroupRows !== undefined) store.put(JSON.stringify(rawItmGroupRows), "rawItmGroupRows");
     tx.oncomplete = () => {
       db.close();
       resolve();
@@ -96,6 +128,7 @@ export async function clearCatalogCache(): Promise<void> {
     store.delete("products");
     store.delete("meta");
     store.delete("features");
+    store.delete("rawItmGroupRows");
     tx.oncomplete = () => {
       db.close();
       resolve();

@@ -61,6 +61,19 @@ export async function fetchSheetByGid(
 }
 
 /**
+ * Return all table rows as string[][] (including header rows). Row index 0 = first sheet row, 1 = second (e.g. header row 2 with exchange column names).
+ */
+export function getAllRows(table: GvizTable): string[][] {
+  const rows: string[][] = [];
+  for (let i = 0; i < table.rows.length; i++) {
+    const row = table.rows[i];
+    if (!row?.c) continue;
+    rows.push(row.c.map((cell) => getCellValue(cell)));
+  }
+  return rows;
+}
+
+/**
  * Return data rows as array of column arrays. Skips rows before dataStartRowIndex (typically 1 = header only).
  * Use 1 when sheet has one header row then data (or when gviz omits empty row 1 so index 0 = header).
  * Use 2 when sheet has row 1 empty, row 2 header, row 3+ data.

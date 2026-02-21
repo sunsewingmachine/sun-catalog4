@@ -46,8 +46,8 @@ function AnnounceIcon({ className }: { className?: string }) {
   );
 }
 
-/** Format ISO date as dd/mm/yy hh:mm:ss AM/PM for bottom bar. */
-function formatLastUpdated(iso: string): string {
+/** Format ISO date as dd/mm/yy hh:mm:ss AM/PM for bottom bar and sidebar. */
+export function formatLastUpdated(iso: string): string {
   const d = new Date(iso);
   const dd = String(d.getDate()).padStart(2, "0");
   const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -65,11 +65,28 @@ function FlashMessageBar({
   messages,
   intervalMs,
   lastUpdated,
+  dbVersion,
+  appVersion,
 }: {
   messages: readonly string[];
   intervalMs: number;
   lastUpdated: string | null;
+  dbVersion: string;
+  appVersion: string;
 }) {
+  const labelWidth = "5.5rem";
+  const versionBlock = (
+    <div
+      id="divBottomBarVersion"
+      className="shrink-0 text-[10px] leading-tight text-slate-600"
+      aria-label="Database, app version and last updated"
+      title="Database and app version, catalog last updated"
+    >
+      <div><span className="inline-block text-left" style={{ width: labelWidth }}>DbVersion</span>: {dbVersion || "—"}</div>
+      <div><span className="inline-block text-left" style={{ width: labelWidth }}>AppVersion</span>: {appVersion || "—"}</div>
+      <div><span className="inline-block text-left" style={{ width: labelWidth }}>Last updated</span>: {lastUpdated ? formatLastUpdated(lastUpdated) : "—"}</div>
+    </div>
+  );
   const length = messages.length;
   const [currentIndex, setCurrentIndex] = useState(() =>
     length > 0 ? Math.floor(Math.random() * length) : 0
@@ -117,15 +134,7 @@ function FlashMessageBar({
         className="flex h-14 min-w-0 shrink-0 items-center gap-3 overflow-hidden border-t border-green-200 bg-green-200 px-3 py-0.5"
         aria-label="Flash messages"
       >
-        {lastUpdated && (
-          <div
-            id="divBottomBarLastUpdated"
-            className="shrink-0 text-xs text-slate-600"
-            title="Catalog last updated"
-          >
-            Last updated: {formatLastUpdated(lastUpdated)}
-          </div>
-        )}
+        {versionBlock}
         <div className="min-w-0 flex-1" role="region" aria-live="polite" />
       </footer>
     );
@@ -144,15 +153,7 @@ function FlashMessageBar({
       className="flex h-14 min-w-0 shrink-0 items-center gap-3 overflow-hidden border-t border-green-200 bg-green-200 px-3 py-1"
       aria-label="Flash messages"
     >
-      {lastUpdated && (
-        <div
-          id="divBottomBarLastUpdated"
-          className="shrink-0 text-xs text-slate-600"
-          title="Catalog last updated"
-        >
-          Last updated: {formatLastUpdated(lastUpdated)}
-        </div>
-      )}
+      {versionBlock}
       <div
         className="relative flex min-w-0 flex-1 items-center justify-center"
         role="region"
@@ -203,6 +204,10 @@ interface CommonImagesBarProps {
   purpose?: "flash" | "images";
   /** Catalog last-updated ISO string; when set, shown on the left of the bottom bar (flash purpose only). */
   lastUpdated?: string | null;
+  /** Database version (e.g. from Sheets B1); shown in bottom bar when purpose is "flash". */
+  dbVersion?: string;
+  /** App version (e.g. 1.0); shown in bottom bar when purpose is "flash". */
+  appVersion?: string;
   /** Image filenames in the server ForAll folder (used when purpose is "images"). */
   forAllFilenames?: string[];
   /** Image filenames in the server ForGroup folder (used when purpose is "images"). */
@@ -256,6 +261,8 @@ function renderBarThumb(
 export default function CommonImagesBar({
   purpose = "flash",
   lastUpdated = null,
+  dbVersion,
+  appVersion,
   forAllFilenames = [],
   forGroupFilenames = [],
   selectedProduct = null,
@@ -282,6 +289,8 @@ export default function CommonImagesBar({
         messages={SETTINGS.displayMessages}
         intervalMs={SETTINGS.bottomBarMessageIntervalMs}
         lastUpdated={lastUpdated ?? null}
+        dbVersion={dbVersion ?? ""}
+        appVersion={appVersion ?? ""}
       />
     );
   }

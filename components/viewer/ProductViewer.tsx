@@ -23,6 +23,8 @@ interface ProductViewerProps {
   mainVideoOverride?: string | null;
   /** Called when user double-clicks an image to open full-size lightbox. */
   onOpenLightbox?: (imageSrc: string, imageAlt: string) => void;
+  /** When true, show best-quality badge image at bottom-right of main image (used when exchange price box is shown). */
+  showBestBadgeOverlay?: boolean;
 }
 
 export default function ProductViewer({
@@ -30,6 +32,7 @@ export default function ProductViewer({
   mainImageOverride = null,
   mainVideoOverride = null,
   onOpenLightbox,
+  showBestBadgeOverlay = false,
 }: ProductViewerProps) {
   const [mainImageError, setMainImageError] = React.useState(false);
   const [tryLowercase, setTryLowercase] = React.useState(false);
@@ -124,6 +127,11 @@ export default function ProductViewer({
             sizes="(max-width: 800px) 100vw, 50vw"
             loading="eager"
           />
+          {showBestBadgeOverlay && (
+            <div id="divBestBadgeOverlay" className="absolute bottom-2 right-2 z-10 rounded-lg bg-white/90 p-1 shadow-md" aria-hidden>
+              <img src="/used/best.png" alt="Best" className="h-12 w-auto object-contain md:h-14" width={56} height={56} />
+            </div>
+          )}
         </div>
       </div>
     );
@@ -218,6 +226,11 @@ export default function ProductViewer({
             onError={() => (tryLowercase ? setMainImageError(true) : setTryLowercase(true))}
             draggable={false}
           />
+        )}
+        {showBestBadgeOverlay && product && (
+          <div id="divBestBadgeOverlay" className="absolute bottom-2 right-2 z-10 rounded-lg bg-white/90 p-1 shadow-md" aria-hidden>
+            <img src="/used/best.png" alt="Best" className="h-12 w-auto object-contain md:h-14" width={56} height={56} />
+          </div>
         )}
       </div>
       {useSample && product && (

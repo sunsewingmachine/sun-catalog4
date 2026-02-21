@@ -26,6 +26,8 @@ interface CatalogLayoutProps {
   products: Product[];
   /** Features table (col A = key, col B = label) from Features sheet for EY lookup. */
   features: FeatureRecord[];
+  /** Raw ItmGroup rows from cache only (no fetch); used for exchange price table. */
+  rawItmGroupRows?: string[][];
   lastUpdated: string | null;
   /** Version from Google Sheets db tab (cell B1). */
   dbVersion: string;
@@ -34,6 +36,24 @@ interface CatalogLayoutProps {
   /** When provided, settings menu shows Refresh; on confirm, this fetches catalog and images from server. */
   onRequestRefresh?: () => Promise<void>;
 }
+
+/** Exchange price submenu keys and separators for "Bybk (Exchange price)" in settings. Row 2 header in sheet uses e.g. C1:Sv:FinalExchangePrice. */
+const EXCHANGE_PRICE_SUBMENUS: (string | "---")[] = [
+  "C1:Sv",
+  "C2:Sv",
+  "C3:Sv",
+  "C4:Sv",
+  "---",
+  "C1:Ta1",
+  "C2:Ta1",
+  "C3:Ta1",
+  "C4:Ta1",
+  "---",
+  "C1:Motor",
+  "C2:Motor",
+  "C3:Motor",
+  "C4:Motor",
+];
 
 const ACTIVATED_KEY = "catalog_activated";
 const RECENTLY_VIEWED_KEY = "catalog_recently_viewed";
@@ -90,6 +110,7 @@ function saveRecentlyViewedToStorage(items: Product[]): void {
 export default function CatalogLayout({
   products,
   features,
+  rawItmGroupRows,
   lastUpdated,
   dbVersion,
   appVersion,
@@ -115,6 +136,12 @@ export default function CatalogLayout({
   const [lightboxImage, setLightboxImage] = React.useState<{ src: string; alt: string } | null>(null);
   const [settingsMenuOpen, setSettingsMenuOpen] = React.useState(false);
   const settingsMenuRef = React.useRef<HTMLDivElement>(null);
+  /** Ref for the combined settings + Bybk fly-out area; used to close fly-out only when pointer leaves entire menu. */
+  const settingsDropdownWrapperRef = React.useRef<HTMLDivElement>(null);
+  /** When set, details panel shows exchange price table for this key (e.g. C1:Sv); best image moves to main image overlay. */
+  const [selectedExchangeMenu, setSelectedExchangeMenu] = React.useState<string | null>(null);
+  /** When true, Bybk (Exchange price) submenus are visible; toggled by hover/click on Bybk header. */
+  const [bybkSubmenuExpanded, setBybkSubmenuExpanded] = React.useState(false);
   /** Filenames for 3-row area below main image: ForAll and ForGroup (from /api/bar-images). */
   const [barImages, setBarImages] = React.useState<{
     forAll: string[];
@@ -151,6 +178,10 @@ export default function CatalogLayout({
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [settingsMenuOpen]);
+
+  React.useEffect(() => {
+    if (!settingsMenuOpen) setBybkSubmenuExpanded(false);
   }, [settingsMenuOpen]);
 
   React.useEffect(() => {
@@ -379,43 +410,95 @@ export default function CatalogLayout({
                 </button>
                 {settingsMenuOpen && (
                   <div
-                    id="divSettingsDropdown"
-                    role="menu"
-                    className="absolute left-full bottom-0 z-50 ml-1 min-w-[10rem] rounded-lg border border-green-200 bg-white py-1 shadow-lg"
+                    ref={settingsDropdownWrapperRef}
+                    className="absolute left-full bottom-0 z-50 ml-1 flex"
+                    onMouseLeave={(e) => {
+                      const wrapper = settingsDropdownWrapperRef.current;
+                      const related = e.relatedTarget as Node | null;
+                      if (wrapper && related && !wrapper.contains(related)) {
+                        setBybkSubmenuExpanded(false);
+                      }
+                    }}
                   >
-                    <button
-                      type="button"
-                      role="menuitem"
-                      id="btnSettingsRefresh"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
-                      onClick={async () => {
-                        const ok = typeof window !== "undefined" && window.confirm("Refresh catalog and images from server? This may take a moment.");
-                        if (!ok) return;
-                        setSettingsMenuOpen(false);
-                        await onRequestRefresh();
-                      }}
+                    <div
+                      id="divSettingsDropdown"
+                      role="menu"
+                      className={`min-w-[10rem] max-h-[70vh] overflow-y-auto border border-green-200 bg-white py-1 shadow-lg ${bybkSubmenuExpanded ? "rounded-l-lg border-r-0 rounded-r-none" : "rounded-lg"}`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0">
-                        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                        <path d="M3 3v5h5" />
-                        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                        <path d="M16 21h5v-5" />
-                      </svg>
-                      Refresh
-                    </button>
+                      <div
+                        id="divExchangePriceMenuSection"
+                        role="group"
+                        aria-labelledby="pExchangePriceMenuLabel"
+                        aria-expanded={bybkSubmenuExpanded}
+                        onMouseEnter={() => setBybkSubmenuExpanded(true)}
+                      >
+                        <button
+                          type="button"
+                          id="btnBybkExchangePrice"
+                          aria-expanded={bybkSubmenuExpanded}
+                          aria-haspopup="true"
+                          onClick={() => setBybkSubmenuExpanded((v) => !v)}
+                          className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide rounded ${bybkSubmenuExpanded ? "bg-green-50 text-green-800" : "text-slate-600 hover:bg-green-50"}`}
+                        >
+                          <span id="pExchangePriceMenuLabel">Bybk (Exchange price)</span>
+                          <span className="text-slate-400 shrink-0 ml-1" aria-hidden>›</span>
+                        </button>
+                      </div>
+                      <div className="border-t border-green-100 my-1" aria-hidden />
+                      <button
+                        type="button"
+                        role="menuitem"
+                        id="btnSettingsRefresh"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                        onClick={async () => {
+                          const ok = typeof window !== "undefined" && window.confirm("Refresh catalog and images from server? This may take a moment.");
+                          if (!ok) return;
+                          setSettingsMenuOpen(false);
+                          await onRequestRefresh();
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0">
+                          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                          <path d="M3 3v5h5" />
+                          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                          <path d="M16 21h5v-5" />
+                        </svg>
+                        Refresh
+                      </button>
+                    </div>
+                    {bybkSubmenuExpanded && (
+                      <div
+                        id="divBybkSubmenuFlyout"
+                        role="menu"
+                        aria-label="Exchange price options"
+                        className="min-w-[8rem] max-h-[70vh] overflow-y-auto rounded-r-lg border border-green-200 border-l-0 bg-white py-1 shadow-lg"
+                      >
+                        {EXCHANGE_PRICE_SUBMENUS.map((item, idx) =>
+                          item === "---" ? (
+                            <div key={`sep-${idx}`} className="my-1 border-t border-green-100" aria-hidden />
+                          ) : (
+                            <button
+                              key={item}
+                              type="button"
+                              role="menuitem"
+                              id={`btnExchangePrice_${item.replace(/:/g, "_")}`}
+                              className={`flex w-full items-center px-3 py-1.5 text-left text-sm rounded mx-0.5 ${selectedExchangeMenu === item ? "bg-green-100 text-green-900 font-medium" : "text-slate-700 hover:bg-green-50"}`}
+                              onClick={() => {
+                                setSelectedExchangeMenu((prev) => (prev === item ? null : item));
+                                setSettingsMenuOpen(false);
+                              }}
+                            >
+                              {item}
+                            </button>
+                          )
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
           )}
-          <div
-            id="divSidebarVersion"
-            className="shrink-0 border-t border-green-200 px-1 py-1.5 text-[10px] leading-tight text-slate-500"
-            aria-label="Database and app version"
-          >
-            <div>VerDb:{dbVersion || "—"}</div>
-            <div>VerApp:{appVersion}</div>
-          </div>
         </aside>
 
         {/* Item part: section 1 = main list (full height), section 2 = 5-row recently viewed */}
@@ -466,6 +549,7 @@ export default function CatalogLayout({
                   mainImageOverride={mainImageOverride}
                   mainVideoOverride={mainVideoOverride}
                   onOpenLightbox={openLightbox}
+                  showBestBadgeOverlay={selectedExchangeMenu != null}
                 />
               </div>
             </div>
@@ -510,12 +594,14 @@ export default function CatalogLayout({
           <ProductDetails
             product={selectedProduct}
             features={features}
+            exchangePriceMenu={selectedExchangeMenu}
+            rawItmGroupRows={rawItmGroupRows}
             onFeatureMediaClick={handleFeatureMediaClick}
           />
         </aside>
       </div>
 
-      <CommonImagesBar purpose="flash" lastUpdated={lastUpdated} />
+      <CommonImagesBar purpose="flash" lastUpdated={lastUpdated} dbVersion={dbVersion} appVersion={appVersion} />
       {lightboxImage && (
         <ImageLightbox
           imageSrc={lightboxImage.src}

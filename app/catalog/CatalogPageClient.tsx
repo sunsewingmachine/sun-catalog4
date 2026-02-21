@@ -11,7 +11,7 @@ import type { Product } from "@/types/product";
 import CatalogLayout from "@/components/layout/CatalogLayout";
 import { shouldFetchCatalog } from "@/lib/versionChecker";
 import { getCachedCatalog, setCachedCatalog } from "@/lib/cacheManager";
-import { fetchSheetByGid, getDataRows } from "@/lib/sheetFetcher";
+import { fetchSheetByGid, getDataRows, getAllRows } from "@/lib/sheetFetcher";
 import { mapRowsToProducts } from "@/lib/productMapper";
 import { mapRowsToFeatureRecords } from "@/lib/featuresMapper";
 import type { FeatureRecord } from "@/types/feature";
@@ -54,6 +54,7 @@ export default function CatalogPageClient() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [features, setFeatures] = useState<FeatureRecord[]>([]);
+  const [rawItmGroupRows, setRawItmGroupRows] = useState<string[][] | undefined>(undefined);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [dbVersion, setDbVersion] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -74,6 +75,8 @@ export default function CatalogPageClient() {
     try {
       const table = await fetchSheetByGid(SHEET_ID, ITMGROUP_GID);
       const rows = getDataRows(table, DATA_START_ROW);
+      const allRows = getAllRows(table);
+      console.warn("[ExchangePrice] Refresh: table.rows.length =", table.rows?.length, "allRows.length =", allRows?.length, "allRows[1]?.length (header cols) =", allRows?.[1]?.length);
       const newProducts = mapRowsToProducts(rows);
       const version = await (await import("@/lib/dbVersionFetcher")).fetchDbVersion(
         SHEET_ID,
@@ -89,11 +92,14 @@ export default function CatalogPageClient() {
           // Features sheet optional; continue without
         }
       }
-      await setCachedCatalog(newProducts, version, newFeatures);
       setProducts(newProducts);
       setFeatures(newFeatures);
+      setRawItmGroupRows(allRows);
+      console.warn("[ExchangePrice] Refresh: setRawItmGroupRows(allRows) called, allRows.length =", allRows.length);
       setDbVersion(version);
       setLastUpdated(new Date().toISOString());
+      await setCachedCatalog(newProducts, version, newFeatures, allRows);
+      console.warn("[ExchangePrice] Refresh: setCachedCatalog done");
       const imageCount = getUniqueImageUrlsFromProducts(newProducts).length;
       const featureMediaCount = getUniqueFeatureMediaUrls(newFeatures).length;
       const totalSync = imageCount + featureMediaCount;
@@ -134,6 +140,7 @@ export default function CatalogPageClient() {
         if (shouldFetch) {
           const table = await fetchSheetByGid(SHEET_ID, ITMGROUP_GID);
           const rows = getDataRows(table, DATA_START_ROW);
+          const allRows = getAllRows(table);
           const newProducts = mapRowsToProducts(rows);
           const version = await (await import("@/lib/dbVersionFetcher")).fetchDbVersion(
             SHEET_ID,
@@ -149,12 +156,15 @@ export default function CatalogPageClient() {
               // Features sheet optional
             }
           }
-          await setCachedCatalog(newProducts, version, newFeatures);
           if (cancelled) return;
+          console.warn("[ExchangePrice] Load (shouldFetch): allRows.length =", allRows?.length);
           setProducts(newProducts);
           setFeatures(newFeatures);
+          setRawItmGroupRows(allRows);
           setDbVersion(version);
           setLastUpdated(new Date().toISOString());
+          await setCachedCatalog(newProducts, version, newFeatures, allRows);
+          if (cancelled) return;
           const imageCount = getUniqueImageUrlsFromProducts(newProducts).length;
           const featureMediaCount = getUniqueFeatureMediaUrls(newFeatures).length;
           const totalSync = imageCount + featureMediaCount;
@@ -179,9 +189,11 @@ export default function CatalogPageClient() {
         } else {
           const cached = await getCachedCatalog();
           if (cancelled) return;
+          console.warn("[ExchangePrice] Load from cache: cached.rawItmGroupRows =", cached?.rawItmGroupRows == null ? "null/undefined" : `array length ${(cached?.rawItmGroupRows as string[][])?.length}`);
           if (cached) {
             setProducts(cached.products);
             setFeatures(cached.features ?? []);
+            setRawItmGroupRows(cached.rawItmGroupRows);
             setDbVersion(cached.meta.version);
             setLastUpdated(cached.meta.lastUpdated);
             if (typeof navigator !== "undefined" && navigator.storage?.persist) {
@@ -192,10 +204,13 @@ export default function CatalogPageClient() {
           }
         }
       } catch (e) {
+        console.warn("[ExchangePrice] Load error, fallback to cache:", e);
         const cached = await getCachedCatalog();
+        console.warn("[ExchangePrice] Fallback cache: rawItmGroupRows =", cached?.rawItmGroupRows == null ? "null/undefined" : `length ${(cached?.rawItmGroupRows as string[][])?.length}`);
         if (cached) {
           setProducts(cached.products);
           setFeatures(cached.features ?? []);
+          setRawItmGroupRows(cached.rawItmGroupRows);
           setDbVersion(cached.meta.version);
           setLastUpdated(cached.meta.lastUpdated);
         } else {
@@ -279,10 +294,14 @@ export default function CatalogPageClient() {
       </div>
     );
   }
+  if (typeof console !== "undefined" && console.warn) {
+    console.warn("[ExchangePrice] CatalogPageClient render: rawItmGroupRows =", rawItmGroupRows == null ? "undefined" : `array length ${rawItmGroupRows.length}`);
+  }
   return (
     <CatalogLayout
       products={products}
       features={features}
+      rawItmGroupRows={rawItmGroupRows}
       lastUpdated={lastUpdated}
       dbVersion={dbVersion}
       appVersion={APP_VERSION}
