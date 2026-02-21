@@ -44,10 +44,10 @@ export default function FeaturesBox({ product, features }: FeaturesBoxProps) {
         Features
       </h3>
       {labels.length > 0 ? (
-        <ul id="ulFeaturesList" className="flex flex-col gap-1.5 text-sm text-slate-700">
+        <ul id="ulFeaturesList" className="flex flex-col gap-1.5 text-sm">
           {labels.map((label, i) => (
             <li key={`${i}-${label.slice(0, 20)}`} id={`liFeature-${i}`}>
-              <div className="flex w-full items-center gap-2 rounded bg-green-100 px-2 py-1.5">
+              <div className="flex w-full items-center gap-2 rounded bg-teal-600 px-2 py-1.5 text-white shadow-sm">
                 <img
                   src="/used/star.jpg"
                   alt=""
@@ -55,7 +55,7 @@ export default function FeaturesBox({ product, features }: FeaturesBoxProps) {
                   width={20}
                   height={20}
                 />
-                <span className="min-w-0 flex-1 text-slate-800">{label}</span>
+                <span className="min-w-0 flex-1 font-medium text-white">{label}</span>
               </div>
             </li>
           ))}

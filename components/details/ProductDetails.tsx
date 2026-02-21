@@ -62,6 +62,20 @@ const FIELDS = [
   { term: "PCode", fieldKey: "pCode" as const, mono: true },
 ] as const;
 
+/** Format ISO date as dd/mm/yy hh:mm:ss AM/PM */
+function formatLastUpdated(iso: string): string {
+  const d = new Date(iso);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yy = String(d.getFullYear()).slice(-2);
+  const h = d.getHours();
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hh = String(h % 12 || 12).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  const ss = String(d.getSeconds()).padStart(2, "0");
+  return `${dd}/${mm}/${yy} ${hh}:${min}:${ss} ${ampm}`;
+}
+
 export default function ProductDetails({
   product,
   lastUpdated,
@@ -74,11 +88,6 @@ export default function ProductDetails({
         className="scrollbar-hide flex flex-1 flex-col overflow-auto p-4 text-slate-500"
       >
         <p>Select a product</p>
-        {lastUpdated && (
-          <p className="mt-4 text-xs text-slate-400">
-            Last updated: {new Date(lastUpdated).toLocaleString()}
-          </p>
-        )}
         <div id="divDetailsDisclaimer" className="mt-4" aria-live="polite">
           <div className="flex gap-2 rounded-lg border border-green-200 bg-green-100 p-3">
             <img
@@ -93,6 +102,11 @@ export default function ProductDetails({
             </p>
           </div>
         </div>
+        {lastUpdated && (
+          <p id="pLastUpdated" className="mt-3 text-xs text-slate-400">
+            Last updated: {formatLastUpdated(lastUpdated)}
+          </p>
+        )}
       </div>
     );
   }
@@ -142,13 +156,6 @@ export default function ProductDetails({
           </>
         )}
         </dl>
-        {lastUpdated && (
-          <footer className="mt-4 border-t border-green-200 pt-3">
-            <p className="text-xs text-slate-400">
-              Last updated: {new Date(lastUpdated).toLocaleString()}
-            </p>
-          </footer>
-        )}
       </div>
 
       <FeaturesBox product={product} features={features} />
@@ -182,6 +189,11 @@ export default function ProductDetails({
           </p>
         </div>
       </div>
+      {lastUpdated && (
+        <p id="pLastUpdated" className="mt-3 text-xs text-slate-400">
+          Last updated: {formatLastUpdated(lastUpdated)}
+        </p>
+      )}
     </div>
   );
 }
