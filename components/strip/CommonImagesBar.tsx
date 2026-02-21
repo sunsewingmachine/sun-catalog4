@@ -96,7 +96,7 @@ export default function CommonImagesBar({
   return (
     <footer
       id="divCommonImagesBar"
-      className="flex h-18 min-w-0 shrink-0 items-center overflow-hidden border-t-2 border-green-300 bg-green-200 px-2 py-0.5 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]"
+      className="flex h-16 min-w-0 shrink-0 items-center overflow-hidden bg-green-200 px-2 py-0.5"
       aria-label="ForAll and ForGroup images"
     >
       <div
