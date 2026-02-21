@@ -33,6 +33,8 @@ interface ProductDetailsProps {
   ultraPriceError?: string | null;
   /** When user closes the Ultra price panel. */
   onUltraPriceClose?: () => void;
+  /** When user clicks an item name in the exchange price (Bybk) table, select that item in the main list. */
+  onSelectProductByItmGroupName?: (itmGroupName: string) => void;
 }
 
 const ICON_CLASS = "size-4 shrink-0 text-slate-600";
@@ -90,6 +92,7 @@ export default function ProductDetails({
   ultraPriceLoading = false,
   ultraPriceError = null,
   onUltraPriceClose,
+  onSelectProductByItmGroupName,
 }: ProductDetailsProps) {
   const hasRawRows = Array.isArray(rawItmGroupRows) && rawItmGroupRows.length > 0;
   const exchangeRows = exchangePriceMenu && hasRawRows ? getExchangePriceRows(rawItmGroupRows, exchangePriceMenu) : [];
@@ -340,7 +343,19 @@ export default function ProductDetails({
                     }
                     return (
                       <tr key={`${row.item}-${i}`} className="border-b border-green-100 hover:bg-green-50/50">
-                        <td id={`cellExchangeItem_${i}`} className="max-w-[8rem] truncate px-1.5 py-1 text-slate-900 font-medium" title={row.item}>{row.item}</td>
+                        <td id={`cellExchangeItem_${i}`} className="max-w-[8rem] truncate px-1.5 py-1 text-slate-900 font-medium" title={row.item}>
+                          {onSelectProductByItmGroupName ? (
+                            <button
+                              type="button"
+                              onClick={() => onSelectProductByItmGroupName(row.item)}
+                              className="text-left w-full min-w-0 truncate hover:text-teal-700 hover:underline focus:outline-none focus:ring-1 focus:ring-teal-500 rounded"
+                            >
+                              {row.item}
+                            </button>
+                          ) : (
+                            row.item
+                          )}
+                        </td>
                         <td id={`cellExchangePrice_${i}`} className="whitespace-nowrap px-1 py-1 text-right text-slate-800">{row.price || "—"}</td>
                         <td id={`cellExchangeLess_${i}`} className="whitespace-nowrap px-1 py-1 text-right text-slate-800">{row.less || "—"}</td>
                         <td id={`cellExchangeFinal_${i}`} className="whitespace-nowrap px-1 py-1 text-right text-slate-900 font-medium">{row.final || "—"}</td>

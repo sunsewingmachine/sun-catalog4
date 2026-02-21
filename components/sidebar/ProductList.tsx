@@ -28,6 +28,7 @@ export default function ProductList({
         >
           <button
             type="button"
+            id={`listItem_${p.itmGroupName.replace(/[.:]/g, "_")}`}
             onClick={() => onSelect(p)}
             title={p.itmGroupName}
             className={`flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-sm font-medium transition-colors ${

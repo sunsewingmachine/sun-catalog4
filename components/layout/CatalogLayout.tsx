@@ -6,8 +6,8 @@
  */
 
 import React from "react";
-import { useRouter } from "next/navigation";
-import type { Product, WholesalePrices } from "@/types/product";
+import type { Product } from "@/types/product";
+import { getWholesaleStringThreeLines } from "@/lib/wholesalePriceHelper";
 import { fetchSheetByGid, getAllRows } from "@/lib/sheetFetcher";
 import type { UltraRow } from "@/lib/ultraPriceHelper";
 import type { FeatureRecord } from "@/types/feature";
@@ -43,7 +43,7 @@ interface CatalogLayoutProps {
   onRequestRefresh?: () => Promise<void>;
 }
 
-/** Exchange price submenu keys and separators for "Bybk (Exchange)" in settings. Row 2 header in sheet uses e.g. C1:Sv:FinalExchangePrice. */
+/** Exchange price submenu keys and separators for "Exchange price" in settings. Row 2 header in sheet uses e.g. C1:Sv:FinalExchangePrice. */
 const EXCHANGE_PRICE_SUBMENUS: (string | "---")[] = [
   "C1:Sv",
   "C2:Sv",
@@ -61,19 +61,9 @@ const EXCHANGE_PRICE_SUBMENUS: (string | "---")[] = [
   "C4:Motor",
 ];
 
-const ACTIVATED_KEY = "catalog_activated";
 const RECENTLY_VIEWED_KEY = "catalog_recently_viewed";
-/** LocalStorage key for "Show W/s" (wholesale prices) toggle. */
+/** LocalStorage key for "W/s price" (wholesale prices) toggle. */
 const SHOW_WS_KEY = "catalog_show_ws";
-/** Default wholesale values when product has no wholesale data (sample: Partial/Set × Open-Fitting, Packing, Mech). */
-const DEFAULT_WHOLESALE: WholesalePrices = {
-  opPar: 39,
-  opSet: 42,
-  packPar: 46,
-  packSet: 49,
-  mechPar: 53,
-  mechSet: 56,
-};
 const RECENTLY_VIEWED_MAX = 5;
 /** Sentinel category: when selected, section 1 shows products ordered by AF column. */
 const BEST_CATEGORY = "Best";
@@ -96,13 +86,6 @@ const BEST_SPARKLE_BURST = [
   { x: -38, y: -22 },
   { x: -22, y: -38 },
 ];
-
-/** Format wholesale prices as OpPar39/OpSet42/PackPar46/... for display above bottom bar. */
-function formatWholesaleString(product: Product | null): string {
-  if (!product) return "";
-  const w = product.wholesale ?? DEFAULT_WHOLESALE;
-  return `OpPar${w.opPar}/OpSet${w.opSet}/PackPar${w.packPar}/PackSet${w.packSet}/MechPar${w.mechPar}/MechSet${w.mechSet}`;
-}
 
 function loadRecentlyViewedFromStorage(products: Product[]): Product[] {
   if (typeof window === "undefined" || products.length === 0) return [];
@@ -142,7 +125,6 @@ export default function CatalogLayout({
   ultraGid = "",
   onRequestRefresh,
 }: CatalogLayoutProps) {
-  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(
     null
   );
@@ -166,7 +148,7 @@ export default function CatalogLayout({
   const settingsDropdownWrapperRef = React.useRef<HTMLDivElement>(null);
   /** When set, details panel shows exchange price table for this key (e.g. C1:Sv); best image moves to main image overlay. */
   const [selectedExchangeMenu, setSelectedExchangeMenu] = React.useState<string | null>(null);
-  /** When true, Bybk (Exchange) submenus are visible; toggled by hover/click on Bybk header. */
+  /** When true, Exchange price submenus are visible; toggled by hover/click on Exchange price header. */
   const [bybkSubmenuExpanded, setBybkSubmenuExpanded] = React.useState(false);
   /** When true, details panel shows Ultra price box with column A from sheet NEXT_PUBLIC_ULTRA_GID. */
   const [ultraPriceBoxOpen, setUltraPriceBoxOpen] = React.useState(false);
@@ -313,6 +295,11 @@ export default function CatalogLayout({
     setMainVideoOverride(null);
   }, []);
 
+  const wholesaleString = React.useMemo(
+    () => getWholesaleStringThreeLines(rawItmGroupRows, selectedProduct?.itmGroupName ?? ""),
+    [rawItmGroupRows, selectedProduct?.itmGroupName]
+  );
+
   const handleSelectProductFromMain = React.useCallback((p: Product) => {
     setSelectionFromRecentList(false);
     setMainImageOverride(null);
@@ -351,6 +338,21 @@ export default function CatalogLayout({
     if (selectedCategory === BEST_CATEGORY) return getProductsOrderedByAf(products);
     return products.filter((p) => p.category === selectedCategory);
   }, [products, selectedCategory]);
+
+  /** When user clicks an item name in the Bybk (exchange price) table, select it in the main list and scroll into view. */
+  const handleSelectProductByItmGroupName = React.useCallback(
+    (itmGroupName: string) => {
+      const p = filteredProducts.find((x) => x.itmGroupName === itmGroupName);
+      if (p) {
+        handleSelectProductFromMain(p);
+        const safeId = `listItem_${itmGroupName.replace(/[.:]/g, "_")}`;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => document.getElementById(safeId)?.scrollIntoView({ block: "nearest", behavior: "smooth" }));
+        });
+      }
+    },
+    [filteredProducts, handleSelectProductFromMain]
+  );
 
   /** Category prefix from selected product (e.g. "Sv.Happy.1st" → "Sv") for filtering ForGroup images. */
   const categoryPrefix = React.useMemo(
@@ -403,19 +405,6 @@ export default function CatalogLayout({
           </span>
           Catalog
         </h1>
-        <div id="divHeaderActions" className="flex items-center gap-2">
-          <button
-            type="button"
-            id="btnDeactivateHeader"
-            onClick={() => {
-              if (typeof window !== "undefined") window.sessionStorage.removeItem(ACTIVATED_KEY);
-              router.push("/");
-            }}
-            className="rounded-lg px-3 py-1.5 text-sm text-slate-500 transition-colors hover:bg-green-100 hover:text-slate-700"
-          >
-            Deactivate
-          </button>
-        </div>
       </header>
 
       <div className="flex min-h-0 min-w-0 flex-1 items-start overflow-hidden">
@@ -542,30 +531,8 @@ export default function CatalogLayout({
                           onClick={() => setBybkSubmenuExpanded((v) => !v)}
                           className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide rounded ${bybkSubmenuExpanded ? "bg-green-50 text-green-800" : "text-slate-600 hover:bg-green-50"}`}
                         >
-                          <span id="pExchangePriceMenuLabel">Bybk (Exchange)</span>
+                          <span id="pExchangePriceMenuLabel">Exchange price</span>
                           <span className="text-slate-400 shrink-0 ml-1" aria-hidden>›</span>
-                        </button>
-                      </div>
-                      <div
-                        role="menuitem"
-                        id="divSettingsShowWs"
-                        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
-                        aria-label="Show wholesale prices"
-                      >
-                        <span>Show W/s</span>
-                        <button
-                          type="button"
-                          id="btnShowWsToggle"
-                          role="switch"
-                          aria-checked={showWs}
-                          onClick={() => setShowWsAndPersist(!showWs)}
-                          className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border border-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${showWs ? "bg-green-600" : "bg-slate-200"}`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${showWs ? "translate-x-5" : "translate-x-0.5"}`}
-                            style={{ marginTop: "2px" }}
-                            aria-hidden
-                          />
                         </button>
                       </div>
                       <button
@@ -581,6 +548,28 @@ export default function CatalogLayout({
                       >
                         <span>Ultra price</span>
                       </button>
+                      <div
+                        role="menuitem"
+                        id="divSettingsShowWs"
+                        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                        aria-label="W/s price (wholesale)"
+                      >
+                        <span>W/s price</span>
+                        <button
+                          type="button"
+                          id="btnShowWsToggle"
+                          role="switch"
+                          aria-checked={showWs}
+                          onClick={() => setShowWsAndPersist(!showWs)}
+                          className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border border-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${showWs ? "bg-green-600" : "bg-slate-200"}`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${showWs ? "translate-x-5" : "translate-x-0.5"}`}
+                            style={{ marginTop: "2px" }}
+                            aria-hidden
+                          />
+                        </button>
+                      </div>
                       <div className="border-t border-green-100 my-1" aria-hidden />
                       <button
                         type="button"
@@ -736,25 +725,33 @@ export default function CatalogLayout({
             rawItmGroupRows={rawItmGroupRows}
             onFeatureMediaClick={handleFeatureMediaClick}
             onExchangePriceClose={() => setSelectedExchangeMenu(null)}
+            onSelectProductByItmGroupName={handleSelectProductByItmGroupName}
             ultraPriceOpen={ultraPriceBoxOpen}
             ultraRows={ultraRows}
             ultraPriceLoading={ultraPriceLoading}
             ultraPriceError={ultraPriceError}
             onUltraPriceClose={() => setUltraPriceBoxOpen(false)}
           />
+          {showWs && wholesaleString ? (
+            <div
+              id="divWholesalePriceRightSection"
+              className="mt-auto min-w-0 shrink-0 border-t border-green-200 bg-green-100/80 px-3 py-2"
+              aria-label="Wholesale prices"
+            >
+              <p className="text-[10px] font-medium text-slate-800 whitespace-pre-line">
+                {wholesaleString}
+              </p>
+            </div>
+          ) : null}
         </aside>
       </div>
 
-      {showWs && selectedProduct && (
-        <div
-          id="divWholesalePriceLine"
-          className="flex shrink-0 justify-end border-t border-green-200 bg-white px-3 py-1 text-sm text-slate-800"
-          aria-label="Wholesale prices"
-        >
-          <span className="font-medium">{formatWholesaleString(selectedProduct)}</span>
-        </div>
-      )}
-      <CommonImagesBar purpose="flash" lastUpdated={lastUpdated} dbVersion={dbVersion} appVersion={appVersion} />
+      <CommonImagesBar
+        purpose="flash"
+        lastUpdated={lastUpdated}
+        dbVersion={dbVersion}
+        appVersion={appVersion}
+      />
       {lightboxImage && (
         <ImageLightbox
           imageSrc={lightboxImage.src}

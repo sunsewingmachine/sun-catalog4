@@ -22,7 +22,7 @@ export const SETTINGS = {
     "We are serving Since 1988 (38 years)",
     "We have 100+ products",
     "We are serving 50000+ customers",
-    "We have 40+ years of experience",
+    "We have 38+ years of experience",
   ],
   /** Interval (ms) between switching to the next message in the bottom bar. */
   bottomBarMessageIntervalMs: 5000,
