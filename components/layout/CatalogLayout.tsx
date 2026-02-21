@@ -448,26 +448,35 @@ export default function CatalogLayout({
               </div>
             </div>
             <div id="divBelowMainImageRows" className="flex shrink-0 flex-col min-w-0">
-            <AdditionalImagesStrip
-              product={selectedProduct}
-              onSetMainImage={setMainImageOverride}
-              onOpenLightbox={openLightbox}
-              compact
-            />
-            <ServerImagesStrip
-              ariaLabel="Category images (ForGroup)"
-              folder="ForGroup"
-              filenames={forGroupFiltered}
-              onSetMainImage={setMainImageOverride}
-              onOpenLightbox={openLightbox}
-            />
-            <ServerImagesStrip
-              ariaLabel="Common images (ForAll)"
-              folder="ForAll"
-              filenames={barImages.forAll}
-              onSetMainImage={setMainImageOverride}
-              onOpenLightbox={openLightbox}
-            />
+            <div id="divAdditionalImagesRow" className="flex min-w-0 shrink-0 items-stretch">
+              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-100/80 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Etc</span>
+              <AdditionalImagesStrip
+                product={selectedProduct}
+                onSetMainImage={setMainImageOverride}
+                onOpenLightbox={openLightbox}
+                compact
+              />
+            </div>
+            <div id="divCategoryImagesRow" className="flex min-w-0 shrink-0 items-stretch">
+              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-100/80 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Cat</span>
+              <ServerImagesStrip
+                ariaLabel="Category images (ForGroup)"
+                folder="ForGroup"
+                filenames={forGroupFiltered}
+                onSetMainImage={setMainImageOverride}
+                onOpenLightbox={openLightbox}
+              />
+            </div>
+            <div id="divCommonImagesRow" className="flex min-w-0 shrink-0 items-stretch">
+              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-100/80 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Gen</span>
+              <ServerImagesStrip
+                ariaLabel="Common images (ForAll)"
+                folder="ForAll"
+                filenames={barImages.forAll}
+                onSetMainImage={setMainImageOverride}
+                onOpenLightbox={openLightbox}
+              />
+            </div>
             </div>
           </div>
         </main>
