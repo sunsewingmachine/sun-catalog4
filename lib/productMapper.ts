@@ -55,7 +55,8 @@ export function mapRowToProduct(row: string[], rowIndex: number): Product | null
   const price = row[COL_S] ?? "";
   const warranty = String(row[COL_T] ?? "").trim();
   const pCode = buildPCode(row, rowIndex);
-  const imageFilename = `${colA} (1).jpg`;
+  /** Main image: same as list name + .jpg (no "(1)" suffix). */
+  const imageFilename = `${colA}.jpg`;
   const afRaw = row[COL_AF];
   const af = parseNum(afRaw);
   const afNum = af > 0 && Number.isInteger(af) ? af : undefined;

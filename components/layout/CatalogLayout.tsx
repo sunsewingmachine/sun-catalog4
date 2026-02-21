@@ -14,6 +14,7 @@ import ProductList from "@/components/sidebar/ProductList";
 import RecentlyViewedList from "@/components/sidebar/RecentlyViewedList";
 import { getProductsOrderedByAf } from "@/components/sidebar/AfOrderedList";
 import ProductViewer from "@/components/viewer/ProductViewer";
+import ImageLightbox from "@/components/viewer/ImageLightbox";
 import ProductDetails from "@/components/details/ProductDetails";
 import ProductStrip from "@/components/strip/ProductStrip";
 import CommonImagesBar from "@/components/strip/CommonImagesBar";
@@ -91,6 +92,10 @@ export default function CatalogLayout({
   const [recentlyViewed, setRecentlyViewed] = React.useState<Product[]>([]);
   const [bestBurstKey, setBestBurstKey] = React.useState(0);
   const hasHydratedFromStorage = React.useRef(false);
+  /** When set, main viewer shows this image URL (e.g. after single-click in common images bar). */
+  const [mainImageOverride, setMainImageOverride] = React.useState<string | null>(null);
+  /** When set, full-size zoomable lightbox is open with this image. */
+  const [lightboxImage, setLightboxImage] = React.useState<{ src: string; alt: string } | null>(null);
 
   React.useEffect(() => {
     const t = setInterval(() => setBestBurstKey((k) => k + 1), BEST_ATTENTION_INTERVAL_MS);
@@ -106,6 +111,7 @@ export default function CatalogLayout({
 
   const handleSelectProductFromMain = React.useCallback((p: Product) => {
     setSelectionFromRecentList(false);
+    setMainImageOverride(null);
     setSelectedProduct(p);
     setRecentlyViewed((prev) => {
       const without = prev.filter((x) => x.itmGroupName !== p.itmGroupName);
@@ -117,13 +123,13 @@ export default function CatalogLayout({
 
   const handleSelectProductFromRecent = React.useCallback((p: Product) => {
     setSelectionFromRecentList(true);
+    setMainImageOverride(null);
     setSelectedProduct(p);
-    setRecentlyViewed((prev) => {
-      const without = prev.filter((x) => x.itmGroupName !== p.itmGroupName);
-      const next = [...without, p].slice(-RECENTLY_VIEWED_MAX);
-      saveRecentlyViewedToStorage(next);
-      return next;
-    });
+    // Do not reorder recently viewed when clicking an item already in the list.
+  }, []);
+
+  const openLightbox = React.useCallback((imageSrc: string, imageAlt: string) => {
+    setLightboxImage({ src: imageSrc, alt: imageAlt });
   }, []);
 
   const categories = React.useMemo(() => {
@@ -144,14 +150,17 @@ export default function CatalogLayout({
     if (categories.length && !selectedCategory) setSelectedCategory(categories[0] ?? null);
   }, [categories, selectedCategory]);
 
+  // Sync main-list selection only when selection did not come from recent list (e.g. category change).
+  // When user clicked recent list, do not overwrite selection or highlight main list.
   React.useEffect(() => {
-    if (filteredProducts.length === 0) return;
+    if (selectionFromRecentList || filteredProducts.length === 0) return;
     const currentInList = selectedProduct && filteredProducts.some((p) => p.itmGroupName === selectedProduct.itmGroupName);
     if (!currentInList) {
       setSelectedProduct(filteredProducts[0] ?? null);
+      setMainImageOverride(null);
       setSelectionFromRecentList(false);
     }
-  }, [filteredProducts, selectedProduct?.itmGroupName]);
+  }, [filteredProducts, selectedProduct?.itmGroupName, selectionFromRecentList]);
 
   return (
     <div
@@ -272,7 +281,7 @@ export default function CatalogLayout({
             <ProductList
               key={selectedCategory ?? ""}
               products={filteredProducts}
-              selected={selectedProduct}
+              selected={selectionFromRecentList ? null : selectedProduct}
               onSelect={handleSelectProductFromMain}
             />
           </div>
@@ -296,7 +305,11 @@ export default function CatalogLayout({
             className="flex min-h-0 flex-1 flex-col border-b border-green-200 bg-green-50 p-4"
           >
             <div className="flex min-h-0 flex-1 flex-col" aria-hidden>
-              <ProductViewer product={selectedProduct} />
+              <ProductViewer
+                product={selectedProduct}
+                mainImageOverride={mainImageOverride}
+                onOpenLightbox={openLightbox}
+              />
             </div>
           </div>
           <div
@@ -307,6 +320,7 @@ export default function CatalogLayout({
               products={products}
               selected={selectedProduct}
               onSelect={handleSelectProductFromMain}
+              onOpenLightbox={openLightbox}
             />
           </div>
         </main>
@@ -319,7 +333,18 @@ export default function CatalogLayout({
         </aside>
       </div>
 
-      <CommonImagesBar products={products} />
+      <CommonImagesBar
+        products={products}
+        onSetMainImage={setMainImageOverride}
+        onOpenLightbox={openLightbox}
+      />
+      {lightboxImage && (
+        <ImageLightbox
+          imageSrc={lightboxImage.src}
+          imageAlt={lightboxImage.alt}
+          onClose={() => setLightboxImage(null)}
+        />
+      )}
     </div>
   );
 }

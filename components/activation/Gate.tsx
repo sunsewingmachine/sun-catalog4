@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Gate: if activated (sessionStorage), show children (catalog link or redirect); else show ActivationScreen.
+ * Gate: if activated (localStorage, persisted), show children (catalog link or redirect); else show ActivationScreen.
  */
 
 import { useEffect, useState } from "react";
@@ -17,7 +17,7 @@ export default function Gate() {
 
   useEffect(() => {
     setActivated(
-      typeof window !== "undefined" && window.sessionStorage?.getItem(ACTIVATED_KEY) === "1"
+      typeof window !== "undefined" && window.localStorage?.getItem(ACTIVATED_KEY) === "1"
     );
     setMounted(true);
   }, []);

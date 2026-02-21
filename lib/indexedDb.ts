@@ -76,6 +76,22 @@ export async function setCatalogInDb(
   });
 }
 
+/** Clears catalog store so next load refetches from sheet (e.g. after image filename convention change). */
+export async function clearCatalogCache(): Promise<void> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_CATALOG, "readwrite");
+    const store = tx.objectStore(STORE_CATALOG);
+    store.delete("products");
+    store.delete("meta");
+    tx.oncomplete = () => {
+      db.close();
+      resolve();
+    };
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 export const INDEXED_DB = {
   DB_NAME,
   STORE_CATALOG,

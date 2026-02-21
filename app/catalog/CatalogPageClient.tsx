@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Client wrapper: ensures activated, loads catalog data (version check + cache/fetch), renders CatalogLayout.
+ * Client wrapper: ensures activated (localStorage), loads catalog data (version check + cache/fetch), renders CatalogLayout.
  */
 
 import { useEffect, useState } from "react";
@@ -36,7 +36,7 @@ export default function CatalogPageClient() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.sessionStorage?.getItem(ACTIVATED_KEY) !== "1") {
+    if (typeof window !== "undefined" && window.localStorage?.getItem(ACTIVATED_KEY) !== "1") {
       router.replace("/");
       return;
     }

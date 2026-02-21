@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Single code input; validates via API (env codes APP_ACTIVATION_CODE1/2 or time-based code) and sets activated flag.
+ * Single code input; validates via API (env codes APP_ACTIVATION_CODE1/2 or time-based code) and sets activated flag (persisted in localStorage).
  */
 
 import { useState } from "react";
@@ -41,7 +41,7 @@ export default function ActivationScreen() {
       const result = await validateActivationViaApi(code);
       if (result.valid) {
         if (typeof window !== "undefined") {
-          window.sessionStorage.setItem(ACTIVATED_KEY, "1");
+          window.localStorage.setItem(ACTIVATED_KEY, "1");
         }
         router.push("/catalog");
         router.refresh();

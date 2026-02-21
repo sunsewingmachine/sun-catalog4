@@ -33,8 +33,8 @@ export default function AfOrderedList({
   }
   return (
     <ul id="ulAfOrderedList" className="flex flex-col gap-1">
-      {ordered.map((p) => (
-        <li key={p.itmGroupName}>
+      {ordered.map((p, index) => (
+        <li key={`${p.itmGroupName}-${index}`}>
           <button
             type="button"
             onClick={() => onSelect(p)}

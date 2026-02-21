@@ -30,10 +30,10 @@ export default function RecentlyViewedList({
   }
   return (
     <ul id="ulRecentlyViewedList" className="flex flex-col gap-1">
-      {products.map((p) => {
+      {products.map((p, index) => {
         const isHighlighted = highlightSelected && selected?.itmGroupName === p.itmGroupName;
         return (
-        <li key={p.itmGroupName} className={p.af != null && p.af > 0 ? "high-warranty-row" : ""}>
+        <li key={`${p.itmGroupName}-${index}`} className={p.af != null && p.af > 0 ? "high-warranty-row" : ""}>
           <button
             type="button"
             onClick={() => onSelect(p)}

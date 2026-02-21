@@ -11,11 +11,15 @@ import type { Product } from "@/types/product";
 import { getImageUrl } from "@/lib/r2ImageHelper";
 import Image from "next/image";
 
-/** Temporary sample image from public/machines; remove when real images are wired. */
-const TEMP_SAMPLE_IMAGE = "/machines/Sample.jpg";
+/** Fallback when no image or common images bar is empty. */
+const DEFAULT_IMAGE = "/used/default.jpg";
 
 interface CommonImagesBarProps {
   products: Product[];
+  /** Single-click sets this image as the main viewer image. */
+  onSetMainImage?: (imageUrl: string) => void;
+  /** Double-click opens full-size zoomable lightbox. */
+  onOpenLightbox?: (imageSrc: string, imageAlt: string) => void;
 }
 
 function getCommonImageFilenames(products: Product[]): string[] {
@@ -30,7 +34,11 @@ function getCommonImageFilenames(products: Product[]): string[] {
     .slice(0, 50);
 }
 
-export default function CommonImagesBar({ products }: CommonImagesBarProps) {
+export default function CommonImagesBar({
+  products,
+  onSetMainImage,
+  onOpenLightbox,
+}: CommonImagesBarProps) {
   const commonFilenames = React.useMemo(
     () => getCommonImageFilenames(products),
     [products]
@@ -44,41 +52,67 @@ export default function CommonImagesBar({ products }: CommonImagesBarProps) {
     >
       <div className="scrollbar-hide flex flex-1 items-center gap-3 overflow-x-auto py-1">
         {commonFilenames.length === 0 ? (
-          <div
-            className="h-8 w-10 shrink-0 overflow-hidden rounded-lg border border-green-300 bg-white shadow-sm"
-            title="Sample (temporary)"
+          <button
+            type="button"
+            className="h-8 w-10 shrink-0 overflow-hidden rounded-lg border border-green-300 bg-white shadow-sm cursor-pointer"
+            title="Default image. Click to show in main; double-click for full size."
+            onClick={() => onSetMainImage?.(DEFAULT_IMAGE)}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              onOpenLightbox?.(DEFAULT_IMAGE, "Default");
+            }}
           >
             <Image
-              src={TEMP_SAMPLE_IMAGE}
-              alt="Sample"
+              src={DEFAULT_IMAGE}
+              alt="Default"
               width={40}
               height={32}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover pointer-events-none"
             />
-          </div>
+          </button>
         ) : (
           commonFilenames.map((filename) => {
             const src = getImageUrl(filename);
+            const displaySrc = src || DEFAULT_IMAGE;
             return (
-              <div
+              <button
                 key={filename}
-                className="h-8 w-10 shrink-0 overflow-hidden rounded-lg border border-green-300 bg-white shadow-sm"
+                type="button"
+                className="h-8 w-10 shrink-0 overflow-hidden rounded-lg border border-green-300 bg-white shadow-sm cursor-pointer"
+                title="Click to show in main; double-click for full size"
+                onClick={() => onSetMainImage?.(displaySrc)}
+                onDoubleClick={(e) => {
+                  e.preventDefault();
+                  onOpenLightbox?.(displaySrc, filename);
+                }}
               >
                 {src ? (
-                  <Image
-                    src={src}
-                    alt=""
-                    width={40}
-                    height={32}
-                    className="h-full w-full object-cover"
-                    unoptimized={src.startsWith("http")}
-                  />
+                  src.startsWith("http") ? (
+                    <img
+                      src={src}
+                      alt=""
+                      width={40}
+                      height={32}
+                      className="h-full w-full object-cover pointer-events-none"
+                      referrerPolicy="no-referrer"
+                      draggable={false}
+                    />
+                  ) : (
+                    <Image
+                      src={src}
+                      alt=""
+                      width={40}
+                      height={32}
+                      className="h-full w-full object-cover pointer-events-none"
+                      draggable={false}
+                    />
+                  )
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-green-100 text-[10px] text-slate-400">
                     —
                   </div>
                 )}
-              </div>
+              </button>
             );
           })
         )}

@@ -22,7 +22,7 @@ export default function ProductList({
     <ul id="divProductListScroll" className="flex flex-col gap-1">
       {products.map((p, index) => (
         <li
-          key={p.itmGroupName}
+          key={`${p.itmGroupName}-${index}`}
           className={`catalog-item-in opacity-0 ${p.af != null && p.af > 0 ? "high-warranty-row" : ""}`}
           style={{ animationDelay: `${Math.min(index * 20, 100)}ms` }}
         >
