@@ -59,7 +59,11 @@ export default function ProductViewer({
   const { displayUrl: mainDisplayUrl } = useImageDisplayUrl(
     mainSrc.startsWith("http") || mainSrc.startsWith("blob:") ? mainSrc : ""
   );
-  const effectiveMainSrc = mainDisplayUrl || mainSrc;
+  // When showing hover or click override, use mainSrc immediately so the main area updates without waiting for cache lookup.
+  const hasOverride =
+    (mainImageHoverPreview != null && mainImageHoverPreview !== "") ||
+    (mainImageOverride != null && mainImageOverride !== "");
+  const effectiveMainSrc = hasOverride ? mainSrc : mainDisplayUrl || mainSrc;
   const mainAlt = product?.itmGroupName ?? "Product";
   const { displayUrl: videoDisplayUrl } = useImageDisplayUrl(
     mainVideoOverride?.startsWith("http") ? mainVideoOverride : ""
@@ -227,10 +231,11 @@ export default function ProductViewer({
           </div>
         ) : effectiveMainSrc.startsWith("http") || effectiveMainSrc.startsWith("blob:") ? (
           <img
+            key={effectiveMainSrc}
             id="imgMainProduct"
             src={effectiveMainSrc}
             alt={mainAlt}
-            className={`pointer-events-none h-full w-full object-contain rounded-2xl transition-opacity duration-200 ${mainImageLoaded ? "opacity-100" : "opacity-0"}`}
+            className={`pointer-events-none h-full w-full object-contain rounded-2xl transition-opacity duration-200 ${hasOverride || mainImageLoaded ? "opacity-100" : "opacity-0"}`}
             loading="eager"
             referrerPolicy="no-referrer"
             onLoad={() => setMainImageLoaded(true)}
@@ -239,11 +244,12 @@ export default function ProductViewer({
           />
         ) : (
           <Image
+            key={effectiveMainSrc}
             id="imgMainProduct"
             src={effectiveMainSrc}
             alt={mainAlt}
             fill
-            className={`pointer-events-none object-contain rounded-2xl transition-opacity duration-200 ${mainImageLoaded ? "opacity-100" : "opacity-0"}`}
+            className={`pointer-events-none object-contain rounded-2xl transition-opacity duration-200 ${hasOverride || mainImageLoaded ? "opacity-100" : "opacity-0"}`}
             sizes="(max-width: 800px) 100vw, 50vw"
             loading="eager"
             onLoad={() => setMainImageLoaded(true)}
@@ -256,23 +262,23 @@ export default function ProductViewer({
             <img src="/used/best.png" alt="Best" className="h-12 w-auto object-contain md:h-14" width={56} height={56} />
           </div>
         )}
-        {useSample && product && (
+        {useSample && product && !hasOverride && (
           <div
             id="divImageNotLoadingOverlay"
-            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-2xl bg-slate-900/90 p-4 text-center text-amber-200"
+            className="absolute bottom-0 left-0 right-0 z-10 flex flex-col gap-1 rounded-t-xl bg-slate-900/95 px-3 py-2 text-center text-amber-200 shadow-lg"
             aria-live="polite"
           >
-            <span className="text-sm font-medium">Image not loading.</span>
-            <code className="max-h-20 w-full overflow-auto break-all text-xs text-slate-300 px-2 py-1 rounded bg-slate-800" title="URL">
+            <span className="text-xs font-medium">Main image not loading</span>
+            <code className="max-h-12 overflow-auto break-all text-[10px] text-slate-300 px-2 py-0.5 rounded bg-slate-800" title="URL">
               {displaySrc}
             </code>
             {displaySrc.startsWith("/images/") && !getCdnBase() ? (
-              <span className="text-xs text-slate-400">
+              <span className="text-[10px] text-slate-400">
                 Set CDN base URL in your deployment env and redeploy (env is applied at build time).
               </span>
             ) : !displaySrc.includes("/items/") && getCdnBase() ? (
-              <span className="text-xs text-slate-400">
-                Add CDN image prefix in env and redeploy.
+              <span className="text-[10px] text-slate-400">
+                Add CDN image prefix in env and redeploy. R2 keys are case-sensitive.
               </span>
             ) : null}
           </div>
