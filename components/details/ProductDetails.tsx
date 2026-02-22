@@ -9,6 +9,7 @@ import React from "react";
 import type { Product } from "@/types/product";
 import type { FeatureRecord } from "@/types/feature";
 import FeaturesBox from "./FeaturesBox";
+import TestimonialsMediaStrip from "./TestimonialsMediaStrip";
 import { getExchangePriceRows, getExchangePriceItemHeaderLabel } from "@/lib/exchangePriceHelper";
 import { getUltraRowWithPrices, getMrpByItmGroupName, getDiscountByItmGroupName, type UltraRow } from "@/lib/ultraPriceHelper";
 
@@ -269,11 +270,11 @@ function ProductDetails({
       {!ultraPriceOpen && (
         <div
           id="divDetailsBox"
-          className="rounded-lg border border-green-200 bg-green-100 p-3"
+          className="flex flex-row gap-3 rounded-lg border border-green-200 bg-green-100 p-3"
         >
           <dl
             id="dlProductDetails"
-            className="grid grid-cols-[max-content_1ch_1fr] gap-x-2 gap-y-1.5 text-lg font-medium text-slate-700"
+            className="grid min-w-0 flex-1 grid-cols-[max-content_1ch_1fr] gap-x-2 gap-y-1.5 text-lg font-medium text-slate-700"
           >
           {FIELDS.filter(
             (f) =>
@@ -312,6 +313,21 @@ function ProductDetails({
             </>
           )}
           </dl>
+          <div
+            id="divDetailsMarkedArea"
+            className="flex min-h-[8rem] min-w-[8rem] flex-1 flex-col items-end justify-center shrink-0"
+            aria-label="Product highlight"
+          >
+            {product.af != null && product.af > 0 && (
+              <img
+                src="/used/best.png"
+                alt="Best"
+                className="max-h-36 w-auto max-w-full object-contain"
+                width={144}
+                height={144}
+              />
+            )}
+          </div>
         </div>
       )}
 
@@ -401,20 +417,14 @@ function ProductDetails({
             </table>
           </div>
         </div>
-      ) : product.af != null && product.af > 0 ? (
+      ) : (
         <div
-          id="divDetailsBestImage"
-          className="mt-4 flex flex-1 min-h-[8rem] flex-col items-center justify-center rounded-lg border border-green-200 bg-green-50/80 p-4"
+          id="divDetailsTestimonials"
+          className="mt-4 flex flex-1 min-h-[8rem] flex-col rounded-lg border border-green-200 bg-green-50/80 p-4"
         >
-          <img
-            src="/used/best.png"
-            alt="Best"
-            className="max-h-48 w-auto max-w-full object-contain"
-            width={192}
-            height={192}
-          />
+          <TestimonialsMediaStrip />
         </div>
-      ) : null}
+      )}
 
     </div>
   );
