@@ -106,8 +106,10 @@ export default function TestimonialsMediaStrip() {
             id="videoTestimonial"
             src={src}
             className="h-full w-full object-cover"
-            controls
+            autoPlay
+            muted
             playsInline
+            controls
             onEnded={goNext}
             aria-label={`Testimonial video ${index + 1}`}
           />

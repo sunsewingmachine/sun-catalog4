@@ -128,18 +128,22 @@ function FlashMessageBar({
   const showTwoLayers = isTransitioning && nextIndex !== null;
   const incomingIndex = nextIndex ?? 0;
 
+  /** Width matches details panel (last column / testimonial section) in CatalogLayout. */
+  const disclaimerColumnWidth = "w-[30rem]";
   const disclaimerBlock = (
-    <div id="divBottomBarDisclaimer" className="shrink-0 max-w-[42%] min-w-0 flex items-center gap-1 px-1.5 py-1" aria-live="polite">
-      <img
-        src="/used/info.png"
-        alt=""
-        className="size-5 shrink-0 object-contain self-center"
-        width={20}
-        height={20}
-      />
-      <p id="pDisclaimerText" className="min-w-0 flex-1 text-[10px] leading-tight text-white whitespace-pre-line">
-        {DISCLAIMER_TEXT}
-      </p>
+    <div className={`ml-auto flex ${disclaimerColumnWidth} shrink-0 justify-center py-1`} aria-live="polite">
+      <div id="divBottomBarDisclaimer" className="flex min-w-0 max-w-full items-center gap-1 px-1.5">
+        <img
+          src="/used/info.png"
+          alt=""
+          className="size-5 shrink-0 object-contain self-center"
+          width={20}
+          height={20}
+        />
+        <p id="pDisclaimerText" className="min-w-0 flex-1 text-[10px] leading-tight text-white whitespace-pre-line">
+          {DISCLAIMER_TEXT}
+        </p>
+      </div>
     </div>
   );
 
