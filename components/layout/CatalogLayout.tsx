@@ -732,7 +732,7 @@ export default function CatalogLayout({
 
         <aside
           id="divDetailsPanel"
-          className="flex w-[25rem] shrink-0 flex-col self-stretch overflow-hidden border-l border-green-200 bg-green-50"
+          className="flex w-[30rem] shrink-0 flex-col self-stretch overflow-hidden border-l border-green-200 bg-green-50"
         >
           <ProductDetails
             product={selectedProduct}
