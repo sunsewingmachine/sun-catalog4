@@ -130,7 +130,7 @@ function FlashMessageBar({
 
   const disclaimerBlock = (
     <div id="divBottomBarDisclaimer" className="shrink-0 max-w-[42%] min-w-0" aria-live="polite">
-      <div className="flex items-center gap-1 rounded border border-green-200 bg-green-200 px-1.5 py-1">
+      <div className="flex items-center gap-1 rounded border border-green-300 bg-green-300 px-1.5 py-1">
         <img
           src="/used/info.png"
           alt=""
@@ -149,7 +149,7 @@ function FlashMessageBar({
     return (
       <footer
         id="divCommonImagesBar"
-        className="flex h-14 min-w-0 shrink-0 items-center gap-3 overflow-hidden border-t border-green-200 bg-green-200 px-3 py-0.5"
+        className="flex h-14 min-w-0 shrink-0 items-center gap-3 overflow-hidden border-t border-green-300 bg-green-300 px-3 py-0.5"
         aria-label="Flash messages"
       >
         {versionBlock}
@@ -169,7 +169,7 @@ function FlashMessageBar({
   return (
     <footer
       id="divCommonImagesBar"
-      className="flex h-14 min-w-0 shrink-0 items-center gap-3 overflow-hidden border-t border-green-200 bg-green-200 px-3 py-1"
+      className="flex h-14 min-w-0 shrink-0 items-center gap-3 overflow-hidden border-t border-green-300 bg-green-300 px-3 py-1"
       aria-label="Flash messages"
     >
       {versionBlock}
@@ -318,7 +318,7 @@ export default function CommonImagesBar({
   return (
     <footer
       id="divCommonImagesBar"
-      className="flex h-16 min-w-0 shrink-0 items-center overflow-hidden bg-green-200 px-2 py-0.5"
+      className="flex h-16 min-w-0 shrink-0 items-center overflow-hidden bg-green-300 px-2 py-0.5"
       aria-label="ForAll and ForGroup images"
     >
       <div

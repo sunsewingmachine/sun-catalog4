@@ -558,7 +558,7 @@ export default function CatalogLayout({
       id="divCatalogRoot"
       className="flex h-screen min-w-0 flex-col overflow-x-hidden bg-green-50 text-slate-800"
     >
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-green-200 bg-green-200 px-5 py-3 shadow-sm">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-green-300 bg-green-300 px-5 py-3 shadow-sm">
         <h1 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
           <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-green-700 p-1.5 text-white" aria-hidden>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
@@ -1025,12 +1025,12 @@ export default function CatalogLayout({
           </div>
           <div
             id="divBelowMainImageRows"
-            className="flex shrink-0 flex-col min-w-0 border-t border-green-200 bg-green-200 pt-4 pb-4 mb-6"
+            className="flex shrink-0 flex-col min-w-0 border-t border-green-300 bg-green-300 pt-4 pb-4 mb-6"
             aria-label="Image strips (Etc, Cat, Gen)"
             onMouseLeave={() => setMainImageHoverPreview(null)}
           >
             <div id="divAdditionalImagesRow" className="flex min-w-0 shrink-0 items-stretch">
-              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-200 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Etc</span>
+              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-300 bg-green-300 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Etc</span>
               <div id="divAdditionalImagesRowScroll" className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
                 <AdditionalImagesStrip
                   product={deferredProduct}
@@ -1042,7 +1042,7 @@ export default function CatalogLayout({
               </div>
             </div>
             <div id="divCategoryImagesRow" className="flex min-w-0 shrink-0 items-stretch">
-              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-200 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Cat</span>
+              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-300 bg-green-300 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Cat</span>
               <div id="divCategoryImagesRowScroll" className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
                 <ServerImagesStrip
                   ariaLabel="Category images (ForGroup)"
@@ -1056,7 +1056,7 @@ export default function CatalogLayout({
               </div>
             </div>
             <div id="divCommonImagesRow" className="flex min-w-0 shrink-0 items-stretch">
-              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-200 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Gen</span>
+              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-300 bg-green-300 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Gen</span>
               <div id="divCommonImagesRowScroll" className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
                 <ServerImagesStrip
                   ariaLabel="Common images (ForAll)"
