@@ -90,3 +90,15 @@ export function getImageUrlForFolder(
     : `${folder}/${encodeURIComponent(imageFilename)}`;
   return `${base}/${path}`;
 }
+
+/** Builds CDN URL for testimonials media (images/videos) in Cloudflare R2 testimonials folder (same path prefix as ForAll). */
+export function getTestimonialsMediaUrl(filename: string): string {
+  if (!filename || !filename.trim()) return "";
+  const base = getCdnBase();
+  if (!base) return "";
+  const pathPrefix = getBarImagesPathPrefix();
+  const path = pathPrefix
+    ? `${pathPrefix}/testimonials/${encodeURIComponent(filename.trim())}`
+    : `testimonials/${encodeURIComponent(filename.trim())}`;
+  return `${base}/${path}`;
+}

@@ -110,3 +110,9 @@ export function getBarFolderListPrefix(folder: "ForAll" | "ForGroup"): string {
   const pathPrefix = getBarImagesPathPrefix();
   return pathPrefix ? `${pathPrefix}/${folder}` : folder;
 }
+
+/** Builds the bucket list prefix for testimonials (same path as ForAll/ForGroup). */
+export function getTestimonialsFolderListPrefix(): string {
+  const pathPrefix = getBarImagesPathPrefix();
+  return pathPrefix ? `${pathPrefix}/testimonials` : "testimonials";
+}

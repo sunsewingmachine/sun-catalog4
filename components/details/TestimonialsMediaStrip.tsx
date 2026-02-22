@@ -1,12 +1,13 @@
 "use client";
 
 /**
- * Shows a random sequence of images/videos from public/testimonials in the details panel.
+ * Shows a random sequence of images/videos from Cloudflare R2 testimonials folder in the details panel.
  * Videos play to end; images display for 5 seconds. Fetches list from /api/testimonials.
  * Uses a slow opacity transition (2.5s) for fade in/out between items.
  */
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { getTestimonialsMediaUrl } from "@/lib/r2ImageHelper";
 
 const IMAGE_DISPLAY_MS = 5000;
 const FADE_DURATION_MS = 2500;
@@ -85,8 +86,9 @@ export default function TestimonialsMediaStrip() {
   const filename = shuffled[index];
   if (!filename) return null;
 
-  const src = `/testimonials/${encodeURIComponent(filename)}`;
+  const src = getTestimonialsMediaUrl(filename);
   const isVideo = isVideoFilename(filename);
+  if (!src) return null;
 
   return (
     <div

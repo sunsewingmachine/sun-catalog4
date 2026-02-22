@@ -1,11 +1,10 @@
 /**
- * API route: returns filenames of images and videos in public/testimonials
- * for the details panel testimonials strip. Client serves them from /testimonials/{filename}.
+ * API route: returns filenames of images and videos in the Cloudflare R2 testimonials folder
+ * (same path prefix as ForAll/ForGroup). Client uses getTestimonialsMediaUrl() for CDN URLs.
  */
 
 import { NextResponse } from "next/server";
-import { readdir } from "fs/promises";
-import { join } from "path";
+import { listKeysByPrefix, getTestimonialsFolderListPrefix } from "@/lib/r2ListHelper";
 
 const VIDEO_EXT = /\.(mp4|webm|mov|ogg|m4v|avi|mn4)$/i;
 const IMAGE_EXT = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i;
@@ -16,11 +15,11 @@ export interface TestimonialsListResponse {
 
 export async function GET(): Promise<NextResponse<TestimonialsListResponse>> {
   try {
-    const dir = join(process.cwd(), "public", "testimonials");
-    const entries = await readdir(dir, { withFileTypes: true });
-    const files = entries
-      .filter((e) => e.isFile() && (VIDEO_EXT.test(e.name) || IMAGE_EXT.test(e.name)))
-      .map((e) => e.name);
+    const prefix = getTestimonialsFolderListPrefix();
+    const keys = await listKeysByPrefix(prefix);
+    const files = keys.filter(
+      (name) => IMAGE_EXT.test(name) || VIDEO_EXT.test(name)
+    );
     return NextResponse.json({ files });
   } catch {
     return NextResponse.json({ files: [] });
