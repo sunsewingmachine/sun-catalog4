@@ -643,6 +643,10 @@ export default function CatalogLayout({
                         role="menuitem"
                         id="btnSettingsUltraPrice"
                         className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                        onMouseEnter={() => {
+                          setBybkSubmenuExpanded(false);
+                          setInfoSubmenuExpanded(false);
+                        }}
                         onClick={() => {
                           setSelectedExchangeMenu(null);
                           setUltraPriceBoxOpen(true);
@@ -657,6 +661,10 @@ export default function CatalogLayout({
                         role="menuitem"
                         id="btnSettingsRefresh"
                         className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                        onMouseEnter={() => {
+                          setBybkSubmenuExpanded(false);
+                          setInfoSubmenuExpanded(false);
+                        }}
                         onClick={async () => {
                           const ok = typeof window !== "undefined" && window.confirm("Refresh catalog and images from server? This may take a moment.");
                           if (!ok) return;
