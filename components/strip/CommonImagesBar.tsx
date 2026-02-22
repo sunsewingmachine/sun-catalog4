@@ -129,19 +129,17 @@ function FlashMessageBar({
   const incomingIndex = nextIndex ?? 0;
 
   const disclaimerBlock = (
-    <div id="divBottomBarDisclaimer" className="shrink-0 max-w-[42%] min-w-0" aria-live="polite">
-      <div className="flex items-center gap-1 rounded border border-teal-500 bg-teal-700/90 px-1.5 py-1">
-        <img
-          src="/used/info.png"
-          alt=""
-          className="size-5 shrink-0 object-contain self-center"
-          width={20}
-          height={20}
-        />
-        <p id="pDisclaimerText" className="min-w-0 flex-1 text-[10px] leading-tight text-white whitespace-pre-line">
-          {DISCLAIMER_TEXT}
-        </p>
-      </div>
+    <div id="divBottomBarDisclaimer" className="shrink-0 max-w-[42%] min-w-0 flex items-center gap-1 px-1.5 py-1" aria-live="polite">
+      <img
+        src="/used/info.png"
+        alt=""
+        className="size-5 shrink-0 object-contain self-center"
+        width={20}
+        height={20}
+      />
+      <p id="pDisclaimerText" className="min-w-0 flex-1 text-[10px] leading-tight text-white whitespace-pre-line">
+        {DISCLAIMER_TEXT}
+      </p>
     </div>
   );
 
