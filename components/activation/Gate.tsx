@@ -2,9 +2,10 @@
 
 /**
  * Gate: if activated (localStorage, persisted), show children (catalog link or redirect); else show ActivationScreen.
+ * useLayoutEffect so activation state is set before paint, reducing loading flash.
  */
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ActivationScreen from "./ActivationScreen";
 
@@ -15,10 +16,10 @@ export default function Gate() {
   const [mounted, setMounted] = useState(false);
   const [activated, setActivated] = useState(false);
 
-  useEffect(() => {
-    setActivated(
-      typeof window !== "undefined" && window.localStorage?.getItem(ACTIVATED_KEY) === "1"
-    );
+  useLayoutEffect(() => {
+    const isActivated =
+      typeof window !== "undefined" && window.localStorage?.getItem(ACTIVATED_KEY) === "1";
+    setActivated(isActivated);
     setMounted(true);
   }, []);
 

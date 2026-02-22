@@ -7,6 +7,7 @@
 
 import React from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import type { Product } from "@/types/product";
 import { getWholesaleStringThreeLines } from "@/lib/wholesalePriceHelper";
 import type { UltraRow } from "@/lib/ultraPriceHelper";
@@ -17,13 +18,22 @@ import ProductList from "@/components/sidebar/ProductList";
 import RecentlyViewedList from "@/components/sidebar/RecentlyViewedList";
 import { getProductsOrderedByAf } from "@/components/sidebar/AfOrderedList";
 import ProductViewer from "@/components/viewer/ProductViewer";
-import ImageLightbox from "@/components/viewer/ImageLightbox";
-import ProductDetails from "@/components/details/ProductDetails";
+
+const ImageLightbox = dynamic(
+  () => import("@/components/viewer/ImageLightbox").then((m) => m.default),
+  { ssr: false }
+);
+
+const ProductDetails = dynamic(
+  () => import("@/components/details/ProductDetails").then((m) => m.default),
+  { ssr: false }
+);
 import { isVideoMediaUrl } from "@/components/details/FeaturesBox";
 import { getImageUrl } from "@/lib/r2ImageHelper";
 import AdditionalImagesStrip from "@/components/strip/AdditionalImagesStrip";
 import ServerImagesStrip from "@/components/strip/ServerImagesStrip";
 import CommonImagesBar from "@/components/strip/CommonImagesBar";
+import type { ImageSyncProgress } from "@/lib/imageSyncService";
 
 interface CatalogLayoutProps {
   products: Product[];
@@ -38,6 +48,8 @@ interface CatalogLayoutProps {
   appVersion: string;
   /** When provided, settings menu shows Refresh; on confirm, this fetches catalog and images from server. */
   onRequestRefresh?: () => Promise<void>;
+  /** When set, shows a small non-blocking "Syncing images" bar (background sync). */
+  imageSyncProgress?: ImageSyncProgress | null;
 }
 
 /** Exchange price submenu keys and separators for "Exchange price" in settings. Row 2 header in sheet uses e.g. C1:Sv:FinalExchangePrice. */
@@ -123,6 +135,7 @@ export default function CatalogLayout({
   dbVersion,
   appVersion,
   onRequestRefresh,
+  imageSyncProgress,
 }: CatalogLayoutProps) {
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(
     null
@@ -521,6 +534,19 @@ export default function CatalogLayout({
           </Link>
         </nav>
       </header>
+
+      {imageSyncProgress && imageSyncProgress.total > 0 && (
+        <div
+          id="divImageSyncBar"
+          className="flex shrink-0 items-center gap-2 border-b border-green-200 bg-teal-50 px-3 py-1.5 text-sm text-teal-700"
+          aria-live="polite"
+        >
+          <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-teal-200 border-t-teal-600" aria-hidden />
+          <span>
+            {imageSyncProgress.message ?? `Syncing images ${imageSyncProgress.current}/${imageSyncProgress.total}`}
+          </span>
+        </div>
+      )}
 
       <div className="flex min-h-0 min-w-0 flex-1 items-start overflow-hidden">
         {/* Left: category buttons only, stacked vertically */}

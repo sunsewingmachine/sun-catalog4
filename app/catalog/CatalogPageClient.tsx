@@ -1,16 +1,16 @@
 "use client";
 
 /**
- * Client wrapper: ensures activated (localStorage), loads catalog (version check + cache/fetch),
- * syncs images to IndexedDB when catalog changes, renders CatalogLayout.
+ * Client wrapper: ensures activated (localStorage), loads catalog (stale-while-revalidate).
+ * Shows cached catalog immediately when available; version check and fetch run in parallel;
+ * image sync never blocks UI. Price and image mapping use full state only (no partial updates).
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types/product";
 import type { FeatureRecord } from "@/types/feature";
 import CatalogLayout from "@/components/layout/CatalogLayout";
-import { shouldFetchCatalogFromApi } from "@/lib/versionChecker";
 import { getCachedCatalog, setCachedCatalog } from "@/lib/cacheManager";
 import {
   syncImages,
@@ -22,6 +22,65 @@ import { APP_VERSION } from "@/lib/appVersion";
 
 const ACTIVATED_KEY = "catalog_activated";
 
+async function fetchRemoteVersion(): Promise<string> {
+  try {
+    const res = await fetch("/api/catalog-version");
+    if (!res.ok) return "";
+    const data = await res.json();
+    return (data.version ?? "").toString();
+  } catch {
+    return "";
+  }
+}
+
+function applyCatalogState(
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>,
+  setFeatures: React.Dispatch<React.SetStateAction<FeatureRecord[]>>,
+  setRawItmGroupRows: React.Dispatch<React.SetStateAction<string[][] | undefined>>,
+  setDbVersion: React.Dispatch<React.SetStateAction<string>>,
+  setLastUpdated: React.Dispatch<React.SetStateAction<string | null>>,
+  products: Product[],
+  features: FeatureRecord[],
+  rawItmGroupRows: string[][] | undefined,
+  version: string,
+  lastUpdated: string
+) {
+  setProducts(products);
+  setFeatures(features ?? []);
+  setRawItmGroupRows(rawItmGroupRows);
+  setDbVersion(version);
+  setLastUpdated(lastUpdated);
+}
+
+/** Runs image sync in background; never blocks. Updates syncProgress for optional UI indicator. */
+function runImageSyncInBackground(
+  products: Product[],
+  features: FeatureRecord[],
+  setSyncProgress: React.Dispatch<React.SetStateAction<ImageSyncProgress | null>>,
+  cancelledRef: { current: boolean }
+) {
+  const total =
+    getUniqueImageUrlsFromProducts(products).length +
+    getUniqueFeatureMediaUrls(features).length;
+  setSyncProgress({
+    current: 0,
+    total,
+    message: total > 0 ? "Syncing images…" : "Done",
+  });
+  syncImages(products, {
+    features,
+    onProgress: (p) => {
+      if (!cancelledRef.current) setSyncProgress(p);
+    },
+  })
+    .finally(() => {
+      if (!cancelledRef.current) setSyncProgress(null);
+      if (typeof navigator !== "undefined" && navigator.storage?.persist) {
+        navigator.storage.persist().catch(() => {});
+      }
+    });
+}
+
 export default function CatalogPageClient() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
@@ -32,6 +91,7 @@ export default function CatalogPageClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [syncProgress, setSyncProgress] = useState<ImageSyncProgress | null>(null);
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.localStorage?.getItem(ACTIVATED_KEY) !== "1") {
@@ -87,90 +147,131 @@ export default function CatalogPageClient() {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
+    cancelledRef.current = false;
+    (async function load() {
       try {
-        const { shouldFetch } = await shouldFetchCatalogFromApi();
-        if (cancelled) return;
-        if (shouldFetch) {
-          const res = await fetch("/api/catalog");
-          if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            if (res.status === 503) {
-              setError("Catalog is not configured. Please try again later.");
-              setLoading(false);
-              return;
-            }
-            throw new Error((data.error as string) || "Failed to load catalog");
-          }
-          const data = await res.json();
-          const newProducts = data.products ?? [];
-          const newFeatures: FeatureRecord[] = data.features ?? [];
-          const allRows: string[][] = data.rawItmGroupRows ?? [];
-          const version = (data.version ?? "").toString();
-          if (cancelled) return;
-          setProducts(newProducts);
-          setFeatures(newFeatures);
-          setRawItmGroupRows(allRows);
-          setDbVersion(version);
-          setLastUpdated(new Date().toISOString());
-          await setCachedCatalog(newProducts, version, newFeatures, allRows);
-          if (cancelled) return;
-          const imageCount = getUniqueImageUrlsFromProducts(newProducts).length;
-          const featureMediaCount = getUniqueFeatureMediaUrls(newFeatures).length;
-          const totalSync = imageCount + featureMediaCount;
-          setSyncProgress({
-            current: 0,
-            total: totalSync,
-            message: totalSync > 0 ? "Syncing images…" : "Done",
-          });
-          try {
-            await syncImages(newProducts, {
-              features: newFeatures,
-              onProgress: (p) => {
-                if (!cancelled) setSyncProgress(p);
-              },
-            });
-          } finally {
-            if (!cancelled) setSyncProgress(null);
-            if (typeof navigator !== "undefined" && navigator.storage?.persist) {
-              navigator.storage.persist().catch(() => {});
-            }
-          }
-        } else {
-          const cached = await getCachedCatalog();
-          if (cancelled) return;
-          if (cached) {
-            setProducts(cached.products);
-            setFeatures(cached.features ?? []);
-            setRawItmGroupRows(cached.rawItmGroupRows);
-            setDbVersion(cached.meta.version);
-            setLastUpdated(cached.meta.lastUpdated);
-            if (typeof navigator !== "undefined" && navigator.storage?.persist) {
-              navigator.storage.persist().catch(() => {});
-            }
-          } else {
-            setError("No cached data. Connect to the internet to load catalog.");
+        const [cached, remoteVersion] = await Promise.all([
+          getCachedCatalog(),
+          fetchRemoteVersion(),
+        ]);
+        if (cancelledRef.current) return;
+
+        const cachedVersion = cached?.meta?.version ?? null;
+        const shouldFetch =
+          !cachedVersion ||
+          remoteVersion > cachedVersion ||
+          remoteVersion !== cachedVersion;
+
+        if (cached) {
+          applyCatalogState(
+            setProducts,
+            setFeatures,
+            setRawItmGroupRows,
+            setDbVersion,
+            setLastUpdated,
+            cached.products,
+            cached.features ?? [],
+            cached.rawItmGroupRows,
+            cached.meta.version,
+            cached.meta.lastUpdated
+          );
+          setLoading(false);
+          if (typeof navigator !== "undefined" && navigator.storage?.persist) {
+            navigator.storage.persist().catch(() => {});
           }
         }
+
+        if (shouldFetch) {
+          try {
+            const res = await fetch("/api/catalog");
+            if (cancelledRef.current) return;
+            if (!res.ok) {
+              const data = await res.json().catch(() => ({}));
+              if (res.status === 503) {
+                setError("Catalog is not configured. Please try again later.");
+                if (!cached) setLoading(false);
+                return;
+              }
+              throw new Error((data.error as string) || "Failed to load catalog");
+            }
+            const data = await res.json();
+            const newProducts = data.products ?? [];
+            const newFeatures: FeatureRecord[] = data.features ?? [];
+            const allRows: string[][] = data.rawItmGroupRows ?? [];
+            const version = (data.version ?? "").toString();
+            if (cancelledRef.current) return;
+            applyCatalogState(
+              setProducts,
+              setFeatures,
+              setRawItmGroupRows,
+              setDbVersion,
+              setLastUpdated,
+              newProducts,
+              newFeatures,
+              allRows,
+              version,
+              new Date().toISOString()
+            );
+            await setCachedCatalog(newProducts, version, newFeatures, allRows);
+            if (!cached) setLoading(false);
+            if (cancelledRef.current) return;
+            runImageSyncInBackground(
+              newProducts,
+              newFeatures,
+              setSyncProgress,
+              cancelledRef
+            );
+          } catch (e) {
+            if (!cached) {
+              const fallback = await getCachedCatalog();
+              if (cancelledRef.current) return;
+              if (fallback) {
+                applyCatalogState(
+                  setProducts,
+                  setFeatures,
+                  setRawItmGroupRows,
+                  setDbVersion,
+                  setLastUpdated,
+                  fallback.products,
+                  fallback.features ?? [],
+                  fallback.rawItmGroupRows,
+                  fallback.meta.version,
+                  fallback.meta.lastUpdated
+                );
+              } else {
+                setError(e instanceof Error ? e.message : "Failed to load catalog");
+              }
+              setLoading(false);
+            }
+          }
+        } else if (!cached) {
+          setError("No cached data. Connect to the internet to load catalog.");
+          setLoading(false);
+        }
       } catch (e) {
-        const cached = await getCachedCatalog();
-        if (cached) {
-          setProducts(cached.products);
-          setFeatures(cached.features ?? []);
-          setRawItmGroupRows(cached.rawItmGroupRows);
-          setDbVersion(cached.meta.version);
-          setLastUpdated(cached.meta.lastUpdated);
+        const fallback = await getCachedCatalog();
+        if (cancelledRef.current) return;
+        if (fallback) {
+          applyCatalogState(
+            setProducts,
+            setFeatures,
+            setRawItmGroupRows,
+            setDbVersion,
+            setLastUpdated,
+            fallback.products,
+            fallback.features ?? [],
+            fallback.rawItmGroupRows,
+            fallback.meta.version,
+            fallback.meta.lastUpdated
+          );
         } else {
           setError(e instanceof Error ? e.message : "Failed to load catalog");
         }
-      } finally {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
       }
-    }
-    load();
+    })();
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
     };
   }, []);
 
@@ -208,6 +309,9 @@ export default function CatalogPageClient() {
   if (typeof console !== "undefined" && console.warn) {
     console.warn("[ExchangePrice] CatalogPageClient render: rawItmGroupRows =", rawItmGroupRows == null ? "undefined" : `array length ${rawItmGroupRows.length}`);
   }
+  if (typeof performance !== "undefined" && performance.mark) {
+    performance.mark("catalog-visible");
+  }
   return (
     <CatalogLayout
       products={products}
@@ -217,6 +321,7 @@ export default function CatalogPageClient() {
       dbVersion={dbVersion}
       appVersion={APP_VERSION}
       onRequestRefresh={performForceRefresh}
+      imageSyncProgress={syncProgress}
     />
   );
 }
