@@ -56,14 +56,11 @@ export default function ProductViewer({
       : mainImageOverride != null && mainImageOverride !== ""
         ? mainImageOverride
         : productMainSrc;
-  const { displayUrl: mainDisplayUrl } = useImageDisplayUrl(
-    mainSrc.startsWith("http") || mainSrc.startsWith("blob:") ? mainSrc : ""
-  );
-  // When showing hover or click override, use mainSrc immediately so the main area updates without waiting for cache lookup.
+  // Use mainSrc directly so leaving hover immediately shows main image (mainDisplayUrl would stay stale until cache resolves).
   const hasOverride =
     (mainImageHoverPreview != null && mainImageHoverPreview !== "") ||
     (mainImageOverride != null && mainImageOverride !== "");
-  const effectiveMainSrc = hasOverride ? mainSrc : mainDisplayUrl || mainSrc;
+  const effectiveMainSrc = mainSrc;
   const mainAlt = product?.itmGroupName ?? "Product";
   const { displayUrl: videoDisplayUrl } = useImageDisplayUrl(
     mainVideoOverride?.startsWith("http") ? mainVideoOverride : ""
@@ -235,7 +232,7 @@ export default function ProductViewer({
             id="imgMainProduct"
             src={effectiveMainSrc}
             alt={mainAlt}
-            className={`pointer-events-none h-full w-full object-contain rounded-2xl transition-opacity duration-200 ${hasOverride || mainImageLoaded ? "opacity-100" : "opacity-0"}`}
+            className="pointer-events-none h-full w-full object-contain rounded-2xl opacity-100"
             loading="eager"
             referrerPolicy="no-referrer"
             onLoad={() => setMainImageLoaded(true)}
@@ -249,7 +246,7 @@ export default function ProductViewer({
             src={effectiveMainSrc}
             alt={mainAlt}
             fill
-            className={`pointer-events-none object-contain rounded-2xl transition-opacity duration-200 ${hasOverride || mainImageLoaded ? "opacity-100" : "opacity-0"}`}
+            className="pointer-events-none object-contain rounded-2xl opacity-100"
             sizes="(max-width: 800px) 100vw, 50vw"
             loading="eager"
             onLoad={() => setMainImageLoaded(true)}
