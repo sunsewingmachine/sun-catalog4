@@ -72,7 +72,7 @@ export default function AdditionalImagesStrip({
                     key={filename}
                     type="button"
                     className={`${thumb.class} shrink-0 overflow-hidden rounded-xl border-4 border-green-300 bg-green-200 shadow-md transition-all duration-200 hover:shadow-lg hover:border-green-300 hover:bg-green-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-1`}
-                    title="Click for full size; double-click to show in main"
+                    title="Click for full size"
                     onClick={(e) => {
                       e.preventDefault();
                       onOpenLightbox(displaySrc, filename);
