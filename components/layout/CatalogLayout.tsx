@@ -47,6 +47,10 @@ interface CatalogLayoutProps {
   onRequestRefresh?: () => Promise<void>;
   /** When set, shows a small non-blocking "Syncing images" bar (background sync). */
   imageSyncProgress?: ImageSyncProgress | null;
+  /** When provided, settings menu shows Logout submenu (Logout, Clear cache, Clear cache and logout). */
+  onLogout?: () => void;
+  onClearCache?: () => Promise<void>;
+  onClearCacheAndLogout?: () => Promise<void>;
 }
 
 /** Exchange price submenu keys and separators for "Exchange price" in settings. Row 2 header in sheet uses e.g. C1:Sv:FinalExchangePrice. */
@@ -133,6 +137,9 @@ export default function CatalogLayout({
   appVersion,
   onRequestRefresh,
   imageSyncProgress,
+  onLogout,
+  onClearCache,
+  onClearCacheAndLogout,
 }: CatalogLayoutProps) {
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(
     null
@@ -167,6 +174,8 @@ export default function CatalogLayout({
   const [bybkSubmenuExpanded, setBybkSubmenuExpanded] = React.useState(false);
   /** When true, Info submenu (All, Price, Warranty, W/s price) is visible. */
   const [infoSubmenuExpanded, setInfoSubmenuExpanded] = React.useState(false);
+  /** When true, Logout submenu (Logout, Clear cache, Clear cache and logout) is visible. */
+  const [logoutSubmenuExpanded, setLogoutSubmenuExpanded] = React.useState(false);
   /** When true, details panel shows Ultra price box with column A from sheet NEXT_PUBLIC_ULTRA_GID. */
   const [ultraPriceBoxOpen, setUltraPriceBoxOpen] = React.useState(false);
   /** When user clicks an Ultra/Aristo/Base item in the Ultra box, show mainItem.Variant.jpg in main area; persists across main list changes while box is open. */
@@ -394,7 +403,10 @@ export default function CatalogLayout({
   }, [settingsMenuOpen]);
 
   React.useEffect(() => {
-    if (!settingsMenuOpen) setBybkSubmenuExpanded(false);
+    if (!settingsMenuOpen) {
+      setBybkSubmenuExpanded(false);
+      setLogoutSubmenuExpanded(false);
+    }
   }, [settingsMenuOpen]);
 
   React.useEffect(() => {
@@ -535,6 +547,25 @@ export default function CatalogLayout({
     const lower = deferredCategoryPrefix.toLowerCase();
     return barImages.forGroup.filter((f) => f.toLowerCase().startsWith(lower));
   }, [barImages.forGroup, deferredCategoryPrefix]);
+
+  const additionalScrollRef = React.useRef<HTMLDivElement>(null);
+  const categoryScrollRef = React.useRef<HTMLDivElement>(null);
+  const commonScrollRef = React.useRef<HTMLDivElement>(null);
+  const isSyncingStripScrollRef = React.useRef(false);
+  const handleStripScroll = React.useCallback((source: "additional" | "category" | "common") => {
+    if (isSyncingStripScrollRef.current) return;
+    const refs = { additional: additionalScrollRef, category: categoryScrollRef, common: commonScrollRef };
+    const el = refs[source].current;
+    if (!el) return;
+    const left = el.scrollLeft;
+    isSyncingStripScrollRef.current = true;
+    (["additional", "category", "common"] as const).forEach((key) => {
+      if (key !== source && refs[key].current) refs[key].current!.scrollLeft = left;
+    });
+    requestAnimationFrame(() => {
+      isSyncingStripScrollRef.current = false;
+    });
+  }, []);
 
   React.useEffect(() => {
     if (categories.length && !selectedCategory) setSelectedCategory(categories[0] ?? null);
@@ -734,6 +765,7 @@ export default function CatalogLayout({
                       if (wrapper && related && !wrapper.contains(related)) {
                         setBybkSubmenuExpanded(false);
                         setInfoSubmenuExpanded(false);
+                        setLogoutSubmenuExpanded(false);
                       }
                     }}
                   >
@@ -749,6 +781,7 @@ export default function CatalogLayout({
                         aria-expanded={bybkSubmenuExpanded}
                         onMouseEnter={() => {
                           setInfoSubmenuExpanded(false);
+                          setLogoutSubmenuExpanded(false);
                           setBybkSubmenuExpanded(true);
                         }}
                       >
@@ -774,6 +807,7 @@ export default function CatalogLayout({
                         aria-expanded={infoSubmenuExpanded}
                         onMouseEnter={() => {
                           setBybkSubmenuExpanded(false);
+                          setLogoutSubmenuExpanded(false);
                           setInfoSubmenuExpanded(true);
                         }}
                       >
@@ -800,6 +834,7 @@ export default function CatalogLayout({
                         onMouseEnter={() => {
                           setBybkSubmenuExpanded(false);
                           setInfoSubmenuExpanded(false);
+                          setLogoutSubmenuExpanded(false);
                         }}
                         onClick={() => {
                           setSelectedExchangeMenu(null);
@@ -818,6 +853,7 @@ export default function CatalogLayout({
                         onMouseEnter={() => {
                           setBybkSubmenuExpanded(false);
                           setInfoSubmenuExpanded(false);
+                          setLogoutSubmenuExpanded(false);
                         }}
                         onClick={async () => {
                           const ok = typeof window !== "undefined" && window.confirm("Refresh catalog and images from server? This may take a moment.");
@@ -834,6 +870,34 @@ export default function CatalogLayout({
                         </svg>
                         Refresh
                       </button>
+                      {(onLogout != null || onClearCache != null || onClearCacheAndLogout != null) && (
+                        <>
+                          <div className="border-t border-green-100 my-1" aria-hidden />
+                          <div
+                            id="divLogoutMenuSection"
+                            role="group"
+                            aria-labelledby="pLogoutMenuLabel"
+                            aria-expanded={logoutSubmenuExpanded}
+                            onMouseEnter={() => {
+                              setBybkSubmenuExpanded(false);
+                              setInfoSubmenuExpanded(false);
+                              setLogoutSubmenuExpanded(true);
+                            }}
+                          >
+                            <button
+                              type="button"
+                              id="btnLogoutMenu"
+                              aria-expanded={logoutSubmenuExpanded}
+                              aria-haspopup="true"
+                              onClick={() => setLogoutSubmenuExpanded((v) => !v)}
+                              className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide rounded ${logoutSubmenuExpanded ? "bg-green-50 text-green-800" : "text-slate-600 hover:bg-green-50"}`}
+                            >
+                              <span id="pLogoutMenuLabel">Logout</span>
+                              <span className="text-slate-400 shrink-0 ml-1" aria-hidden>›</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                     {bybkSubmenuExpanded && (
                       <div
@@ -961,6 +1025,60 @@ export default function CatalogLayout({
                         </div>
                       </div>
                     )}
+                    {logoutSubmenuExpanded && (onLogout != null || onClearCache != null || onClearCacheAndLogout != null) && (
+                      <div
+                        id="divLogoutSubmenuFlyout"
+                        role="menu"
+                        aria-label="Logout options"
+                        className="ml-1 min-w-[10rem] max-h-[70vh] overflow-y-auto overflow-x-hidden border border-green-200 bg-white py-1 shadow-lg rounded-lg"
+                      >
+                        {onLogout != null && (
+                          <button
+                            type="button"
+                            role="menuitem"
+                            id="btnLogoutAction"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                            onClick={() => {
+                              setSettingsMenuOpen(false);
+                              setLogoutSubmenuExpanded(false);
+                              onLogout();
+                            }}
+                          >
+                            Logout
+                          </button>
+                        )}
+                        {onClearCache != null && (
+                          <button
+                            type="button"
+                            role="menuitem"
+                            id="btnClearCacheAction"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                            onClick={async () => {
+                              setSettingsMenuOpen(false);
+                              setLogoutSubmenuExpanded(false);
+                              await onClearCache();
+                            }}
+                          >
+                            Clear cache
+                          </button>
+                        )}
+                        {onClearCacheAndLogout != null && (
+                          <button
+                            type="button"
+                            role="menuitem"
+                            id="btnClearCacheAndLogoutAction"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                            onClick={async () => {
+                              setSettingsMenuOpen(false);
+                              setLogoutSubmenuExpanded(false);
+                              await onClearCacheAndLogout();
+                            }}
+                          >
+                            Clear cache and logout
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1031,7 +1149,12 @@ export default function CatalogLayout({
           >
             <div id="divAdditionalImagesRow" className="flex min-w-0 shrink-0 items-stretch">
               <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-300 bg-green-300 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Etc</span>
-              <div id="divAdditionalImagesRowScroll" className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
+              <div
+                id="divAdditionalImagesRowScroll"
+                ref={additionalScrollRef}
+                className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
+                onScroll={() => handleStripScroll("additional")}
+              >
                 <AdditionalImagesStrip
                   product={deferredProduct}
                   onSetMainImage={handleSetMainImage}
@@ -1043,7 +1166,12 @@ export default function CatalogLayout({
             </div>
             <div id="divCategoryImagesRow" className="flex min-w-0 shrink-0 items-stretch">
               <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-300 bg-green-300 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Cat</span>
-              <div id="divCategoryImagesRowScroll" className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
+              <div
+                id="divCategoryImagesRowScroll"
+                ref={categoryScrollRef}
+                className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
+                onScroll={() => handleStripScroll("category")}
+              >
                 <ServerImagesStrip
                   ariaLabel="Category images (ForGroup)"
                   folder="ForGroup"
@@ -1057,7 +1185,12 @@ export default function CatalogLayout({
             </div>
             <div id="divCommonImagesRow" className="flex min-w-0 shrink-0 items-stretch">
               <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-300 bg-green-300 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Gen</span>
-              <div id="divCommonImagesRowScroll" className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
+              <div
+                id="divCommonImagesRowScroll"
+                ref={commonScrollRef}
+                className="strip-scroll-sync flex min-w-0 flex-1"
+                onScroll={() => handleStripScroll("common")}
+              >
                 <ServerImagesStrip
                   ariaLabel="Common images (ForAll)"
                   folder="ForAll"

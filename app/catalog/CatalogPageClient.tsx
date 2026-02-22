@@ -12,6 +12,7 @@ import type { Product } from "@/types/product";
 import type { FeatureRecord } from "@/types/feature";
 import CatalogLayout from "@/components/layout/CatalogLayout";
 import { getCachedCatalog, setCachedCatalog } from "@/lib/cacheManager";
+import { clearCatalogCache } from "@/lib/indexedDb";
 import {
   syncImages,
   getUniqueImageUrlsFromProducts,
@@ -98,6 +99,28 @@ export default function CatalogPageClient() {
       router.replace("/");
       return;
     }
+  }, [router]);
+
+  const handleLogout = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(ACTIVATED_KEY);
+    }
+    router.replace("/");
+  }, [router]);
+
+  const handleClearCache = useCallback(async () => {
+    await clearCatalogCache();
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+  }, []);
+
+  const handleClearCacheAndLogout = useCallback(async () => {
+    await clearCatalogCache();
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(ACTIVATED_KEY);
+    }
+    router.replace("/");
   }, [router]);
 
   const performForceRefresh = useCallback(async () => {
@@ -322,6 +345,9 @@ export default function CatalogPageClient() {
       appVersion={APP_VERSION}
       onRequestRefresh={performForceRefresh}
       imageSyncProgress={syncProgress}
+      onLogout={handleLogout}
+      onClearCache={handleClearCache}
+      onClearCacheAndLogout={handleClearCacheAndLogout}
     />
   );
 }

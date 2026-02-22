@@ -76,6 +76,31 @@ body {
   display: none;
 }
 
+/* Gen row: horizontal scroll with mild scrollbar always visible (no .horizontal-scroll on this row). */
+.strip-scroll-sync {
+  overflow-x: scroll;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 197, 94, 0.4) transparent;
+}
+.strip-scroll-sync::-webkit-scrollbar {
+  display: block;
+  height: 6px;
+}
+.strip-scroll-sync::-webkit-scrollbar-track {
+  background: transparent;
+}
+.strip-scroll-sync::-webkit-scrollbar-thumb {
+  background: rgba(34, 197, 94, 0.35);
+  border-radius: 9999px;
+}
+.strip-scroll-sync::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.5);
+}
+
 /* Fast stagger when product list updates after category change. */
 @keyframes catalog-item-in {
   from {
