@@ -238,7 +238,7 @@ interface CommonImagesBarProps {
   barImagesHint?: "r2_not_configured";
   /** Single-click sets this image as the main viewer image (when purpose is "images"). */
   onSetMainImage?: (imageUrl: string) => void;
-  /** Double-click opens full-size zoomable lightbox (when purpose is "images"). */
+  /** Single-click opens full-size zoomable lightbox (when purpose is "images"). */
   onOpenLightbox?: (imageSrc: string, imageAlt: string) => void;
 }
 
@@ -254,12 +254,12 @@ function renderBarThumb(
       key={filename}
       type="button"
       className="h-10 w-12 shrink-0 overflow-hidden rounded-lg border border-green-300 bg-white shadow-sm cursor-pointer"
-      title="Click to show in main; double-click for full size"
-      onClick={() => onSetMainImage?.(displaySrc)}
-      onDoubleClick={(e) => {
+      title="Click for full size; double-click to show in main"
+      onClick={(e) => {
         e.preventDefault();
         onOpenLightbox?.(displaySrc, filename);
       }}
+      onDoubleClick={() => onSetMainImage?.(displaySrc)}
     >
       {src ? (
         <CachedImage
@@ -331,12 +331,12 @@ export default function CommonImagesBar({
               <button
                 type="button"
                 className="h-10 w-12 shrink-0 overflow-hidden rounded-lg border border-green-300 bg-white shadow-sm cursor-pointer"
-                title="Default image. Click to show in main; double-click for full size."
-                onClick={() => onSetMainImage?.(SETTINGS.fallbackImagePath)}
-                onDoubleClick={(e) => {
+                title="Default image. Click for full size; double-click to show in main."
+                onClick={(e) => {
                   e.preventDefault();
                   onOpenLightbox?.(SETTINGS.fallbackImagePath, "Default");
                 }}
+                onDoubleClick={() => onSetMainImage?.(SETTINGS.fallbackImagePath)}
               >
                 <Image
                   src={SETTINGS.fallbackImagePath}

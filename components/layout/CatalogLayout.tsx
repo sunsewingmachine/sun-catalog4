@@ -1120,7 +1120,10 @@ export default function CatalogLayout({
         <ImageLightbox
           imageSrc={lightboxImage.src}
           imageAlt={lightboxImage.alt}
-          onClose={() => setLightboxImage(null)}
+          onClose={() => {
+            setLightboxImage(null);
+            setMainImageOverride(null);
+          }}
         />
       )}
     </div>

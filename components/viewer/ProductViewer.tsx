@@ -2,7 +2,7 @@
 
 /**
  * Main product image and thumbnail strip. Main image: {ItmGroupName}.jpg
- * Uses cached image from IndexedDB when available; single-click strip shows here; double-click opens lightbox.
+ * Uses cached image from IndexedDB when available; single-click strip shows here; single-click main opens lightbox.
  */
 
 import React from "react";
@@ -21,7 +21,7 @@ interface ProductViewerProps {
   mainImageHoverPreview?: string | null;
   /** When set, main area shows this video URL (e.g. after clicking a feature with video in col C). */
   mainVideoOverride?: string | null;
-  /** Called when user double-clicks an image to open full-size lightbox. */
+  /** Called when user single-clicks an image to open full-size lightbox. */
   onOpenLightbox?: (imageSrc: string, imageAlt: string) => void;
   /** When main image is showing an override URL and that image fails to load (e.g. variant image 404), call this to fall back to usual main image. */
   onMainImageOverrideError?: () => void;
@@ -112,7 +112,7 @@ export default function ProductViewer({
     if (el && el instanceof HTMLVideoElement) el.load();
   }, [mainVideoOverride, effectiveVideoSrc]);
 
-  const handleDoubleClickMain = () => {
+  const handleClickMainOpenLightbox = () => {
     onOpenLightbox?.(mainSrc, mainAlt);
   };
 
@@ -135,11 +135,11 @@ export default function ProductViewer({
         <div
           id="divMainImageBackgroundBox"
           className={`${mainImageBoxClassName} min-h-0 flex-1`}
-          onDoubleClick={handleDoubleClickMain}
+          onClick={handleClickMainOpenLightbox}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => e.key === "Enter" && handleDoubleClickMain()}
-          aria-label="Double-click to open full size"
+          onKeyDown={(e) => e.key === "Enter" && handleClickMainOpenLightbox()}
+          aria-label="Click to open full size"
         >
           <Image
             id="imgMainProduct"
@@ -165,11 +165,11 @@ export default function ProductViewer({
       <div
         id="divMainImageBackgroundBox"
         className={`${mainImageBoxClassName} min-h-0 flex-1`}
-        onDoubleClick={showVideo ? undefined : handleDoubleClickMain}
+        onClick={showVideo ? undefined : handleClickMainOpenLightbox}
         role={showVideo ? undefined : "button"}
         tabIndex={showVideo ? undefined : 0}
-        onKeyDown={showVideo ? undefined : (e) => e.key === "Enter" && handleDoubleClickMain()}
-        aria-label={showVideo ? undefined : "Double-click to open full size"}
+        onKeyDown={showVideo ? undefined : (e) => e.key === "Enter" && handleClickMainOpenLightbox()}
+        aria-label={showVideo ? undefined : "Click to open full size"}
       >
         {showVideo ? (
           <div className="relative h-full w-full rounded-2xl bg-slate-900">

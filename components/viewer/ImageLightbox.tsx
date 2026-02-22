@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Full-screen lightbox for a single image. Double-click any catalog image to open.
+ * Full-screen lightbox for a single image. Single-click main or strip image to open.
  * Supports zoom (mouse wheel / pinch) and pan (drag) to inspect any area.
  * Renders via portal to document.body so closing it restores the main view without stacking-context or focus side effects.
  */

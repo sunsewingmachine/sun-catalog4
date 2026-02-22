@@ -72,14 +72,14 @@ export default function AdditionalImagesStrip({
                     key={filename}
                     type="button"
                     className={`${thumb.class} shrink-0 overflow-hidden rounded-lg border-2 border-green-200 bg-green-200 shadow-sm transition-colors hover:border-green-300 focus:outline-none focus:ring-2 focus:ring-teal-500`}
-                    title="Click to show in main; double-click for full size"
-                    onClick={() => onSetMainImage(displaySrc)}
-                    onMouseEnter={() => onHoverMainImage?.(displaySrc)}
-                    onMouseLeave={() => onHoverMainImage?.(null)}
-                    onDoubleClick={(e) => {
+                    title="Click for full size; double-click to show in main"
+                    onClick={(e) => {
                       e.preventDefault();
                       onOpenLightbox(displaySrc, filename);
                     }}
+                    onDoubleClick={() => onSetMainImage(displaySrc)}
+                    onMouseEnter={() => onHoverMainImage?.(displaySrc)}
+                    onMouseLeave={() => onHoverMainImage?.(null)}
                   >
                     {src ? (
                       <CachedImage
