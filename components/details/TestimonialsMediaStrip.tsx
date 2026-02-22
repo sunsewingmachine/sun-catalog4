@@ -91,11 +91,11 @@ export default function TestimonialsMediaStrip() {
   return (
     <div
       id="divTestimonialsMediaStrip"
-      className="flex min-h-[12rem] w-full flex-1 flex-col overflow-hidden rounded-lg bg-green-50/60"
+      className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg bg-green-50/60"
       aria-label="Testimonials"
     >
       <div
-        className="relative flex h-full min-h-0 w-full transition-opacity ease-in-out"
+        className="relative flex h-full min-h-0 w-full flex-1 items-center justify-center transition-opacity ease-in-out"
         style={{ opacity: fadingOut ? 0 : 1, transitionDuration: `${FADE_DURATION_MS}ms` }}
       >
         {isVideo ? (
@@ -103,7 +103,7 @@ export default function TestimonialsMediaStrip() {
             key={key}
             id="videoTestimonial"
             src={src}
-            className="h-full min-h-0 w-full object-fill"
+            className="max-h-full max-w-full object-contain"
             controls
             playsInline
             onEnded={goNext}
@@ -115,7 +115,7 @@ export default function TestimonialsMediaStrip() {
             id="imgTestimonial"
             src={src}
             alt={`Testimonial ${index + 1}`}
-            className="block h-full min-h-0 w-full object-fill"
+            className="block max-h-full max-w-full object-contain"
           />
         )}
       </div>

@@ -391,6 +391,31 @@ export default function CatalogLayout({
     if (typeof exit === "function") exit().catch(() => {});
   }, []);
 
+  /** Toggle: try exit first; if not in fullscreen (rejects), request. Avoids relying on fullscreenElement. */
+  const toggleBrowserFullscreen = React.useCallback(() => {
+    const doc = document as Document & { exitFullscreen?: () => Promise<void>; webkitExitFullscreen?: () => Promise<void> };
+    const root = document.documentElement as HTMLElement & { requestFullscreen?: () => Promise<void>; webkitRequestFullscreen?: () => Promise<void> };
+    const exit = doc.exitFullscreen ?? doc.webkitExitFullscreen;
+    const req = root.requestFullscreen ?? root.webkitRequestFullscreen;
+    if (typeof exit !== "function") return;
+    const exitPromise = exit.call(doc);
+    if (exitPromise && typeof exitPromise.then === "function") {
+      exitPromise
+        .then(() => {
+          setIsBrowserFullscreen(false);
+        })
+        .catch(() => {
+          if (typeof req === "function") {
+            const p = req.call(root);
+            if (p && typeof p.catch === "function") {
+              p.catch((err: unknown) => console.warn("Fullscreen request failed:", err));
+            }
+            setIsBrowserFullscreen(true);
+          }
+        });
+    }
+  }, []);
+
   React.useEffect(() => {
     if (!settingsMenuOpen) return;
     function handleClickOutside(e: MouseEvent) {
@@ -589,9 +614,9 @@ export default function CatalogLayout({
       id="divCatalogRoot"
       className="flex h-screen min-w-0 flex-col overflow-x-hidden bg-green-50 text-slate-800"
     >
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-green-300 bg-green-300 px-5 py-3 shadow-sm">
-        <h1 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-          <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-green-700 p-1.5 text-white" aria-hidden>
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-teal-600 bg-teal-600 px-5 py-3 shadow-sm">
+        <h1 className="flex items-center gap-2 text-lg font-semibold text-white">
+          <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-teal-700 p-1.5 text-white" aria-hidden>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
               <rect x="3" y="3" width="7" height="7" rx="1" />
               <rect x="14" y="3" width="7" height="7" rx="1" />
@@ -607,7 +632,7 @@ export default function CatalogLayout({
             href="/admin"
             title="Admin"
             aria-label="Admin"
-            className="flex items-center justify-center rounded-full bg-green-700 p-1.5 text-white transition-colors hover:bg-green-800"
+            className="flex items-center justify-center rounded-full bg-teal-700 p-1.5 text-white transition-colors hover:bg-teal-800"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden>
               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
@@ -709,7 +734,7 @@ export default function CatalogLayout({
               <button
                 type="button"
                 id="btnExitBrowserFullscreen"
-                onClick={exitBrowserFullscreen}
+                onClick={toggleBrowserFullscreen}
                 className="flex w-full items-center justify-center gap-1 rounded p-2 text-slate-600 transition-colors hover:bg-green-100 hover:text-slate-800"
                 title="Exit fullscreen (Esc)"
                 aria-label="Exit fullscreen"
@@ -722,7 +747,7 @@ export default function CatalogLayout({
               <button
                 type="button"
                 id="btnEnterBrowserFullscreen"
-                onClick={requestBrowserFullscreen}
+                onClick={toggleBrowserFullscreen}
                 disabled={!fullscreenSupported}
                 className={`flex w-full items-center justify-center gap-1 rounded p-2 transition-colors ${
                   fullscreenSupported

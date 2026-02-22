@@ -95,62 +95,74 @@ export default function FeaturesBox({ product, features, onFeatureMediaClick }: 
   const matches = getFeatureMatchesForProductEy(product.ey, features);
   const hasEy = product.ey != null && product.ey.trim() !== "";
 
-  // Hide the box when product has no EY (no features listed for this product).
-  if (matches.length === 0 && !hasEy) return null;
-
   return (
     <div
       id="divFeaturesBox"
-      className="mt-4 rounded-lg border border-green-200 bg-white p-3"
+      className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-green-200 bg-white p-3"
     >
-      <h3 id="h3FeaturesTitle" className="mb-2 text-sm font-semibold text-slate-800">
-        Features
-      </h3>
-      {matches.length > 0 ? (
-        <ul id="ulFeaturesList" className="flex flex-col gap-1.5 text-sm">
-          {matches.map((m, i) => (
-            <li key={`${i}-${m.label.slice(0, 20)}`} id={`liFeature-${i}`}>
-              {m.mediaUrl && onFeatureMediaClick ? (
-                <button
-                  type="button"
-                  id={`btnFeature-${i}`}
-                  onClick={() => onFeatureMediaClick(m.mediaUrl!)}
-                  className="flex w-full items-center gap-2 rounded bg-teal-600 px-2 py-1.5 text-white shadow-sm transition-colors hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-400"
-                  title={isVideoMediaUrl(m.mediaUrl) ? "Play video in main viewer" : "Show in main image"}
-                >
-                  <img
-                    src="/used/star.jpg"
-                    alt=""
-                    className="size-5 shrink-0 object-contain"
-                    width={20}
-                    height={20}
-                  />
-                  <span className="min-w-0 flex-1 text-left font-medium text-white">{m.label}</span>
-                  <FeatureMediaTypeIcon mediaUrl={m.mediaUrl} />
-                </button>
-              ) : (
-                <div className="flex w-full items-center gap-2 rounded bg-teal-600 px-2 py-1.5 text-white shadow-sm">
-                  <img
-                    src="/used/star.jpg"
-                    alt=""
-                    className="size-5 shrink-0 object-contain"
-                    width={20}
-                    height={20}
-                  />
-                  <span className="min-w-0 flex-1 font-medium text-white">{m.label}</span>
-                  <FeatureMediaTypeIcon mediaUrl={null} />
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p id="pFeaturesEmpty" className="text-sm text-slate-500">
-          {!hasEy
-            ? "No features listed for this product."
-            : "No matching features. Check EY column and Features sheet (NEXT_PUBLIC_FEATURES_GID)."}
-        </p>
-      )}
+      <div id="divFeaturesHeader" className="mb-2 flex shrink-0 items-center justify-between gap-2">
+        <h3 id="h3FeaturesTitle" className="text-sm font-semibold text-slate-800">
+          Features
+        </h3>
+        <span
+          id="spanFeaturesCount"
+          className="inline-flex h-5 min-w-5 items-center justify-center rounded bg-teal-600 px-1.5 text-xs font-medium text-white tabular-nums"
+          aria-label={`${matches.length} features`}
+        >
+          {matches.length}
+        </span>
+      </div>
+      <div
+        id="divFeaturesListScroll"
+        className="scrollbar-hide min-h-0 flex-1 overflow-y-auto"
+        aria-label="Features list"
+      >
+        {matches.length > 0 ? (
+          <ul id="ulFeaturesList" className="flex flex-col gap-1.5 text-sm">
+            {matches.map((m, i) => (
+              <li key={`${i}-${m.label.slice(0, 20)}`} id={`liFeature-${i}`}>
+                {m.mediaUrl && onFeatureMediaClick ? (
+                  <button
+                    type="button"
+                    id={`btnFeature-${i}`}
+                    onClick={() => onFeatureMediaClick(m.mediaUrl!)}
+                    className="flex w-full items-center gap-2 rounded bg-teal-600 px-2 py-1.5 text-white shadow-sm transition-colors hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-400"
+                    title={isVideoMediaUrl(m.mediaUrl) ? "Play video in main viewer" : "Show in main image"}
+                  >
+                    <img
+                      src="/used/star.jpg"
+                      alt=""
+                      className="size-5 shrink-0 object-contain"
+                      width={20}
+                      height={20}
+                    />
+                    <span className="min-w-0 flex-1 text-left font-medium text-white">{m.label}</span>
+                    <FeatureMediaTypeIcon mediaUrl={m.mediaUrl} />
+                  </button>
+                ) : (
+                  <div className="flex w-full items-center gap-2 rounded bg-teal-600 px-2 py-1.5 text-white shadow-sm">
+                    <img
+                      src="/used/star.jpg"
+                      alt=""
+                      className="size-5 shrink-0 object-contain"
+                      width={20}
+                      height={20}
+                    />
+                    <span className="min-w-0 flex-1 font-medium text-white">{m.label}</span>
+                    <FeatureMediaTypeIcon mediaUrl={null} />
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p id="pFeaturesEmpty" className="text-sm text-slate-500">
+            {!hasEy
+              ? "No features listed for this product."
+              : "No matching features. Check EY column and Features sheet (NEXT_PUBLIC_FEATURES_GID)."}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

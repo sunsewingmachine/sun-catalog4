@@ -265,13 +265,18 @@ function ProductDetails({
   return (
     <div
       id="divDetailsContent"
-      className="scrollbar-hide flex flex-1 flex-col overflow-auto p-4"
+      className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-4"
     >
       {!ultraPriceOpen && (
         <div
-          id="divDetailsBox"
-          className="flex flex-row gap-3 rounded-lg border border-green-200 bg-green-100 p-3"
+          id="divDetailsSection1"
+          className="flex shrink-0 flex-col"
+          aria-label="Product details and quality"
         >
+          <div
+            id="divDetailsBox"
+            className="flex flex-row gap-3 rounded-lg border border-green-200 bg-green-100 p-3"
+          >
           <dl
             id="dlProductDetails"
             className="grid min-w-0 flex-1 grid-cols-[max-content_1ch_1fr] gap-x-2 gap-y-1.5 text-lg font-medium text-slate-700"
@@ -329,14 +334,26 @@ function ProductDetails({
             )}
           </div>
         </div>
+        </div>
       )}
 
-      <FeaturesBox product={product} features={features} onFeatureMediaClick={onFeatureMediaClick} />
+      <div
+        id="divDetailsSection2"
+        className="flex h-[12.5rem] min-h-[12.5rem] shrink-0 flex-col overflow-hidden"
+        aria-label="Features"
+      >
+        <FeaturesBox product={product} features={features} onFeatureMediaClick={onFeatureMediaClick} />
+      </div>
 
+      <div
+        id="divDetailsSection3"
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        aria-label={exchangePriceMenu != null ? "Exchange price" : "Testimonials"}
+      >
       {exchangePriceMenu != null ? (
         <div
           id="divDetailsExchangePrice"
-          className="mt-4 flex flex-1 flex-col min-h-0 rounded-lg border border-green-200 bg-green-50/80 overflow-hidden"
+          className="flex h-full min-h-0 flex-col rounded-lg border border-green-200 bg-green-50/80 overflow-hidden"
           aria-label="Exchange price"
         >
           <div className="flex shrink-0 items-center justify-between gap-2 px-2 py-1 border-b border-teal-700 bg-teal-600">
@@ -420,11 +437,12 @@ function ProductDetails({
       ) : (
         <div
           id="divDetailsTestimonials"
-          className="mt-4 flex flex-1 min-h-[8rem] flex-col rounded-lg border border-green-200 bg-green-50/80 p-4"
+          className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-green-200 bg-green-50/80 p-3"
         >
           <TestimonialsMediaStrip />
         </div>
       )}
+      </div>
 
     </div>
   );

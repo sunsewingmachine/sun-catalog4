@@ -28,7 +28,7 @@ function AnnounceIcon({ className }: { className?: string }) {
   if (failed) {
     return (
       <span className={className} aria-hidden>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-full w-full text-slate-700">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-full w-full text-teal-100">
           <path d="M3 11l18-5v12L3 14v-3z" />
           <path d="M11 6v12" />
           <path d="M18 6v3" />
@@ -79,7 +79,7 @@ function FlashMessageBar({
   const versionBlock = (
     <div
       id="divBottomBarVersion"
-      className="shrink-0 text-[10px] leading-tight text-slate-600"
+      className="shrink-0 text-[10px] leading-tight text-teal-100"
       aria-label="Database, app version and last updated"
       title="Database and app version, catalog last updated"
     >
@@ -130,7 +130,7 @@ function FlashMessageBar({
 
   const disclaimerBlock = (
     <div id="divBottomBarDisclaimer" className="shrink-0 max-w-[42%] min-w-0" aria-live="polite">
-      <div className="flex items-center gap-1 rounded border border-green-300 bg-green-300 px-1.5 py-1">
+      <div className="flex items-center gap-1 rounded border border-teal-500 bg-teal-700/90 px-1.5 py-1">
         <img
           src="/used/info.png"
           alt=""
@@ -138,7 +138,7 @@ function FlashMessageBar({
           width={20}
           height={20}
         />
-        <p id="pDisclaimerText" className="min-w-0 flex-1 text-[10px] leading-tight text-slate-900 whitespace-pre-line">
+        <p id="pDisclaimerText" className="min-w-0 flex-1 text-[10px] leading-tight text-white whitespace-pre-line">
           {DISCLAIMER_TEXT}
         </p>
       </div>
@@ -149,7 +149,7 @@ function FlashMessageBar({
     return (
       <footer
         id="divCommonImagesBar"
-        className="flex h-14 min-w-0 shrink-0 items-center gap-3 overflow-hidden border-t border-green-300 bg-green-300 px-3 py-0.5"
+        className="flex h-14 min-w-0 shrink-0 items-center gap-3 overflow-hidden border-t border-teal-600 bg-teal-600 px-3 py-0.5"
         aria-label="Flash messages"
       >
         {versionBlock}
@@ -169,7 +169,7 @@ function FlashMessageBar({
   return (
     <footer
       id="divCommonImagesBar"
-      className="flex h-14 min-w-0 shrink-0 items-center gap-3 overflow-hidden border-t border-green-300 bg-green-300 px-3 py-1"
+      className="flex h-14 min-w-0 shrink-0 items-center gap-3 overflow-hidden border-t border-teal-600 bg-teal-600 px-3 py-1"
       aria-label="Flash messages"
     >
       {versionBlock}
@@ -182,7 +182,7 @@ function FlashMessageBar({
         {showTwoLayers ? (
           <>
             <div
-              className="absolute inset-0 flex items-center justify-center text-lg font-semibold text-slate-800 transition-opacity ease-out"
+              className="absolute inset-0 flex items-center justify-center text-lg font-semibold text-white transition-opacity ease-out"
               style={{
                 opacity: isTransitioning ? 0 : 1,
                 transitionDuration: `${FLASH_FADE_OUT_MS}ms`,
@@ -192,7 +192,7 @@ function FlashMessageBar({
               {messageContent(messages[currentIndex])}
             </div>
             <div
-              className="flex min-w-0 flex-1 items-center justify-center text-lg font-semibold text-slate-800 transition-opacity ease-out"
+              className="flex min-w-0 flex-1 items-center justify-center text-lg font-semibold text-white transition-opacity ease-out"
               style={{
                 opacity: fadeOutComplete ? 1 : 0,
                 transitionDuration: `${FLASH_FADE_IN_MS}ms`,
@@ -202,7 +202,7 @@ function FlashMessageBar({
             </div>
           </>
         ) : (
-          <div className="flex min-w-0 flex-1 items-center justify-center text-lg font-semibold text-slate-800">
+          <div className="flex min-w-0 flex-1 items-center justify-center text-lg font-semibold text-white">
             {messageContent(messages[currentIndex])}
           </div>
         )}
@@ -253,7 +253,7 @@ function renderBarThumb(
     <button
       key={filename}
       type="button"
-      className="h-10 w-12 shrink-0 overflow-hidden rounded-lg border border-green-300 bg-white shadow-sm cursor-pointer"
+      className="h-10 w-12 shrink-0 overflow-hidden rounded-lg border border-teal-500 bg-white shadow-sm cursor-pointer"
       title="Click for full size; double-click to show in main"
       onClick={(e) => {
         e.preventDefault();
@@ -270,7 +270,7 @@ function renderBarThumb(
           className="h-full w-full object-cover pointer-events-none"
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-green-100 text-[10px] text-slate-400">
+        <div className="flex h-full w-full items-center justify-center bg-teal-100 text-[10px] text-slate-500">
           —
         </div>
       )}
@@ -318,7 +318,7 @@ export default function CommonImagesBar({
   return (
     <footer
       id="divCommonImagesBar"
-      className="flex h-16 min-w-0 shrink-0 items-center overflow-hidden bg-green-300 px-2 py-0.5"
+      className="flex h-16 min-w-0 shrink-0 items-center overflow-hidden border-t border-teal-600 bg-teal-600 px-2 py-0.5"
       aria-label="ForAll and ForGroup images"
     >
       <div
@@ -330,7 +330,7 @@ export default function CommonImagesBar({
             <>
               <button
                 type="button"
-                className="h-10 w-12 shrink-0 overflow-hidden rounded-lg border border-green-300 bg-white shadow-sm cursor-pointer"
+                className="h-10 w-12 shrink-0 overflow-hidden rounded-lg border border-teal-500 bg-white shadow-sm cursor-pointer"
                 title="Default image. Click for full size; double-click to show in main."
                 onClick={(e) => {
                   e.preventDefault();
