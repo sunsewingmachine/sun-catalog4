@@ -72,13 +72,20 @@ const fieldIcons: Record<string, React.ReactNode> = {
   ),
 };
 
-const FIELDS = [
-  { term: "Company", fieldKey: "company" as const },
-  { term: "Model", fieldKey: "model" as const },
-  { term: "Price", fieldKey: "price" as const },
-  { term: "Warranty", fieldKey: "warranty" as const },
-  { term: "PCode", fieldKey: "pCode" as const, mono: true },
-] as const;
+type ProductFieldKey = keyof Pick<Product, "company" | "model" | "price" | "warranty" | "pCode">;
+interface DetailFieldConfig {
+  term: string;
+  fieldKey: ProductFieldKey;
+  mono?: boolean;
+}
+
+const FIELDS: DetailFieldConfig[] = [
+  { term: "Company", fieldKey: "company" },
+  { term: "Model", fieldKey: "model" },
+  { term: "Price", fieldKey: "price" },
+  { term: "Warranty", fieldKey: "warranty" },
+  { term: "PCode", fieldKey: "pCode", mono: true },
+];
 
 export default function ProductDetails({
   product,

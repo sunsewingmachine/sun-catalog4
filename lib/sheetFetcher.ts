@@ -3,7 +3,7 @@
  * Call getDataRows(table, 1) to skip one header row; use 2 if sheet has empty row 1 then header.
  */
 
-const GVIZ_JSONP_REGEX = /google\.visualization\.Query\.setResponse\((.*)\);?\s*$/s;
+const GVIZ_JSONP_REGEX = /google\.visualization\.Query\.setResponse\(([\s\S]*)\);?\s*$/;
 
 export interface GvizCell {
   v?: string | number | boolean | null;
