@@ -33,6 +33,8 @@ interface ProductDetailsProps {
   ultraPriceError?: string | null;
   /** When user closes the Ultra price panel. */
   onUltraPriceClose?: () => void;
+  /** When user clicks an Ultra/Aristo/Base item in the Ultra box; variant drives main area image (mainItem.Variant.jpg). */
+  onUltraPriceItemClick?: (variant: "Ultra" | "Aristo" | "Base") => void;
   /** When user clicks an item name in the exchange price (Bybk) table, select that item in the main list. */
   onSelectProductByItmGroupName?: (itmGroupName: string) => void;
   /** When true, hide the Price field in the product info box (persisted via Settings → Hide). */
@@ -42,6 +44,15 @@ interface ProductDetailsProps {
 }
 
 const ICON_CLASS = "size-4 shrink-0 text-slate-700";
+
+/** From Ultra box item label (e.g. Ultra3.MotC2, Aristo.MotC1): return Ultra, Aristo, or Base; else null. */
+function getVariantFromUltraItemLabel(mainLabel: string): "Ultra" | "Aristo" | "Base" | null {
+  const first = (mainLabel.trim().split(/[.\s]/)[0] ?? "").toLowerCase();
+  if (first.startsWith("ultra")) return "Ultra";
+  if (first === "aristo") return "Aristo";
+  if (first === "base") return "Base";
+  return null;
+}
 
 const fieldIcons: Record<string, React.ReactNode> = {
   Company: (
@@ -103,6 +114,7 @@ export default function ProductDetails({
   ultraPriceLoading = false,
   ultraPriceError = null,
   onUltraPriceClose,
+  onUltraPriceItemClick,
   onSelectProductByItmGroupName,
   hidePrice = false,
   hideWarranty = false,
@@ -135,11 +147,11 @@ export default function ProductDetails({
         <div
           id="divDetailsUltraPrice"
           className="flex flex-1 flex-col min-h-0 rounded-lg border border-green-200 bg-green-50/80 overflow-hidden"
-          aria-label="Ultra price"
+          aria-label="Aristo & Ultra"
         >
           <div className="flex shrink-0 items-center justify-between gap-2 px-2 py-1 border-b border-teal-700 bg-teal-600">
-            <h3 id="h3UltraPriceTitle" className="text-xs font-semibold text-white">
-              Ultra price{product?.itmGroupName ? ` (${product.itmGroupName})` : ""}
+            <h3 id="h3UltraPriceTitle" className="text-sm font-semibold text-white">
+              Aristo & Ultra{product?.itmGroupName ? ` - ${product.itmGroupName}` : ""}
             </h3>
             {onUltraPriceClose ? (
               <button
@@ -147,7 +159,7 @@ export default function ProductDetails({
                 id="btnUltraPriceClose"
                 onClick={onUltraPriceClose}
                 className="rounded p-1 text-white hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-1"
-                aria-label="Close Ultra price"
+                aria-label="Close Aristo & Ultra"
                 title="Close"
               >
                 <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
@@ -178,7 +190,7 @@ export default function ProductDetails({
               const selectedItemMrp = product && hasRawRows ? getMrpByItmGroupName(rawItmGroupRows, product.itmGroupName) : 0;
               const lessSvStandTableMrp = hasRawRows ? getMrpByItmGroupName(rawItmGroupRows, "less.svstandtable") : 0;
               return (
-                <div id="listUltraPriceColA" className="flex flex-col gap-2 w-full" aria-label="Ultra price items and MRP">
+                <div id="listUltraPriceColA" className="flex flex-col gap-2 w-full" aria-label="Aristo & Ultra items and MRP">
                   {groups.map((group, gi) => (
                     <div
                       key={`ultra-group-${gi}`}
@@ -209,11 +221,16 @@ export default function ProductDetails({
                           const mrpStr = hasRawRows ? (threePlusSelected > 0 ? String(Math.round(threePlusSelected)) : "—") : null;
                           const discountStr = hasRawRows ? (totalDiscount > 0 ? String(Math.round(totalDiscount)) : "—") : null;
                           const priceStr = hasRawRows ? String(Math.round(price)) : null;
+                          const variant = getVariantFromUltraItemLabel(mainLabel);
                           return (
                             <li key={`ultra-a-${gi}-${ii}`} id={`liUltraColA_${gi}_${ii}`}>
                               <div
+                                role={variant ? "button" : undefined}
+                                tabIndex={variant ? 0 : undefined}
                                 title={`${mainLabel} | MRP: ${threePlusSelected} | Discount: ${totalDiscount} (B+C+D+selected) | Price: ${price}`}
-                                className="flex w-full flex-row items-center gap-2 rounded px-1.5 py-1 text-left text-sm font-medium bg-green-100 text-slate-700 hover:bg-green-200 transition-colors"
+                                className="flex w-full flex-row items-center gap-2 rounded px-1.5 py-1 text-left text-sm font-medium bg-green-100 text-slate-700 hover:bg-green-200 transition-colors cursor-pointer"
+                                onClick={() => variant && onUltraPriceItemClick?.(variant)}
+                                onKeyDown={(e) => variant && (e.key === "Enter" || e.key === " ") && onUltraPriceItemClick?.(variant)}
                               >
                                 <span className="min-w-0 flex-1 truncate">{mainLabel}</span>
                                 {mrpStr != null && (

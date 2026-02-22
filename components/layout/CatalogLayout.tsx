@@ -20,6 +20,7 @@ import ProductViewer from "@/components/viewer/ProductViewer";
 import ImageLightbox from "@/components/viewer/ImageLightbox";
 import ProductDetails from "@/components/details/ProductDetails";
 import { isVideoMediaUrl } from "@/components/details/FeaturesBox";
+import { getImageUrl } from "@/lib/r2ImageHelper";
 import AdditionalImagesStrip from "@/components/strip/AdditionalImagesStrip";
 import ServerImagesStrip from "@/components/strip/ServerImagesStrip";
 import CommonImagesBar from "@/components/strip/CommonImagesBar";
@@ -152,6 +153,10 @@ export default function CatalogLayout({
   const [infoSubmenuExpanded, setInfoSubmenuExpanded] = React.useState(false);
   /** When true, details panel shows Ultra price box with column A from sheet NEXT_PUBLIC_ULTRA_GID. */
   const [ultraPriceBoxOpen, setUltraPriceBoxOpen] = React.useState(false);
+  /** When user clicks an Ultra/Aristo/Base item in the Ultra box, show mainItem.Variant.jpg in main area; persists across main list changes while box is open. */
+  const [ultraSelectedVariant, setUltraSelectedVariant] = React.useState<"Ultra" | "Aristo" | "Base" | null>(null);
+  /** Keys "itmGroupName.Variant" for which the variant image failed (404); avoid reusing that URL. */
+  const [variantImageFailed, setVariantImageFailed] = React.useState<Set<string>>(() => new Set());
   /** Ultra sheet rows (cols A,B,C,D); populated when ultraPriceBoxOpen is true and sheet is fetched. */
   const [ultraRows, setUltraRows] = React.useState<UltraRow[]>([]);
   const [ultraPriceLoading, setUltraPriceLoading] = React.useState(false);
@@ -259,23 +264,28 @@ export default function CatalogLayout({
     }
   }, []);
 
+  /** Defer bar-images (GEN + CAT list) fetch so app shell opens faster. GEN loads once on app load; 5s delay as GEN is not critical initially. */
+  const DELAY_MS_BAR_FETCH = 5000;
   React.useEffect(() => {
     let cancelled = false;
-    fetch("/api/bar-images")
-      .then((res) => res.json())
-      .then((data: { forAll?: string[]; forGroup?: string[]; _hint?: "r2_not_configured" }) => {
-        if (cancelled) return;
-        setBarImages({
-          forAll: Array.isArray(data.forAll) ? data.forAll : [],
-          forGroup: Array.isArray(data.forGroup) ? data.forGroup : [],
-          hint: data._hint,
+    const t = setTimeout(() => {
+      fetch("/api/bar-images")
+        .then((res) => res.json())
+        .then((data: { forAll?: string[]; forGroup?: string[]; _hint?: "r2_not_configured" }) => {
+          if (cancelled) return;
+          setBarImages({
+            forAll: Array.isArray(data.forAll) ? data.forAll : [],
+            forGroup: Array.isArray(data.forGroup) ? data.forGroup : [],
+            hint: data._hint,
+          });
+        })
+        .catch(() => {
+          if (!cancelled) setBarImages({ forAll: [], forGroup: [] });
         });
-      })
-      .catch(() => {
-        if (!cancelled) setBarImages({ forAll: [], forGroup: [] });
-      });
+    }, DELAY_MS_BAR_FETCH);
     return () => {
       cancelled = true;
+      clearTimeout(t);
     };
   }, []);
 
@@ -283,6 +293,7 @@ export default function CatalogLayout({
     if (!ultraPriceBoxOpen) {
       setUltraRows([]);
       setUltraPriceError(null);
+      setUltraSelectedVariant(null);
       return;
     }
     let cancelled = false;
@@ -412,6 +423,26 @@ export default function CatalogLayout({
     [filteredProducts, handleSelectProductFromMain]
   );
 
+  /** When Ultra box is open and a variant is selected, show mainItem.Variant.jpg; else use mainImageOverride (strip/feature). Show usual main image only when variant image 404s. */
+  const effectiveMainImageOverride = React.useMemo(() => {
+    if (ultraPriceBoxOpen && ultraSelectedVariant && selectedProduct?.itmGroupName) {
+      const key = `${selectedProduct.itmGroupName}.${ultraSelectedVariant}`;
+      if (variantImageFailed.has(key)) return null;
+      return getImageUrl(`${selectedProduct.itmGroupName}.${ultraSelectedVariant}.jpg`);
+    }
+    return mainImageOverride;
+  }, [ultraPriceBoxOpen, ultraSelectedVariant, selectedProduct?.itmGroupName, variantImageFailed, mainImageOverride]);
+
+  const handleUltraPriceItemClick = React.useCallback((variant: "Ultra" | "Aristo" | "Base") => {
+    setUltraSelectedVariant(variant);
+  }, []);
+
+  const handleMainImageOverrideError = React.useCallback(() => {
+    if (selectedProduct?.itmGroupName && ultraSelectedVariant) {
+      setVariantImageFailed((prev) => new Set(prev).add(`${selectedProduct.itmGroupName}.${ultraSelectedVariant}`));
+    }
+  }, [selectedProduct?.itmGroupName, ultraSelectedVariant]);
+
   /** Category prefix from selected product (e.g. "Sv.Happy.1st" → "Sv") for filtering ForGroup images. */
   const categoryPrefix = React.useMemo(
     () =>
@@ -423,11 +454,24 @@ export default function CatalogLayout({
         : "",
     [selectedProduct?.itmGroupName]
   );
+  /** Deferred category prefix: updates after delay so list click feels instant. CAT row only changes when category changes. */
+  const DELAY_MS_STRIP = 120;
+  const [deferredCategoryPrefix, setDeferredCategoryPrefix] = React.useState("");
+  React.useEffect(() => {
+    const t = setTimeout(() => setDeferredCategoryPrefix(categoryPrefix), DELAY_MS_STRIP);
+    return () => clearTimeout(t);
+  }, [categoryPrefix]);
+  /** ETC: product for strip; deferred so main list selection stays snappy. */
+  const [deferredProduct, setDeferredProduct] = React.useState<Product | null>(null);
+  React.useEffect(() => {
+    const t = setTimeout(() => setDeferredProduct(selectedProduct), DELAY_MS_STRIP);
+    return () => clearTimeout(t);
+  }, [selectedProduct]);
   const forGroupFiltered = React.useMemo(() => {
-    if (!categoryPrefix) return [];
-    const lower = categoryPrefix.toLowerCase();
+    if (!deferredCategoryPrefix) return [];
+    const lower = deferredCategoryPrefix.toLowerCase();
     return barImages.forGroup.filter((f) => f.toLowerCase().startsWith(lower));
-  }, [barImages.forGroup, categoryPrefix]);
+  }, [barImages.forGroup, deferredCategoryPrefix]);
 
   React.useEffect(() => {
     if (categories.length && !selectedCategory) setSelectedCategory(categories[0] ?? null);
@@ -653,7 +697,7 @@ export default function CatalogLayout({
                           setSettingsMenuOpen(false);
                         }}
                       >
-                        <span>Ultra price</span>
+                        <span>Aristo & Ultra</span>
                       </button>
                       <div className="border-t border-green-100 my-1" aria-hidden />
                       <button
@@ -772,12 +816,12 @@ export default function CatalogLayout({
                             type="button"
                             id="btnHidePriceToggle"
                             role="switch"
-                            aria-checked={hidePrice}
+                            aria-checked={!hidePrice}
                             onClick={() => setHidePriceAndPersist(!hidePrice)}
-                            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border border-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${hidePrice ? "bg-green-600" : "bg-slate-200"}`}
+                            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border border-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${!hidePrice ? "bg-green-600" : "bg-slate-200"}`}
                           >
                             <span
-                              className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${hidePrice ? "translate-x-5" : "translate-x-0.5"}`}
+                              className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${!hidePrice ? "translate-x-5" : "translate-x-0.5"}`}
                               style={{ marginTop: "2px" }}
                               aria-hidden
                             />
@@ -794,12 +838,12 @@ export default function CatalogLayout({
                             type="button"
                             id="btnHideWarrantyToggle"
                             role="switch"
-                            aria-checked={hideWarranty}
+                            aria-checked={!hideWarranty}
                             onClick={() => setHideWarrantyAndPersist(!hideWarranty)}
-                            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border border-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${hideWarranty ? "bg-green-600" : "bg-slate-200"}`}
+                            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border border-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${!hideWarranty ? "bg-green-600" : "bg-slate-200"}`}
                           >
                             <span
-                              className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${hideWarranty ? "translate-x-5" : "translate-x-0.5"}`}
+                              className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${!hideWarranty ? "translate-x-5" : "translate-x-0.5"}`}
                               style={{ marginTop: "2px" }}
                               aria-hidden
                             />
@@ -859,9 +903,10 @@ export default function CatalogLayout({
               <div className="flex min-h-0 flex-1 flex-col" aria-hidden>
                 <ProductViewer
                   product={selectedProduct}
-                  mainImageOverride={mainImageOverride}
+                  mainImageOverride={effectiveMainImageOverride}
                   mainVideoOverride={mainVideoOverride}
                   onOpenLightbox={openLightbox}
+                  onMainImageOverrideError={handleMainImageOverrideError}
                   showBestBadgeOverlay={selectedExchangeMenu != null || ultraPriceBoxOpen}
                 />
               </div>
@@ -872,7 +917,7 @@ export default function CatalogLayout({
               <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-100/80 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Etc</span>
               <div id="divAdditionalImagesRowScroll" className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
                 <AdditionalImagesStrip
-                  product={selectedProduct}
+                  product={deferredProduct}
                   onSetMainImage={handleSetMainImage}
                   onOpenLightbox={openLightbox}
                   compact
@@ -925,6 +970,7 @@ export default function CatalogLayout({
               ultraPriceLoading={ultraPriceLoading}
               ultraPriceError={ultraPriceError}
               onUltraPriceClose={() => setUltraPriceBoxOpen(false)}
+              onUltraPriceItemClick={handleUltraPriceItemClick}
               hidePrice={hidePrice}
               hideWarranty={hideWarranty}
             />

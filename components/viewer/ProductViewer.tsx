@@ -23,6 +23,8 @@ interface ProductViewerProps {
   mainVideoOverride?: string | null;
   /** Called when user double-clicks an image to open full-size lightbox. */
   onOpenLightbox?: (imageSrc: string, imageAlt: string) => void;
+  /** When main image is showing an override URL and that image fails to load (e.g. variant image 404), call this to fall back to usual main image. */
+  onMainImageOverrideError?: () => void;
   /** When true, show best-quality badge image at bottom-right of main image (used when exchange price box is shown). */
   showBestBadgeOverlay?: boolean;
 }
@@ -32,6 +34,7 @@ export default function ProductViewer({
   mainImageOverride = null,
   mainVideoOverride = null,
   onOpenLightbox,
+  onMainImageOverrideError,
   showBestBadgeOverlay = false,
 }: ProductViewerProps) {
   const [mainImageError, setMainImageError] = React.useState(false);
@@ -102,6 +105,15 @@ export default function ProductViewer({
   const handleDoubleClickMain = () => {
     onOpenLightbox?.(mainSrc, mainAlt);
   };
+
+  const handleMainImageError = React.useCallback(() => {
+    if (mainImageOverride != null && mainImageOverride !== "") {
+      onMainImageOverrideError?.();
+    } else {
+      if (tryLowercase) setMainImageError(true);
+      else setTryLowercase(true);
+    }
+  }, [mainImageOverride, onMainImageOverrideError, tryLowercase]);
 
   const mainImageBoxClassName =
     "main-image-box-cap relative overflow-hidden bg-green-50 shadow-sm mx-auto outline-none focus:outline-none focus-visible:ring-0";
@@ -211,7 +223,7 @@ export default function ProductViewer({
             className="pointer-events-none h-full w-full object-contain rounded-2xl"
             loading="eager"
             referrerPolicy="no-referrer"
-            onError={() => (tryLowercase ? setMainImageError(true) : setTryLowercase(true))}
+            onError={handleMainImageError}
             draggable={false}
           />
         ) : (
@@ -223,7 +235,7 @@ export default function ProductViewer({
             className="pointer-events-none object-contain rounded-2xl"
             sizes="(max-width: 800px) 100vw, 50vw"
             loading="eager"
-            onError={() => (tryLowercase ? setMainImageError(true) : setTryLowercase(true))}
+            onError={handleMainImageError}
             draggable={false}
           />
         )}
