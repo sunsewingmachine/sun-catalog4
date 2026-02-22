@@ -9,7 +9,6 @@ import React from "react";
 import Link from "next/link";
 import type { Product } from "@/types/product";
 import { getWholesaleStringThreeLines } from "@/lib/wholesalePriceHelper";
-import { fetchSheetByGid, getAllRows } from "@/lib/sheetFetcher";
 import type { UltraRow } from "@/lib/ultraPriceHelper";
 import type { FeatureRecord } from "@/types/feature";
 import { ALLOWED_CATEGORIES } from "@/types/product";
@@ -36,10 +35,6 @@ interface CatalogLayoutProps {
   dbVersion: string;
   /** App version shown in UI (e.g. 1.0). */
   appVersion: string;
-  /** Sheet ID for fetching Ultra price tab (NEXT_PUBLIC_ULTRA_GID). */
-  sheetId?: string;
-  /** GID of Ultra price sheet; column A is listed in the Ultra price box. */
-  ultraGid?: string;
   /** When provided, settings menu shows Refresh; on confirm, this fetches catalog and images from server. */
   onRequestRefresh?: () => Promise<void>;
 }
@@ -122,8 +117,6 @@ export default function CatalogLayout({
   lastUpdated,
   dbVersion,
   appVersion,
-  sheetId = "",
-  ultraGid = "",
   onRequestRefresh,
 }: CatalogLayoutProps) {
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(
@@ -219,30 +212,21 @@ export default function CatalogLayout({
       setUltraPriceError(null);
       return;
     }
-    if (!sheetId || !ultraGid) {
-      setUltraPriceError("Missing NEXT_PUBLIC_SHEET_ID or NEXT_PUBLIC_ULTRA_GID.");
-      setUltraRows([]);
-      setUltraPriceLoading(false);
-      return;
-    }
     let cancelled = false;
     setUltraPriceLoading(true);
     setUltraPriceError(null);
-    fetchSheetByGid(sheetId, ultraGid)
-      .then((table) => {
+    fetch("/api/ultra-price")
+      .then((res) => {
+        if (!res.ok) return res.json().then((d) => Promise.reject(new Error((d as { error?: string }).error ?? "Failed to load")));
+        return res.json();
+      })
+      .then((data: { rows?: UltraRow[] }) => {
         if (cancelled) return;
-        const allRows = getAllRows(table);
-        const rows: UltraRow[] = allRows.map((row) => [
-          String((row[0] ?? "")).trim(),
-          String((row[1] ?? "")).trim(),
-          String((row[2] ?? "")).trim(),
-          String((row[3] ?? "")).trim(),
-        ] as UltraRow);
-        setUltraRows(rows);
+        setUltraRows(Array.isArray(data.rows) ? data.rows : []);
       })
       .catch((e) => {
         if (!cancelled) {
-          setUltraPriceError(e instanceof Error ? e.message : "Failed to load Ultra sheet");
+          setUltraPriceError(e instanceof Error ? e.message : "Ultra price data is not available.");
           setUltraRows([]);
         }
       })
@@ -252,7 +236,7 @@ export default function CatalogLayout({
     return () => {
       cancelled = true;
     };
-  }, [ultraPriceBoxOpen, sheetId, ultraGid]);
+  }, [ultraPriceBoxOpen]);
 
   React.useEffect(() => {
     if (!settingsMenuOpen) return;

@@ -47,9 +47,7 @@ export async function fetchSheetByGid(
   const res = await fetch(url);
   if (!res.ok) {
     if (res.status === 404) {
-      throw new Error(
-        "Sheet not found (404). Check NEXT_PUBLIC_SHEET_ID and GIDs. If the sheet is private, publish it to the web (File → Share → Publish to web)."
-      );
+      throw new Error("Sheet not found (404).");
     }
     throw new Error(`Sheet fetch failed: ${res.status}`);
   }

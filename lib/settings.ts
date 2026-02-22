@@ -3,6 +3,8 @@
  * (env values are read from .env.local; do not put secrets in this file).
  */
 
+import { parseSheetId, parseGid } from "./sheetEnvParser";
+
 /** In-file variables — edit these directly to change behavior without touching .env */
 export const SETTINGS = {
   /** Catalog window/title label in the UI */
@@ -41,12 +43,12 @@ function getEnvNumber(key: string, fallback: number): number {
 }
 
 export const ENV = {
-  sheetId: getEnv("NEXT_PUBLIC_SHEET_ID"),
-  itmGroupGid: getEnv("NEXT_PUBLIC_ITMGROUP_GID"),
-  dbGid: getEnv("NEXT_PUBLIC_DB_GID"),
-  featuresGid: getEnv("NEXT_PUBLIC_FEATURES_GID"),
+  sheetId: parseSheetId(getEnv("NEXT_PUBLIC_SHEET_ID")),
+  itmGroupGid: parseGid(getEnv("NEXT_PUBLIC_ITMGROUP_GID")),
+  dbGid: parseGid(getEnv("NEXT_PUBLIC_DB_GID")),
+  featuresGid: parseGid(getEnv("NEXT_PUBLIC_FEATURES_GID")),
   /** GID of the Ultra price sheet; column A is listed in the Ultra price exchange box. */
-  ultraGid: getEnv("NEXT_PUBLIC_ULTRA_GID"),
+  ultraGid: parseGid(getEnv("NEXT_PUBLIC_ULTRA_GID")),
   dataStartRow: getEnvNumber("NEXT_PUBLIC_ITMGROUP_DATA_START_ROW", SETTINGS.dataStartRowDefault),
   cdnBaseUrl: getEnv("NEXT_PUBLIC_CDN_BASE_URL"),
   cdnImagePrefix: getEnv("NEXT_PUBLIC_CDN_IMAGE_PREFIX"),
