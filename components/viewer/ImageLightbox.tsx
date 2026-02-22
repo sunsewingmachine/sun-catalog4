@@ -8,12 +8,11 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
+import { SETTINGS } from "@/lib/settings";
 
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 5;
 const WHEEL_ZOOM_FACTOR = 0.002;
-/** Fallback when image URL is missing. */
-const DEFAULT_IMAGE = "/used/default.jpg";
 
 interface ImageLightboxProps {
   imageSrc: string;
@@ -41,7 +40,7 @@ export default function ImageLightbox({
   const unoptimized =
     imageSrc.startsWith("http") ||
     imageSrc.startsWith("blob:") ||
-    imageSrc === DEFAULT_IMAGE;
+    imageSrc === SETTINGS.fallbackImagePath;
 
   const handleImageLoad = React.useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -152,6 +151,29 @@ export default function ImageLightbox({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/85"
       onClick={handleBackdropClick}
     >
+      {/* Exit fullscreen strip on the left (like sidebar) */}
+      <div
+        id="divLightboxExitFullscreenStrip"
+        className="absolute left-0 top-0 z-10 flex h-full w-14 flex-col justify-end border-r border-white/20 bg-black/40 p-1"
+        aria-label="Exit fullscreen"
+      >
+        <button
+          type="button"
+          id="btnLightboxExitFullscreen"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClose();
+          }}
+          className="flex w-full items-center justify-center gap-1 rounded border-t border-white/20 p-2 text-white/90 transition-colors hover:bg-white/20 hover:text-white"
+          title="Exit fullscreen (Esc)"
+          aria-label="Exit fullscreen"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0" aria-hidden>
+            <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+          </svg>
+          <span className="text-xs font-medium">/ exit fullscreen</span>
+        </button>
+      </div>
       <button
         type="button"
         id="btnLightboxClose"
@@ -160,7 +182,7 @@ export default function ImageLightbox({
       >
         Close
       </button>
-      <p className="absolute bottom-4 left-4 z-10 text-xs text-white/80">
+      <p className="absolute bottom-4 left-[4.5rem] z-10 text-xs text-white/80">
         Scroll to zoom, drag to pan
       </p>
       <div
@@ -179,7 +201,7 @@ export default function ImageLightbox({
         >
           <img
             id="imgLightboxImage"
-            src={imageSrc || DEFAULT_IMAGE}
+            src={imageSrc || SETTINGS.fallbackImagePath}
             alt={imageAlt}
             className="h-full w-full select-none object-contain"
             draggable={false}

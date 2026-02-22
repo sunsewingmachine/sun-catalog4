@@ -10,9 +10,7 @@ import type { Product } from "@/types/product";
 import { getImageUrl, getCdnBase } from "@/lib/r2ImageHelper";
 import Image from "next/image";
 import { useImageDisplayUrl } from "@/hooks/useImageDisplayUrl";
-
-/** Fallback when product image is missing or fails to load. */
-const DEFAULT_IMAGE = "/used/default.jpg";
+import { SETTINGS } from "@/lib/settings";
 /** Main image backbox: 16:9, max 1520px wide, height capped in .main-image-box-cap (globals.css). */
 
 interface ProductViewerProps {
@@ -42,6 +40,8 @@ export default function ProductViewer({
 }: ProductViewerProps) {
   const [mainImageError, setMainImageError] = React.useState(false);
   const [tryLowercase, setTryLowercase] = React.useState(false);
+  /** When true, main image has loaded so we can fade it in smoothly (avoids blink). */
+  const [mainImageLoaded, setMainImageLoaded] = React.useState(false);
   const displaySrcExact = product ? getImageUrl(product.imageFilename, false) : "";
   const displaySrcLower = product ? getImageUrl(product.imageFilename, true) : "";
   const displaySrc = tryLowercase ? displaySrcLower : displaySrcExact;
@@ -49,7 +49,7 @@ export default function ProductViewer({
     displaySrc?.startsWith("http") ? displaySrc : ""
   );
   const useSample = !displaySrc || mainImageError;
-  const productMainSrc = useSample ? DEFAULT_IMAGE : (cachedMainUrl || displaySrc || DEFAULT_IMAGE);
+  const productMainSrc = useSample ? SETTINGS.fallbackImagePath : (cachedMainUrl || displaySrc || SETTINGS.fallbackImagePath);
   const mainSrc =
     mainImageHoverPreview != null && mainImageHoverPreview !== ""
       ? mainImageHoverPreview
@@ -73,6 +73,10 @@ export default function ProductViewer({
     setMainImageError(false);
     setTryLowercase(false);
   }, [product?.itmGroupName, displaySrcExact]);
+
+  React.useEffect(() => {
+    setMainImageLoaded(false);
+  }, [effectiveMainSrc]);
 
   React.useEffect(() => {
     if (!showVideo) {
@@ -138,7 +142,7 @@ export default function ProductViewer({
         >
           <Image
             id="imgMainProduct"
-            src={DEFAULT_IMAGE}
+            src={SETTINGS.fallbackImagePath}
             alt="Default"
             fill
             className="pointer-events-none object-contain rounded-2xl"
@@ -226,9 +230,10 @@ export default function ProductViewer({
             id="imgMainProduct"
             src={effectiveMainSrc}
             alt={mainAlt}
-            className="pointer-events-none h-full w-full object-contain rounded-2xl"
+            className={`pointer-events-none h-full w-full object-contain rounded-2xl transition-opacity duration-200 ${mainImageLoaded ? "opacity-100" : "opacity-0"}`}
             loading="eager"
             referrerPolicy="no-referrer"
+            onLoad={() => setMainImageLoaded(true)}
             onError={handleMainImageError}
             draggable={false}
           />
@@ -238,9 +243,10 @@ export default function ProductViewer({
             src={effectiveMainSrc}
             alt={mainAlt}
             fill
-            className="pointer-events-none object-contain rounded-2xl"
+            className={`pointer-events-none object-contain rounded-2xl transition-opacity duration-200 ${mainImageLoaded ? "opacity-100" : "opacity-0"}`}
             sizes="(max-width: 800px) 100vw, 50vw"
             loading="eager"
+            onLoad={() => setMainImageLoaded(true)}
             onError={handleMainImageError}
             draggable={false}
           />

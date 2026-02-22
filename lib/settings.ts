@@ -28,6 +28,8 @@ export const SETTINGS = {
   ],
   /** Interval (ms) between switching to the next message in the bottom bar. */
   bottomBarMessageIntervalMs: 5000,
+  /** Fallback image when product/bar image is missing, wrong format, or fails to load (public/machines/Sample.jpg). */
+  fallbackImagePath: "/machines/Sample.jpg",
 } as const;
 
 /** Env-derived config (set in .env.local; restart dev server after changes) */

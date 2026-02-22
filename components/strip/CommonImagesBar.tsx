@@ -12,9 +12,6 @@ import Image from "next/image";
 import CachedImage from "@/components/shared/CachedImage";
 import { SETTINGS } from "@/lib/settings";
 
-/** Fallback when no image or bar is empty. */
-const DEFAULT_IMAGE = "/used/default.jpg";
-
 /** Disclaimer text shown in the bottom bar (compact). */
 const DISCLAIMER_TEXT =
   "படத்தில் உள்ளவைகள் சேம்பிள் மட்டுமே. பொருட்களின் கலர்,\nஅளவு, லேபிள்கள், விலை என அனைத்தும் மாற்றத்திற்கு\nஉரியது. GST Applicable. Cover, Scissor Extra.";
@@ -335,14 +332,14 @@ export default function CommonImagesBar({
                 type="button"
                 className="h-10 w-12 shrink-0 overflow-hidden rounded-lg border border-green-300 bg-white shadow-sm cursor-pointer"
                 title="Default image. Click to show in main; double-click for full size."
-                onClick={() => onSetMainImage?.(DEFAULT_IMAGE)}
+                onClick={() => onSetMainImage?.(SETTINGS.fallbackImagePath)}
                 onDoubleClick={(e) => {
                   e.preventDefault();
-                  onOpenLightbox?.(DEFAULT_IMAGE, "Default");
+                  onOpenLightbox?.(SETTINGS.fallbackImagePath, "Default");
                 }}
               >
                 <Image
-                  src={DEFAULT_IMAGE}
+                  src={SETTINGS.fallbackImagePath}
                   alt="Default"
                   width={48}
                   height={40}
@@ -359,12 +356,12 @@ export default function CommonImagesBar({
             <>
               {forAllFilenames.map((filename) => {
                 const src = getImageUrlForFolder(filename, "ForAll");
-                const displaySrc = src || DEFAULT_IMAGE;
+                const displaySrc = src || SETTINGS.fallbackImagePath;
                 return renderBarThumb(filename, src, displaySrc, onSetMainImage, onOpenLightbox);
               })}
               {forGroupFiltered.map((filename) => {
                 const src = getImageUrlForFolder(filename, "ForGroup");
-                const displaySrc = src || DEFAULT_IMAGE;
+                const displaySrc = src || SETTINGS.fallbackImagePath;
                 return renderBarThumb(filename, src, displaySrc, onSetMainImage, onOpenLightbox);
               })}
             </>

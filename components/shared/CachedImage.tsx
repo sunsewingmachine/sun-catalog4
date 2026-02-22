@@ -7,6 +7,7 @@
 import React from "react";
 import Image from "next/image";
 import { useImageDisplayUrl } from "@/hooks/useImageDisplayUrl";
+import { SETTINGS } from "@/lib/settings";
 
 export interface CachedImageProps
   extends Omit<
@@ -19,11 +20,9 @@ export interface CachedImageProps
   height?: number;
   fill?: boolean;
   sizes?: string;
-  /** Use Next Image for non-http/blob (e.g. /used/default.jpg). */
+  /** Use Next Image for non-http/blob (e.g. fallback image). */
   useNextImageForLocal?: boolean;
 }
-
-const DEFAULT_IMAGE = "/used/default.jpg";
 
 export default function CachedImage({
   src,
@@ -49,7 +48,7 @@ export default function CachedImage({
   if (showAsImg) {
     return (
       <img
-        src={effectiveSrc || DEFAULT_IMAGE}
+        src={effectiveSrc || SETTINGS.fallbackImagePath}
         alt={alt}
         width={width}
         height={height}
@@ -63,7 +62,7 @@ export default function CachedImage({
   if (fill) {
     return (
       <Image
-        src={effectiveSrc || DEFAULT_IMAGE}
+        src={effectiveSrc || SETTINGS.fallbackImagePath}
         alt={alt}
         fill
         sizes={sizes}
@@ -75,7 +74,7 @@ export default function CachedImage({
   }
   return (
     <Image
-      src={effectiveSrc || DEFAULT_IMAGE}
+      src={effectiveSrc || SETTINGS.fallbackImagePath}
       alt={alt}
       width={width ?? 80}
       height={height ?? 64}

@@ -9,6 +9,7 @@ import React from "react";
 import type { Product } from "@/types/product";
 import { getImageUrl } from "@/lib/r2ImageHelper";
 import CachedImage from "@/components/shared/CachedImage";
+import { SETTINGS } from "@/lib/settings";
 
 interface ProductStripProps {
   products: Product[];
@@ -17,9 +18,6 @@ interface ProductStripProps {
   /** Double-click image opens full-size zoomable lightbox. */
   onOpenLightbox?: (imageSrc: string, imageAlt: string) => void;
 }
-
-/** Fallback when product image is missing or fails to load. */
-const DEFAULT_IMAGE = "/used/default.jpg";
 
 export default function ProductStrip({
   products,
@@ -38,7 +36,7 @@ export default function ProductStrip({
         const useLower = useLowercaseFor.has(p.itmGroupName);
         const src = getImageUrl(p.imageFilename, useLower);
         const isSelected = selected?.itmGroupName === p.itmGroupName;
-        const displaySrc = src || DEFAULT_IMAGE;
+        const displaySrc = src || SETTINGS.fallbackImagePath;
         return (
           <button
             key={`${p.itmGroupName}-${index}`}

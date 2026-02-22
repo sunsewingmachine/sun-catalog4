@@ -2,7 +2,7 @@
 
 /**
  * Fixed list of products ordered by column AF (1, 2, 3, …).
- * getProductsOrderedByAf is used by CatalogLayout when "Best" category is selected; component used elsewhere if needed.
+ * getBestProducts is used by CatalogLayout when "Best" is selected (only items with TargetSellingOrder). getProductsOrderedByAf used by this component for full ordered list.
  */
 
 import type { Product } from "@/types/product";
@@ -14,8 +14,17 @@ interface AfOrderedListProps {
 }
 
 /**
- * Returns all products with "Best" ordering: those with column AF (order number) first, sorted by AF;
- * then products without AF, in original array order, so no item is hidden when "Best" is selected.
+ * Returns only products that have a value in the TargetSellingOrder column (AF), sorted by that value.
+ * Used when "Best" is selected so the list shows only items with an order number.
+ */
+export function getBestProducts(products: Product[]): Product[] {
+  const withAf = products.filter((p): p is Product & { af: number } => p.af != null && p.af > 0);
+  return [...withAf].sort((a, b) => a.af - b.af);
+}
+
+/**
+ * Returns all products with "Best" ordering: those with column AF first (sorted by AF), then products without AF.
+ * Used by AfOrderedList component when a full ordered list is needed (e.g. section 2).
  */
 export function getProductsOrderedByAf(products: Product[]): Product[] {
   const withAf = products.filter((p): p is Product & { af: number } => p.af != null && p.af > 0);

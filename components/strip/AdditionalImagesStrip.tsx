@@ -9,8 +9,7 @@ import React from "react";
 import type { Product } from "@/types/product";
 import { getImageUrl } from "@/lib/r2ImageHelper";
 import CachedImage from "@/components/shared/CachedImage";
-
-const DEFAULT_IMAGE = "/used/default.jpg";
+import { SETTINGS } from "@/lib/settings";
 const MAX_ADDITIONAL = 5;
 
 /** Compact thumb size (a little smaller than original) for use in 3-row layout below main image. */
@@ -67,7 +66,7 @@ export default function AdditionalImagesStrip({
           {product
             ? filenames.map((filename) => {
                 const src = getImageUrl(filename);
-                const displaySrc = src || DEFAULT_IMAGE;
+                const displaySrc = src || SETTINGS.fallbackImagePath;
                 return (
                   <button
                     key={filename}

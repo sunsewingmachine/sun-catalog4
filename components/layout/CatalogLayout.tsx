@@ -2,7 +2,7 @@
 
 /**
  * Layout: left category strip (vertical buttons) | item part (section 1 + section 2) | viewer + strip | details.
- * "Best" category shows items ordered by AF column in section 1.
+ * "Best" category shows only items with a value in TargetSellingOrder (AF) column, ordered by that value.
  */
 
 import React from "react";
@@ -16,7 +16,7 @@ import { ALLOWED_CATEGORIES } from "@/types/product";
 import CategoryList from "@/components/sidebar/CategoryList";
 import ProductList from "@/components/sidebar/ProductList";
 import RecentlyViewedList from "@/components/sidebar/RecentlyViewedList";
-import { getProductsOrderedByAf } from "@/components/sidebar/AfOrderedList";
+import { getBestProducts } from "@/components/sidebar/AfOrderedList";
 import ProductViewer from "@/components/viewer/ProductViewer";
 
 const ImageLightbox = dynamic(
@@ -24,10 +24,7 @@ const ImageLightbox = dynamic(
   { ssr: false }
 );
 
-const ProductDetails = dynamic(
-  () => import("@/components/details/ProductDetails").then((m) => m.default),
-  { ssr: false }
-);
+import ProductDetails from "@/components/details/ProductDetails";
 import { isVideoMediaUrl } from "@/components/details/FeaturesBox";
 import { getImageUrl } from "@/lib/r2ImageHelper";
 import AdditionalImagesStrip from "@/components/strip/AdditionalImagesStrip";
@@ -78,7 +75,7 @@ const HIDE_ALL_KEY = "catalog_hide_all";
 const HIDE_PRICE_KEY = "catalog_hide_price";
 const HIDE_WARRANTY_KEY = "catalog_hide_warranty";
 const RECENTLY_VIEWED_MAX = 5;
-/** Sentinel category: when selected, section 1 shows products ordered by AF column. */
+/** Sentinel category: when selected, section 1 shows only products with TargetSellingOrder (AF) value, ordered by it. */
 const BEST_CATEGORY = "Best";
 /** Interval (ms) between Best button attention animation (blink + stars). */
 const BEST_ATTENTION_INTERVAL_MS = 20000;
@@ -156,6 +153,10 @@ export default function CatalogLayout({
   const [mainVideoOverride, setMainVideoOverride] = React.useState<string | null>(null);
   /** When set, full-size zoomable lightbox is open with this image. */
   const [lightboxImage, setLightboxImage] = React.useState<{ src: string; alt: string } | null>(null);
+  /** True when the page is in browser fullscreen (hides Chrome bar, taskbar). Synced via fullscreenchange. */
+  const [isBrowserFullscreen, setIsBrowserFullscreen] = React.useState(false);
+  /** Fullscreen API available (secure context, no blocking iframes). Set once on mount. */
+  const [fullscreenSupported, setFullscreenSupported] = React.useState(false);
   const [settingsMenuOpen, setSettingsMenuOpen] = React.useState(false);
   const settingsMenuRef = React.useRef<HTMLDivElement>(null);
   /** Ref for the combined settings + Bybk fly-out area; used to close fly-out only when pointer leaves entire menu. */
@@ -337,6 +338,50 @@ export default function CatalogLayout({
     };
   }, [ultraPriceBoxOpen]);
 
+  /** Detect fullscreen API support on mount (client-only). */
+  React.useEffect(() => {
+    const doc = document as Document & { fullscreenEnabled?: boolean; webkitFullscreenEnabled?: boolean };
+    const enabled = doc.fullscreenEnabled ?? doc.webkitFullscreenEnabled ?? false;
+    const root = document.documentElement;
+    const hasRequest =
+      typeof root.requestFullscreen === "function" ||
+      typeof (root as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen === "function";
+    setFullscreenSupported(Boolean(enabled && hasRequest));
+  }, []);
+
+  /** Sync isBrowserFullscreen when user enters/exits via API or Esc. */
+  React.useEffect(() => {
+    function onFullscreenChange() {
+      const doc = document as Document & { webkitFullscreenElement?: Element | null };
+      const fullscreenEl = doc.fullscreenElement ?? doc.webkitFullscreenElement ?? null;
+      setIsBrowserFullscreen(fullscreenEl != null);
+    }
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", onFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", onFullscreenChange);
+    };
+  }, []);
+
+  const requestBrowserFullscreen = React.useCallback(() => {
+    const root = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
+    const req = root.requestFullscreen ?? root.webkitRequestFullscreen;
+    if (typeof req !== "function") return;
+    const p = req.call(root);
+    if (p && typeof p.catch === "function") {
+      p.catch((err: unknown) => {
+        console.warn("Fullscreen request failed:", err);
+      });
+    }
+  }, []);
+
+  const exitBrowserFullscreen = React.useCallback(() => {
+    const doc = document as Document & { exitFullscreen?: () => Promise<void>; webkitExitFullscreen?: () => Promise<void> };
+    const exit = doc.exitFullscreen ?? doc.webkitExitFullscreen;
+    if (typeof exit === "function") exit().catch(() => {});
+  }, []);
+
   React.useEffect(() => {
     if (!settingsMenuOpen) return;
     function handleClickOutside(e: MouseEvent) {
@@ -419,7 +464,7 @@ export default function CatalogLayout({
 
   const filteredProducts = React.useMemo(() => {
     if (!selectedCategory) return products;
-    if (selectedCategory === BEST_CATEGORY) return getProductsOrderedByAf(products);
+    if (selectedCategory === BEST_CATEGORY) return getBestProducts(products);
     return products.filter((p) => p.category === selectedCategory);
   }, [products, selectedCategory]);
 
@@ -451,6 +496,9 @@ export default function CatalogLayout({
   const handleUltraPriceItemClick = React.useCallback((variant: "Ultra" | "Aristo" | "Base") => {
     setUltraSelectedVariant(variant);
   }, []);
+
+  const handleExchangePriceClose = React.useCallback(() => setSelectedExchangeMenu(null), []);
+  const handleUltraPriceClose = React.useCallback(() => setUltraPriceBoxOpen(false), []);
 
   const handleMainImageOverrideError = React.useCallback(() => {
     if (selectedProduct?.itmGroupName && ultraSelectedVariant) {
@@ -607,7 +655,7 @@ export default function CatalogLayout({
                 type="button"
                 id="btnCategoryBest"
                 onClick={() => setSelectedCategory(BEST_CATEGORY)}
-                title="Best (AF order)"
+                title="Best (only items with TargetSellingOrder)"
                 className={`animate-best-blink w-full rounded px-1.5 py-1 text-center text-sm font-medium transition-colors truncate text-black ${
                   selectedCategory === BEST_CATEGORY
                     ? "bg-red-600 shadow-sm"
@@ -624,6 +672,42 @@ export default function CatalogLayout({
               selected={selectedCategory}
               onSelect={setSelectedCategory}
             />
+          </div>
+          <div id="divBrowserFullscreenSidebar" className="shrink-0 border-t border-green-200 p-1">
+            {isBrowserFullscreen ? (
+              <button
+                type="button"
+                id="btnExitBrowserFullscreen"
+                onClick={exitBrowserFullscreen}
+                className="flex w-full items-center justify-center gap-1 rounded p-2 text-slate-600 transition-colors hover:bg-green-100 hover:text-slate-800"
+                title="Exit fullscreen (Esc)"
+                aria-label="Exit fullscreen"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0" aria-hidden>
+                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                </svg>
+                <span className="text-xs font-medium truncate">/ exit fullscreen</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                id="btnEnterBrowserFullscreen"
+                onClick={requestBrowserFullscreen}
+                disabled={!fullscreenSupported}
+                className={`flex w-full items-center justify-center gap-1 rounded p-2 transition-colors ${
+                  fullscreenSupported
+                    ? "text-slate-600 hover:bg-green-100 hover:text-slate-800"
+                    : "cursor-not-allowed text-slate-400"
+                }`}
+                title={fullscreenSupported ? "Enter fullscreen (like Chrome menu)" : "Fullscreen not available (use HTTPS, not in iframe)"}
+                aria-label="Enter fullscreen"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0" aria-hidden>
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                </svg>
+                <span className="text-xs font-medium truncate">/ fullscreen</span>
+              </button>
+            )}
           </div>
           {onRequestRefresh != null && (
             <div id="divSidebarSettings" className="shrink-0 border-t border-green-200 p-1" ref={settingsMenuRef}>
@@ -894,7 +978,7 @@ export default function CatalogLayout({
           <div
             id="divItemPartSection1"
             className="scrollbar-hide min-h-0 flex-1 overflow-auto rounded-lg border border-green-200 bg-green-50/50 p-2"
-            aria-label={selectedCategory === BEST_CATEGORY ? "Items ordered by AF column" : "Item list"}
+            aria-label={selectedCategory === BEST_CATEGORY ? "Items with TargetSellingOrder only" : "Item list"}
           >
             <ProductList
               key={selectedCategory ?? ""}
@@ -943,7 +1027,7 @@ export default function CatalogLayout({
           </div>
           <div
             id="divBelowMainImageRows"
-            className="flex shrink-0 flex-col min-w-0 border-t border-green-200 bg-green-200 pt-4 pb-4"
+            className="flex shrink-0 flex-col min-w-0 border-t border-green-200 bg-green-200 pt-4 pb-4 mb-6"
             aria-label="Image strips (Etc, Cat, Gen)"
             onMouseLeave={() => setMainImageHoverPreview(null)}
           >
@@ -1002,13 +1086,13 @@ export default function CatalogLayout({
               exchangePriceMenu={selectedExchangeMenu}
               rawItmGroupRows={rawItmGroupRows}
               onFeatureMediaClick={handleFeatureMediaClick}
-              onExchangePriceClose={() => setSelectedExchangeMenu(null)}
+              onExchangePriceClose={handleExchangePriceClose}
               onSelectProductByItmGroupName={handleSelectProductByItmGroupName}
               ultraPriceOpen={ultraPriceBoxOpen}
               ultraRows={ultraRows}
               ultraPriceLoading={ultraPriceLoading}
               ultraPriceError={ultraPriceError}
-              onUltraPriceClose={() => setUltraPriceBoxOpen(false)}
+              onUltraPriceClose={handleUltraPriceClose}
               onUltraPriceItemClick={handleUltraPriceItemClick}
               hidePrice={hidePrice}
               hideWarranty={hideWarranty}

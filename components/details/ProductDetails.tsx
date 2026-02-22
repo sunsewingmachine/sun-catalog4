@@ -99,10 +99,10 @@ const FIELDS: DetailFieldConfig[] = [
   { term: "Model", fieldKey: "model" },
   { term: "Price", fieldKey: "price" },
   { term: "Warranty", fieldKey: "warranty" },
-  { term: "PCode", fieldKey: "pCode", mono: true },
+  { term: "PCode", fieldKey: "pCode" },
 ];
 
-export default function ProductDetails({
+function ProductDetails({
   product,
   features = [],
   exchangePriceMenu = null,
@@ -419,3 +419,5 @@ export default function ProductDetails({
     </div>
   );
 }
+
+export default React.memo(ProductDetails);

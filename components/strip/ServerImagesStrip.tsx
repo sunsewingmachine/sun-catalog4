@@ -9,8 +9,7 @@ import React from "react";
 import { getImageUrlForFolder } from "@/lib/r2ImageHelper";
 import type { BarImageFolder } from "@/lib/r2ImageHelper";
 import CachedImage from "@/components/shared/CachedImage";
-
-const DEFAULT_IMAGE = "/used/default.jpg";
+import { SETTINGS } from "@/lib/settings";
 const THUMB_WIDTH = 64;
 const THUMB_HEIGHT = 48;
 const THUMB_CLASS = "h-12 w-16";
@@ -44,7 +43,7 @@ function ThumbButton({
   onOpenLightbox: ServerImagesStripProps["onOpenLightbox"];
 }) {
   const src = getImageUrlForFolder(filename, folder);
-  const displaySrc = src || DEFAULT_IMAGE;
+  const displaySrc = src || SETTINGS.fallbackImagePath;
   return (
     <button
       type="button"

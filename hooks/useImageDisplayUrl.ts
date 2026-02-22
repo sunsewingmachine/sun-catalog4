@@ -1,5 +1,6 @@
 /**
- * Resolves image URL from IndexedDB cache (object URL) or returns network URL. Revokes blob URL on unmount.
+ * Resolves image URL from IndexedDB cache (object URL) or returns network URL.
+ * Keeps previous displayUrl until the new one is ready to avoid blink; revokes blob URLs on unmount.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -14,31 +15,40 @@ export function useImageDisplayUrl(
 
   useEffect(() => {
     if (!imageUrl) {
+      const toRevoke = blobUrlRef.current;
+      blobUrlRef.current = null;
+      if (toRevoke) URL.revokeObjectURL(toRevoke);
       setDisplayUrl(null);
       setIsReady(true);
       return;
     }
     let cancelled = false;
-    setDisplayUrl(null);
     setIsReady(false);
+    // Keep previous displayUrl until new URL resolves to avoid blink (stale-while-revalidate).
     getImageDisplayUrl(imageUrl).then((url) => {
       if (cancelled) {
         if (url.startsWith("blob:")) URL.revokeObjectURL(url);
         return;
       }
+      const prevBlob = blobUrlRef.current;
       blobUrlRef.current = url.startsWith("blob:") ? url : null;
+      if (prevBlob) URL.revokeObjectURL(prevBlob);
       setDisplayUrl(url);
       setIsReady(true);
     });
     return () => {
       cancelled = true;
+      // Do not revoke here when imageUrl changed so the previous image stays visible until the new one loads.
+    };
+  }, [imageUrl]);
+
+  useEffect(() => {
+    return () => {
       const toRevoke = blobUrlRef.current;
       blobUrlRef.current = null;
       if (toRevoke) URL.revokeObjectURL(toRevoke);
-      setDisplayUrl(null);
-      setIsReady(false);
     };
-  }, [imageUrl]);
+  }, []);
 
   return { displayUrl, isReady };
 }
