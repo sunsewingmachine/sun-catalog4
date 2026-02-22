@@ -242,9 +242,13 @@ export default function ProductViewer({
             <code className="max-h-20 w-full overflow-auto break-all text-xs text-slate-300 px-2 py-1 rounded bg-slate-800" title="URL">
               {displaySrc}
             </code>
-            {!displaySrc.includes("/items/") && getCdnBase() ? (
+            {displaySrc.startsWith("/images/") && !getCdnBase() ? (
               <span className="text-xs text-slate-400">
-                Add <code className="bg-slate-700 px-1 rounded">NEXT_PUBLIC_CDN_IMAGE_PREFIX=items</code> to .env.local and restart dev server.
+                Set CDN base URL in your deployment env and redeploy (env is applied at build time).
+              </span>
+            ) : !displaySrc.includes("/items/") && getCdnBase() ? (
+              <span className="text-xs text-slate-400">
+                Add CDN image prefix in env and redeploy.
               </span>
             ) : null}
           </div>

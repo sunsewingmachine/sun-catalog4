@@ -35,6 +35,10 @@ interface ProductDetailsProps {
   onUltraPriceClose?: () => void;
   /** When user clicks an item name in the exchange price (Bybk) table, select that item in the main list. */
   onSelectProductByItmGroupName?: (itmGroupName: string) => void;
+  /** When true, hide the Price field in the product info box (persisted via Settings → Hide). */
+  hidePrice?: boolean;
+  /** When true, hide the Warranty field in the product info box (persisted via Settings → Hide). */
+  hideWarranty?: boolean;
 }
 
 const ICON_CLASS = "size-4 shrink-0 text-slate-700";
@@ -100,6 +104,8 @@ export default function ProductDetails({
   ultraPriceError = null,
   onUltraPriceClose,
   onSelectProductByItmGroupName,
+  hidePrice = false,
+  hideWarranty = false,
 }: ProductDetailsProps) {
   const hasRawRows = Array.isArray(rawItmGroupRows) && rawItmGroupRows.length > 0;
   const exchangeRows = exchangePriceMenu && hasRawRows ? getExchangePriceRows(rawItmGroupRows, exchangePriceMenu) : [];
@@ -252,7 +258,11 @@ export default function ProductDetails({
             id="dlProductDetails"
             className="grid grid-cols-[max-content_1ch_1fr] gap-x-2 gap-y-1.5 text-lg font-medium text-slate-700"
           >
-          {FIELDS.map(({ term, fieldKey, mono }) => (
+          {FIELDS.filter(
+            (f) =>
+              (f.fieldKey !== "price" || !hidePrice) &&
+              (f.fieldKey !== "warranty" || !hideWarranty)
+          ).map(({ term, fieldKey, mono }) => (
             <React.Fragment key={term}>
               <dt className="flex items-center gap-1.5">
                 <span className="flex shrink-0" aria-hidden>

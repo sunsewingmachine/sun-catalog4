@@ -58,8 +58,12 @@ const EXCHANGE_PRICE_SUBMENUS: (string | "---")[] = [
 ];
 
 const RECENTLY_VIEWED_KEY = "catalog_recently_viewed";
-/** LocalStorage key for "W/s price" (wholesale prices) toggle. */
+/** LocalStorage key for Wholesale price toggle (Info submenu). */
 const SHOW_WS_KEY = "catalog_show_ws";
+/** LocalStorage keys for Info menu: hide entire product info box (when off), hide price field, hide warranty field. */
+const HIDE_ALL_KEY = "catalog_hide_all";
+const HIDE_PRICE_KEY = "catalog_hide_price";
+const HIDE_WARRANTY_KEY = "catalog_hide_warranty";
 const RECENTLY_VIEWED_MAX = 5;
 /** Sentinel category: when selected, section 1 shows products ordered by AF column. */
 const BEST_CATEGORY = "Best";
@@ -144,6 +148,8 @@ export default function CatalogLayout({
   const [selectedExchangeMenu, setSelectedExchangeMenu] = React.useState<string | null>(null);
   /** When true, Exchange price submenus are visible; toggled by hover/click on Exchange price header. */
   const [bybkSubmenuExpanded, setBybkSubmenuExpanded] = React.useState(false);
+  /** When true, Info submenu (All, Price, Warranty, W/s price) is visible. */
+  const [infoSubmenuExpanded, setInfoSubmenuExpanded] = React.useState(false);
   /** When true, details panel shows Ultra price box with column A from sheet NEXT_PUBLIC_ULTRA_GID. */
   const [ultraPriceBoxOpen, setUltraPriceBoxOpen] = React.useState(false);
   /** Ultra sheet rows (cols A,B,C,D); populated when ultraPriceBoxOpen is true and sheet is fetched. */
@@ -181,6 +187,73 @@ export default function CatalogLayout({
     setShowWs(value);
     try {
       window.localStorage.setItem(SHOW_WS_KEY, value ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  /** Hide product info box entirely; persisted in localStorage. */
+  const [hideAll, setHideAll] = React.useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const v = window.localStorage.getItem(HIDE_ALL_KEY);
+      return v === "1" || v === "true";
+    } catch {
+      return false;
+    }
+  });
+  /** Hide only price field in product info; persisted in localStorage. */
+  const [hidePrice, setHidePrice] = React.useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const v = window.localStorage.getItem(HIDE_PRICE_KEY);
+      return v === "1" || v === "true";
+    } catch {
+      return false;
+    }
+  });
+  /** Hide only warranty field in product info; persisted in localStorage. */
+  const [hideWarranty, setHideWarranty] = React.useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const v = window.localStorage.getItem(HIDE_WARRANTY_KEY);
+      return v === "1" || v === "true";
+    } catch {
+      return false;
+    }
+  });
+  const hasHydratedHide = React.useRef(false);
+  React.useEffect(() => {
+    if (hasHydratedHide.current) return;
+    hasHydratedHide.current = true;
+    try {
+      setHideAll(window.localStorage.getItem(HIDE_ALL_KEY) === "1" || window.localStorage.getItem(HIDE_ALL_KEY) === "true");
+      setHidePrice(window.localStorage.getItem(HIDE_PRICE_KEY) === "1" || window.localStorage.getItem(HIDE_PRICE_KEY) === "true");
+      setHideWarranty(window.localStorage.getItem(HIDE_WARRANTY_KEY) === "1" || window.localStorage.getItem(HIDE_WARRANTY_KEY) === "true");
+    } catch {
+      // ignore
+    }
+  }, []);
+  const setHideAllAndPersist = React.useCallback((value: boolean) => {
+    setHideAll(value);
+    try {
+      window.localStorage.setItem(HIDE_ALL_KEY, value ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  }, []);
+  const setHidePriceAndPersist = React.useCallback((value: boolean) => {
+    setHidePrice(value);
+    try {
+      window.localStorage.setItem(HIDE_PRICE_KEY, value ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  }, []);
+  const setHideWarrantyAndPersist = React.useCallback((value: boolean) => {
+    setHideWarranty(value);
+    try {
+      window.localStorage.setItem(HIDE_WARRANTY_KEY, value ? "1" : "0");
     } catch {
       // ignore
     }
@@ -380,8 +453,8 @@ export default function CatalogLayout({
     >
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-green-200 bg-green-200 px-5 py-3 shadow-sm">
         <h1 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-          <span className="inline-flex shrink-0 text-slate-700" aria-hidden>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+          <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-green-700 p-1.5 text-white" aria-hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
               <rect x="3" y="3" width="7" height="7" rx="1" />
               <rect x="14" y="3" width="7" height="7" rx="1" />
               <rect x="3" y="14" width="7" height="7" rx="1" />
@@ -394,9 +467,13 @@ export default function CatalogLayout({
           <Link
             id="linkAdmin"
             href="/admin"
-            className="rounded px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-green-300/80 hover:text-slate-900"
+            title="Admin"
+            aria-label="Admin"
+            className="flex items-center justify-center rounded-full bg-green-700 p-1.5 text-white transition-colors hover:bg-green-800"
           >
-            Admin
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden>
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg>
           </Link>
         </nav>
       </header>
@@ -502,30 +579,62 @@ export default function CatalogLayout({
                       const related = e.relatedTarget as Node | null;
                       if (wrapper && related && !wrapper.contains(related)) {
                         setBybkSubmenuExpanded(false);
+                        setInfoSubmenuExpanded(false);
                       }
                     }}
                   >
                     <div
                       id="divSettingsDropdown"
                       role="menu"
-                      className={`min-w-[10rem] max-h-[70vh] overflow-y-auto border border-green-200 bg-white py-1 shadow-lg ${bybkSubmenuExpanded ? "rounded-l-lg border-r-0 rounded-r-none" : "rounded-lg"}`}
+                      className="min-w-[10rem] max-h-[70vh] overflow-y-auto border border-green-200 bg-white py-1 shadow-lg rounded-lg"
                     >
                       <div
                         id="divExchangePriceMenuSection"
                         role="group"
                         aria-labelledby="pExchangePriceMenuLabel"
                         aria-expanded={bybkSubmenuExpanded}
-                        onMouseEnter={() => setBybkSubmenuExpanded(true)}
+                        onMouseEnter={() => {
+                          setInfoSubmenuExpanded(false);
+                          setBybkSubmenuExpanded(true);
+                        }}
                       >
                         <button
                           type="button"
                           id="btnBybkExchangePrice"
                           aria-expanded={bybkSubmenuExpanded}
                           aria-haspopup="true"
-                          onClick={() => setBybkSubmenuExpanded((v) => !v)}
+                          onClick={() => {
+                            setInfoSubmenuExpanded(false);
+                            setBybkSubmenuExpanded((v) => !v);
+                          }}
                           className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide rounded ${bybkSubmenuExpanded ? "bg-green-50 text-green-800" : "text-slate-600 hover:bg-green-50"}`}
                         >
                           <span id="pExchangePriceMenuLabel">Exchange price</span>
+                          <span className="text-slate-400 shrink-0 ml-1" aria-hidden>›</span>
+                        </button>
+                      </div>
+                      <div
+                        id="divInfoMenuSection"
+                        role="group"
+                        aria-labelledby="pInfoMenuLabel"
+                        aria-expanded={infoSubmenuExpanded}
+                        onMouseEnter={() => {
+                          setBybkSubmenuExpanded(false);
+                          setInfoSubmenuExpanded(true);
+                        }}
+                      >
+                        <button
+                          type="button"
+                          id="btnInfoMenu"
+                          aria-expanded={infoSubmenuExpanded}
+                          aria-haspopup="true"
+                          onClick={() => {
+                            setBybkSubmenuExpanded(false);
+                            setInfoSubmenuExpanded((v) => !v);
+                          }}
+                          className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide rounded ${infoSubmenuExpanded ? "bg-green-50 text-green-800" : "text-slate-600 hover:bg-green-50"}`}
+                        >
+                          <span id="pInfoMenuLabel">Info</span>
                           <span className="text-slate-400 shrink-0 ml-1" aria-hidden>›</span>
                         </button>
                       </div>
@@ -542,28 +651,6 @@ export default function CatalogLayout({
                       >
                         <span>Ultra price</span>
                       </button>
-                      <div
-                        role="menuitem"
-                        id="divSettingsShowWs"
-                        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
-                        aria-label="W/s price (wholesale)"
-                      >
-                        <span>W/s price</span>
-                        <button
-                          type="button"
-                          id="btnShowWsToggle"
-                          role="switch"
-                          aria-checked={showWs}
-                          onClick={() => setShowWsAndPersist(!showWs)}
-                          className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border border-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${showWs ? "bg-green-600" : "bg-slate-200"}`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${showWs ? "translate-x-5" : "translate-x-0.5"}`}
-                            style={{ marginTop: "2px" }}
-                            aria-hidden
-                          />
-                        </button>
-                      </div>
                       <div className="border-t border-green-100 my-1" aria-hidden />
                       <button
                         type="button"
@@ -591,7 +678,7 @@ export default function CatalogLayout({
                         id="divBybkSubmenuFlyout"
                         role="menu"
                         aria-label="Exchange price options"
-                        className="min-w-[8rem] max-h-[70vh] overflow-y-auto overflow-x-hidden rounded-r-lg border border-green-200 border-l-0 bg-white py-1 shadow-lg"
+                        className="ml-1 min-w-[8rem] max-h-[70vh] overflow-y-auto overflow-x-hidden border border-green-200 bg-white py-1 shadow-lg rounded-lg"
                       >
                         {EXCHANGE_PRICE_SUBMENUS.map((item, idx) =>
                           item === "---" ? (
@@ -613,6 +700,103 @@ export default function CatalogLayout({
                             </button>
                           )
                         )}
+                      </div>
+                    )}
+                    {infoSubmenuExpanded && (
+                      <div
+                        id="divInfoSubmenuFlyout"
+                        role="menu"
+                        aria-label="Info options"
+                        className="ml-1 min-w-[8rem] max-h-[70vh] overflow-y-auto overflow-x-hidden border border-green-200 bg-white py-1 shadow-lg rounded-lg"
+                      >
+                        <div
+                          role="menuitem"
+                          id="divInfoShowWs"
+                          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                          aria-label="Wholesale price"
+                        >
+                          <span>Wholesale</span>
+                          <button
+                            type="button"
+                            id="btnShowWsToggle"
+                            role="switch"
+                            aria-checked={showWs}
+                            onClick={() => setShowWsAndPersist(!showWs)}
+                            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border border-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${showWs ? "bg-green-600" : "bg-slate-200"}`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${showWs ? "translate-x-5" : "translate-x-0.5"}`}
+                              style={{ marginTop: "2px" }}
+                              aria-hidden
+                            />
+                          </button>
+                        </div>
+                        <div
+                          role="menuitem"
+                          id="divInfoAll"
+                          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                          aria-label="Show product info box"
+                        >
+                          <span>All</span>
+                          <button
+                            type="button"
+                            id="btnHideAllToggle"
+                            role="switch"
+                            aria-checked={!hideAll}
+                            onClick={() => setHideAllAndPersist(!hideAll)}
+                            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border border-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${!hideAll ? "bg-green-600" : "bg-slate-200"}`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${!hideAll ? "translate-x-5" : "translate-x-0.5"}`}
+                              style={{ marginTop: "2px" }}
+                              aria-hidden
+                            />
+                          </button>
+                        </div>
+                        <div
+                          role="menuitem"
+                          id="divHidePrice"
+                          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                          aria-label="Hide price in product info"
+                        >
+                          <span>Price</span>
+                          <button
+                            type="button"
+                            id="btnHidePriceToggle"
+                            role="switch"
+                            aria-checked={hidePrice}
+                            onClick={() => setHidePriceAndPersist(!hidePrice)}
+                            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border border-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${hidePrice ? "bg-green-600" : "bg-slate-200"}`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${hidePrice ? "translate-x-5" : "translate-x-0.5"}`}
+                              style={{ marginTop: "2px" }}
+                              aria-hidden
+                            />
+                          </button>
+                        </div>
+                        <div
+                          role="menuitem"
+                          id="divHideWarranty"
+                          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                          aria-label="Hide warranty in product info"
+                        >
+                          <span>Warranty</span>
+                          <button
+                            type="button"
+                            id="btnHideWarrantyToggle"
+                            role="switch"
+                            aria-checked={hideWarranty}
+                            onClick={() => setHideWarrantyAndPersist(!hideWarranty)}
+                            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border border-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${hideWarranty ? "bg-green-600" : "bg-slate-200"}`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${hideWarranty ? "translate-x-5" : "translate-x-0.5"}`}
+                              style={{ marginTop: "2px" }}
+                              aria-hidden
+                            />
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -714,36 +898,41 @@ export default function CatalogLayout({
           </div>
         </main>
 
-        <aside
-          id="divDetailsPanel"
-          className="flex w-[30rem] shrink-0 flex-col self-stretch overflow-hidden border-l border-green-200 bg-green-50"
-        >
-          <ProductDetails
-            product={selectedProduct}
-            features={features}
-            exchangePriceMenu={selectedExchangeMenu}
-            rawItmGroupRows={rawItmGroupRows}
-            onFeatureMediaClick={handleFeatureMediaClick}
-            onExchangePriceClose={() => setSelectedExchangeMenu(null)}
-            onSelectProductByItmGroupName={handleSelectProductByItmGroupName}
-            ultraPriceOpen={ultraPriceBoxOpen}
-            ultraRows={ultraRows}
-            ultraPriceLoading={ultraPriceLoading}
-            ultraPriceError={ultraPriceError}
-            onUltraPriceClose={() => setUltraPriceBoxOpen(false)}
-          />
-          {showWs && wholesaleString ? (
-            <div
-              id="divWholesalePriceRightSection"
-              className="mt-auto min-w-0 shrink-0 border-t border-green-200 bg-green-100/80 px-3 py-2"
-              aria-label="Wholesale prices"
-            >
-              <p className="text-[10px] font-medium text-slate-800 whitespace-pre-line">
-                {wholesaleString}
-              </p>
-            </div>
-          ) : null}
-        </aside>
+        {!hideAll && (
+          <aside
+            id="divDetailsPanel"
+            className="flex w-[30rem] shrink-0 flex-col self-stretch overflow-hidden border-l border-green-200 bg-green-50"
+            aria-label="Product details"
+          >
+            <ProductDetails
+              product={selectedProduct}
+              features={features}
+              exchangePriceMenu={selectedExchangeMenu}
+              rawItmGroupRows={rawItmGroupRows}
+              onFeatureMediaClick={handleFeatureMediaClick}
+              onExchangePriceClose={() => setSelectedExchangeMenu(null)}
+              onSelectProductByItmGroupName={handleSelectProductByItmGroupName}
+              ultraPriceOpen={ultraPriceBoxOpen}
+              ultraRows={ultraRows}
+              ultraPriceLoading={ultraPriceLoading}
+              ultraPriceError={ultraPriceError}
+              onUltraPriceClose={() => setUltraPriceBoxOpen(false)}
+              hidePrice={hidePrice}
+              hideWarranty={hideWarranty}
+            />
+            {showWs && wholesaleString ? (
+              <div
+                id="divWholesalePriceRightSection"
+                className="mt-auto min-w-0 shrink-0 border-t border-green-200 bg-green-100/80 px-3 py-2"
+                aria-label="Wholesale prices"
+              >
+                <p className="text-[10px] font-medium text-slate-800 whitespace-pre-line">
+                  {wholesaleString}
+                </p>
+              </div>
+            ) : null}
+          </aside>
+        )}
       </div>
 
       <CommonImagesBar
