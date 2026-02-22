@@ -19,6 +19,8 @@ interface ProductViewerProps {
   product: Product | null;
   /** When set, main area shows this URL instead of product image (e.g. after single-click in strip or feature). */
   mainImageOverride?: string | null;
+  /** When set, main area shows this URL on hover over strip thumbs; takes priority over mainImageOverride until mouse leaves. */
+  mainImageHoverPreview?: string | null;
   /** When set, main area shows this video URL (e.g. after clicking a feature with video in col C). */
   mainVideoOverride?: string | null;
   /** Called when user double-clicks an image to open full-size lightbox. */
@@ -32,6 +34,7 @@ interface ProductViewerProps {
 export default function ProductViewer({
   product,
   mainImageOverride = null,
+  mainImageHoverPreview = null,
   mainVideoOverride = null,
   onOpenLightbox,
   onMainImageOverrideError,
@@ -48,9 +51,11 @@ export default function ProductViewer({
   const useSample = !displaySrc || mainImageError;
   const productMainSrc = useSample ? DEFAULT_IMAGE : (cachedMainUrl || displaySrc || DEFAULT_IMAGE);
   const mainSrc =
-    mainImageOverride != null && mainImageOverride !== ""
-      ? mainImageOverride
-      : productMainSrc;
+    mainImageHoverPreview != null && mainImageHoverPreview !== ""
+      ? mainImageHoverPreview
+      : mainImageOverride != null && mainImageOverride !== ""
+        ? mainImageOverride
+        : productMainSrc;
   const { displayUrl: mainDisplayUrl } = useImageDisplayUrl(
     mainSrc.startsWith("http") || mainSrc.startsWith("blob:") ? mainSrc : ""
   );
@@ -107,13 +112,14 @@ export default function ProductViewer({
   };
 
   const handleMainImageError = React.useCallback(() => {
-    if (mainImageOverride != null && mainImageOverride !== "") {
+    const showingOverride = (mainImageHoverPreview == null || mainImageHoverPreview === "") && mainImageOverride != null && mainImageOverride !== "";
+    if (showingOverride) {
       onMainImageOverrideError?.();
-    } else {
+    } else if (mainImageHoverPreview == null || mainImageHoverPreview === "") {
       if (tryLowercase) setMainImageError(true);
       else setTryLowercase(true);
     }
-  }, [mainImageOverride, onMainImageOverrideError, tryLowercase]);
+  }, [mainImageHoverPreview, mainImageOverride, onMainImageOverrideError, tryLowercase]);
 
   const mainImageBoxClassName =
     "main-image-box-cap relative overflow-hidden bg-green-50 shadow-sm mx-auto outline-none focus:outline-none focus-visible:ring-0";

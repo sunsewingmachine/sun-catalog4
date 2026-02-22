@@ -30,6 +30,8 @@ function getAdditionalImageFilenames(product: Product | null): string[] {
 interface AdditionalImagesStripProps {
   product: Product | null;
   onSetMainImage: (url: string) => void;
+  /** When provided, hovering a thumb shows this URL in main area; pass null on mouse leave. */
+  onHoverMainImage?: (url: string | null) => void;
   onOpenLightbox: (imageSrc: string, imageAlt: string) => void;
   /** When true, use smaller thumbs for 3-row layout below main image. */
   compact?: boolean;
@@ -38,6 +40,7 @@ interface AdditionalImagesStripProps {
 export default function AdditionalImagesStrip({
   product,
   onSetMainImage,
+  onHoverMainImage,
   onOpenLightbox,
   compact = false,
 }: AdditionalImagesStripProps) {
@@ -46,11 +49,12 @@ export default function AdditionalImagesStrip({
     [product?.itmGroupName]
   );
   const thumb = compact ? COMPACT_THUMB : DEFAULT_THUMB;
+  const rowStyle = compact ? "flex min-w-0 shrink-0 overflow-hidden bg-transparent p-2 h-16" : "flex min-w-0 shrink-0 overflow-hidden border-t border-green-200 bg-green-50 p-2 h-24";
 
   return (
     <div
       id="divAdditionalImagesStrip"
-      className={`flex min-w-0 shrink-0 overflow-hidden border-t border-green-200 bg-green-50 p-2 ${compact ? "h-16" : "h-24"}`}
+      className={rowStyle}
       aria-label="Additional images for selected product"
     >
       <div
@@ -68,9 +72,11 @@ export default function AdditionalImagesStrip({
                   <button
                     key={filename}
                     type="button"
-                    className={`${thumb.class} shrink-0 overflow-hidden rounded-lg border-2 border-green-200 bg-white shadow-sm transition-colors hover:border-green-300 focus:outline-none focus:ring-2 focus:ring-teal-500`}
+                    className={`${thumb.class} shrink-0 overflow-hidden rounded-lg border-2 border-green-200 bg-green-200 shadow-sm transition-colors hover:border-green-300 focus:outline-none focus:ring-2 focus:ring-teal-500`}
                     title="Click to show in main; double-click for full size"
                     onClick={() => onSetMainImage(displaySrc)}
+                    onMouseEnter={() => onHoverMainImage?.(displaySrc)}
+                    onMouseLeave={() => onHoverMainImage?.(null)}
                     onDoubleClick={(e) => {
                       e.preventDefault();
                       onOpenLightbox(displaySrc, filename);
@@ -88,7 +94,7 @@ export default function AdditionalImagesStrip({
                         }}
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-green-100 text-xs text-slate-500">
+                      <div className="flex h-full w-full items-center justify-center bg-green-200 text-xs text-slate-500">
                         —
                       </div>
                     )}

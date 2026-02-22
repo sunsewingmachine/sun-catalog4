@@ -23,18 +23,24 @@ interface ServerImagesStripProps {
   /** Image filenames to show in this row. */
   filenames: string[];
   onSetMainImage?: (url: string) => void;
+  /** When provided, hovering a thumb shows this URL in main area; pass null on mouse leave. */
+  onHoverMainImage?: (url: string | null) => void;
   onOpenLightbox?: (imageSrc: string, imageAlt: string) => void;
+  /** When true, used in 3-row area: no top border (no divider below previous row). */
+  noTopBorder?: boolean;
 }
 
 function ThumbButton({
   filename,
   folder,
   onSetMainImage,
+  onHoverMainImage,
   onOpenLightbox,
 }: {
   filename: string;
   folder: BarImageFolder;
   onSetMainImage: ServerImagesStripProps["onSetMainImage"];
+  onHoverMainImage: ServerImagesStripProps["onHoverMainImage"];
   onOpenLightbox: ServerImagesStripProps["onOpenLightbox"];
 }) {
   const src = getImageUrlForFolder(filename, folder);
@@ -42,9 +48,11 @@ function ThumbButton({
   return (
     <button
       type="button"
-      className={`${THUMB_CLASS} shrink-0 overflow-hidden rounded-lg border-2 border-green-200 bg-white shadow-sm transition-colors hover:border-green-300 focus:outline-none focus:ring-2 focus:ring-teal-500`}
+      className={`${THUMB_CLASS} shrink-0 overflow-hidden rounded-lg border-2 border-green-200 bg-green-200 shadow-sm transition-colors hover:border-green-300 focus:outline-none focus:ring-2 focus:ring-teal-500`}
       title="Click to show in main; double-click for full size"
       onClick={() => onSetMainImage?.(displaySrc)}
+      onMouseEnter={() => onHoverMainImage?.(displaySrc)}
+      onMouseLeave={() => onHoverMainImage?.(null)}
       onDoubleClick={(e) => {
         e.preventDefault();
         onOpenLightbox?.(displaySrc, filename);
@@ -59,7 +67,7 @@ function ThumbButton({
           className="h-full w-full object-cover pointer-events-none"
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-green-100 text-xs text-slate-500">
+        <div className="flex h-full w-full items-center justify-center bg-green-200 text-xs text-slate-500">
           —
         </div>
       )}
@@ -72,11 +80,16 @@ export default function ServerImagesStrip({
   folder,
   filenames,
   onSetMainImage,
+  onHoverMainImage,
   onOpenLightbox,
+  noTopBorder = false,
 }: ServerImagesStripProps) {
+  const wrapperClass = noTopBorder
+    ? "flex h-16 min-w-0 shrink-0 overflow-hidden bg-transparent p-2"
+    : "flex h-16 min-w-0 shrink-0 overflow-hidden border-t border-green-200 bg-green-50 p-2";
   return (
     <div
-      className="flex h-16 min-w-0 shrink-0 overflow-hidden border-t border-green-200 bg-green-50 p-2"
+      className={wrapperClass}
       aria-label={ariaLabel}
     >
       <div
@@ -92,6 +105,7 @@ export default function ServerImagesStrip({
               filename={filename}
               folder={folder}
               onSetMainImage={onSetMainImage}
+              onHoverMainImage={onHoverMainImage}
               onOpenLightbox={onOpenLightbox}
             />
           ))}

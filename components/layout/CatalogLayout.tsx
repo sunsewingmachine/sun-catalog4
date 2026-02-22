@@ -150,6 +150,8 @@ export default function CatalogLayout({
   const hasHydratedFromStorage = React.useRef(false);
   /** When set, main viewer shows this image URL (e.g. after single-click in common images bar or feature). */
   const [mainImageOverride, setMainImageOverride] = React.useState<string | null>(null);
+  /** When set, main area shows this image on hover over strip thumbs; cleared when mouse leaves the 3 rows. */
+  const [mainImageHoverPreview, setMainImageHoverPreview] = React.useState<string | null>(null);
   /** When set, main viewer shows this video URL (e.g. after clicking a feature with video in col C). */
   const [mainVideoOverride, setMainVideoOverride] = React.useState<string | null>(null);
   /** When set, full-size zoomable lightbox is open with this image. */
@@ -930,6 +932,7 @@ export default function CatalogLayout({
                 <ProductViewer
                   product={selectedProduct}
                   mainImageOverride={effectiveMainImageOverride}
+                  mainImageHoverPreview={mainImageHoverPreview}
                   mainVideoOverride={mainVideoOverride}
                   onOpenLightbox={openLightbox}
                   onMainImageOverrideError={handleMainImageOverrideError}
@@ -938,39 +941,49 @@ export default function CatalogLayout({
               </div>
             </div>
           </div>
-          <div id="divBelowMainImageRows" className="flex shrink-0 flex-col min-w-0 border-t border-green-200 bg-green-50/50 pt-4 pb-4" aria-label="Image strips (Etc, Cat, Gen)">
+          <div
+            id="divBelowMainImageRows"
+            className="flex shrink-0 flex-col min-w-0 border-t border-green-200 bg-green-200 pt-4 pb-4"
+            aria-label="Image strips (Etc, Cat, Gen)"
+            onMouseLeave={() => setMainImageHoverPreview(null)}
+          >
             <div id="divAdditionalImagesRow" className="flex min-w-0 shrink-0 items-stretch">
-              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-100/80 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Etc</span>
+              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-200 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Etc</span>
               <div id="divAdditionalImagesRowScroll" className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
                 <AdditionalImagesStrip
                   product={deferredProduct}
                   onSetMainImage={handleSetMainImage}
+                  onHoverMainImage={setMainImageHoverPreview}
                   onOpenLightbox={openLightbox}
                   compact
                 />
               </div>
             </div>
             <div id="divCategoryImagesRow" className="flex min-w-0 shrink-0 items-stretch">
-              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-100/80 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Cat</span>
+              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-200 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Cat</span>
               <div id="divCategoryImagesRowScroll" className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
                 <ServerImagesStrip
                   ariaLabel="Category images (ForGroup)"
                   folder="ForGroup"
                   filenames={forGroupFiltered}
                   onSetMainImage={handleSetMainImage}
+                  onHoverMainImage={setMainImageHoverPreview}
                   onOpenLightbox={openLightbox}
+                  noTopBorder
                 />
               </div>
             </div>
             <div id="divCommonImagesRow" className="flex min-w-0 shrink-0 items-stretch">
-              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-100/80 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Gen</span>
+              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-200 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Gen</span>
               <div id="divCommonImagesRowScroll" className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
                 <ServerImagesStrip
                   ariaLabel="Common images (ForAll)"
                   folder="ForAll"
                   filenames={barImages.forAll}
                   onSetMainImage={handleSetMainImage}
+                  onHoverMainImage={setMainImageHoverPreview}
                   onOpenLightbox={openLightbox}
+                  noTopBorder
                 />
               </div>
             </div>
