@@ -1143,16 +1143,16 @@ export default function CatalogLayout({
           </div>
           <div
             id="divBelowMainImageRows"
-            className="flex shrink-0 flex-col min-w-0 border-t border-green-300 bg-green-300 pt-4 pb-4 mb-6"
+            className="flex shrink-0 flex-col min-w-0 mb-6 rounded-2xl border border-green-200/80 bg-gradient-to-b from-green-50 via-emerald-50/80 to-green-100/60 shadow-lg shadow-green-900/10 ring-1 ring-green-100/50 overflow-hidden"
             aria-label="Image strips (Etc, Cat, Gen)"
             onMouseLeave={() => setMainImageHoverPreview(null)}
           >
-            <div id="divAdditionalImagesRow" className="flex min-w-0 shrink-0 items-stretch">
-              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-300 bg-green-300 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Etc</span>
+            <div id="divAdditionalImagesRow" className="flex min-w-0 shrink-0 items-stretch border-b border-green-200/60">
+              <span className="strip-label flex w-14 shrink-0 items-center justify-center border-r border-green-200/70 bg-gradient-to-r from-green-100/90 to-emerald-100/70 px-2 py-2.5 text-[0.7rem] font-bold uppercase tracking-widest text-green-800/90" aria-hidden>Etc</span>
               <div
                 id="divAdditionalImagesRowScroll"
                 ref={additionalScrollRef}
-                className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
+                className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden bg-white/20"
                 onScroll={() => handleStripScroll("additional")}
               >
                 <AdditionalImagesStrip
@@ -1164,12 +1164,12 @@ export default function CatalogLayout({
                 />
               </div>
             </div>
-            <div id="divCategoryImagesRow" className="flex min-w-0 shrink-0 items-stretch">
-              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-300 bg-green-300 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Cat</span>
+            <div id="divCategoryImagesRow" className="flex min-w-0 shrink-0 items-stretch border-b border-green-200/60">
+              <span className="strip-label flex w-14 shrink-0 items-center justify-center border-r border-green-200/70 bg-gradient-to-r from-green-100/90 to-emerald-100/70 px-2 py-2.5 text-[0.7rem] font-bold uppercase tracking-widest text-green-800/90" aria-hidden>Cat</span>
               <div
                 id="divCategoryImagesRowScroll"
                 ref={categoryScrollRef}
-                className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
+                className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden bg-white/20"
                 onScroll={() => handleStripScroll("category")}
               >
                 <ServerImagesStrip
@@ -1184,11 +1184,11 @@ export default function CatalogLayout({
               </div>
             </div>
             <div id="divCommonImagesRow" className="flex min-w-0 shrink-0 items-stretch">
-              <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-300 bg-green-300 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Gen</span>
+              <span className="strip-label flex w-14 shrink-0 items-center justify-center border-r border-green-200/70 bg-gradient-to-r from-green-100/90 to-emerald-100/70 px-2 py-2.5 text-[0.7rem] font-bold uppercase tracking-widest text-green-800/90" aria-hidden>Gen</span>
               <div
                 id="divCommonImagesRowScroll"
                 ref={commonScrollRef}
-                className="strip-scroll-sync flex min-w-0 flex-1"
+                className="strip-scroll-sync flex min-w-0 flex-1 bg-white/20"
                 onScroll={() => handleStripScroll("common")}
               >
                 <ServerImagesStrip

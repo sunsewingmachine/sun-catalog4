@@ -71,7 +71,7 @@ export default function AdditionalImagesStrip({
                   <button
                     key={filename}
                     type="button"
-                    className={`${thumb.class} shrink-0 overflow-hidden rounded-lg border-2 border-green-200 bg-green-200 shadow-sm transition-colors hover:border-green-300 focus:outline-none focus:ring-2 focus:ring-teal-500`}
+                    className={`${thumb.class} shrink-0 overflow-hidden rounded-xl border border-green-200/90 bg-white/95 shadow-md transition-all duration-200 hover:shadow-lg hover:border-green-300 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-1`}
                     title="Click for full size; double-click to show in main"
                     onClick={(e) => {
                       e.preventDefault();
@@ -93,7 +93,7 @@ export default function AdditionalImagesStrip({
                         }}
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-green-200 text-xs text-slate-500">
+                      <div className="flex h-full w-full items-center justify-center bg-green-50 text-xs text-slate-500 rounded-xl">
                         —
                       </div>
                     )}
