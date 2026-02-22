@@ -43,12 +43,14 @@ function buildPrefix(pcName: string): string {
 
 /**
  * Full activation code for a PC at a given time: PREFIX + TIMECODE.
+ * PC name is normalized to uppercase so the generated code is always in capital.
  */
 export function generateActivationCode(
   pcName: string,
   date?: Date
 ): string {
-  const prefix = buildPrefix(pcName);
+  const normalizedName = (pcName ?? "").trim().toUpperCase();
+  const prefix = buildPrefix(normalizedName);
   const timeCode = getTimeCode(date);
   return prefix + timeCode;
 }

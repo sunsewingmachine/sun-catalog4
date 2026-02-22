@@ -33,9 +33,10 @@ export async function POST(request: Request) {
     );
   }
 
+  const enteredUpper = entered.toUpperCase();
   const staticCodes = getStaticActivationCodes();
   for (const envCode of staticCodes) {
-    if (entered === envCode) {
+    if (enteredUpper === (envCode ?? "").toUpperCase()) {
       return NextResponse.json({ valid: true });
     }
   }

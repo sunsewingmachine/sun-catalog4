@@ -108,10 +108,10 @@ export default function ProductViewer({
 
   if (!product) {
     return (
-      <div id="divProductViewer" className="flex shrink-0 flex-col">
+      <div id="divProductViewer" className="flex min-h-0 flex-1 flex-col">
         <div
           id="divMainImageBackgroundBox"
-          className={mainImageBoxClassName}
+          className={`${mainImageBoxClassName} min-h-0 flex-1`}
           onDoubleClick={handleDoubleClickMain}
           role="button"
           tabIndex={0}
@@ -138,10 +138,10 @@ export default function ProductViewer({
   }
 
   return (
-    <div id="divProductViewer" className="flex shrink-0 flex-col">
+    <div id="divProductViewer" className="flex min-h-0 flex-1 flex-col">
       <div
         id="divMainImageBackgroundBox"
-        className={mainImageBoxClassName}
+        className={`${mainImageBoxClassName} min-h-0 flex-1`}
         onDoubleClick={showVideo ? undefined : handleDoubleClickMain}
         role={showVideo ? undefined : "button"}
         tabIndex={showVideo ? undefined : 0}
@@ -232,15 +232,24 @@ export default function ProductViewer({
             <img src="/used/best.png" alt="Best" className="h-12 w-auto object-contain md:h-14" width={56} height={56} />
           </div>
         )}
+        {useSample && product && (
+          <div
+            id="divImageNotLoadingOverlay"
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-2xl bg-slate-900/90 p-4 text-center text-amber-200"
+            aria-live="polite"
+          >
+            <span className="text-sm font-medium">Image not loading.</span>
+            <code className="max-h-20 w-full overflow-auto break-all text-xs text-slate-300 px-2 py-1 rounded bg-slate-800" title="URL">
+              {displaySrc}
+            </code>
+            {!displaySrc.includes("/items/") && getCdnBase() ? (
+              <span className="text-xs text-slate-400">
+                Add <code className="bg-slate-700 px-1 rounded">NEXT_PUBLIC_CDN_IMAGE_PREFIX=items</code> to .env.local and restart dev server.
+              </span>
+            ) : null}
+          </div>
+        )}
       </div>
-      {useSample && product && (
-        <p id="pImageDebug" className="mt-1 text-xs text-amber-700">
-          Image not loading. URL: <code className="break-all">{displaySrc}</code>
-          {!displaySrc.includes("/items/") && getCdnBase() ? (
-            <> — Add <code>NEXT_PUBLIC_CDN_IMAGE_PREFIX=items</code> to .env.local and restart dev server.</>
-          ) : null}
-        </p>
-      )}
     </div>
   );
 }

@@ -42,7 +42,7 @@ function getCurrentTimeCode(): string {
 }
 
 export function validateActivationCode(enteredCode: string): ActivationValidationResult {
-  const code = (enteredCode ?? "").replace(/\s/g, "");
+  const code = (enteredCode ?? "").replace(/\s/g, "").toUpperCase();
   if (code.length < TIMECODE_LENGTH + 4) {
     return { valid: false, error: "Code too short" };
   }

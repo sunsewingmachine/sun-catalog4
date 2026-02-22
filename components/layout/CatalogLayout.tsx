@@ -6,6 +6,7 @@
  */
 
 import React from "react";
+import Link from "next/link";
 import type { Product } from "@/types/product";
 import { getWholesaleStringThreeLines } from "@/lib/wholesalePriceHelper";
 import { fetchSheetByGid, getAllRows } from "@/lib/sheetFetcher";
@@ -405,6 +406,15 @@ export default function CatalogLayout({
           </span>
           Catalog
         </h1>
+        <nav id="navCatalogHeader" aria-label="Catalog header">
+          <Link
+            id="linkAdmin"
+            href="/admin"
+            className="rounded px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-green-300/80 hover:text-slate-900"
+          >
+            Admin
+          </Link>
+        </nav>
       </header>
 
       <div className="flex min-h-0 min-w-0 flex-1 items-start overflow-hidden">
@@ -659,18 +669,18 @@ export default function CatalogLayout({
           </div>
         </div>
 
-        <main className="flex min-h-0 min-w-0 shrink-0 flex-1 flex-col overflow-hidden">
+        <main className="flex min-h-0 min-w-0 max-h-full shrink-0 flex-1 flex-col overflow-hidden">
           <div
             id="divMainViewerScroll"
-            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden"
+            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
             role="region"
-            aria-label="Main image and image strips"
+            aria-label="Main product image"
           >
             <div
               id="divMainViewer"
-              className="flex shrink-0 flex-col border-b border-green-200 bg-green-50 p-4"
+              className="flex min-h-0 flex-1 flex-col border-b border-green-200 bg-green-50 p-4"
             >
-              <div className="flex shrink-0 flex-col" aria-hidden>
+              <div className="flex min-h-0 flex-1 flex-col" aria-hidden>
                 <ProductViewer
                   product={selectedProduct}
                   mainImageOverride={mainImageOverride}
@@ -680,7 +690,8 @@ export default function CatalogLayout({
                 />
               </div>
             </div>
-            <div id="divBelowMainImageRows" className="flex shrink-0 flex-col min-w-0">
+          </div>
+          <div id="divBelowMainImageRows" className="flex shrink-0 flex-col min-w-0 border-t border-green-200 bg-green-50/50 pt-4 pb-4" aria-label="Image strips (Etc, Cat, Gen)">
             <div id="divAdditionalImagesRow" className="flex min-w-0 shrink-0 items-stretch">
               <span className="flex w-12 shrink-0 items-center justify-center border-r border-green-200 bg-green-100/80 px-1 py-2 text-xs font-semibold uppercase tracking-wide text-green-800" aria-hidden>Etc</span>
               <div id="divAdditionalImagesRowScroll" className="horizontal-scroll flex min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
@@ -715,7 +726,6 @@ export default function CatalogLayout({
                   onOpenLightbox={openLightbox}
                 />
               </div>
-            </div>
             </div>
           </div>
         </main>
