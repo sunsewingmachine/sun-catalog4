@@ -14,6 +14,12 @@ const THUMB_WIDTH = 64;
 const THUMB_HEIGHT = 48;
 const THUMB_CLASS = "h-12 w-16";
 
+/** Pads list to at least minLength with null placeholders. */
+function padToMinSlots<T>(list: T[], minLength: number): (T | null)[] {
+  if (list.length >= minLength) return list;
+  return [...list, ...Array(minLength - list.length).fill(null)];
+}
+
 interface ServerImagesStripProps {
   /** Row label for aria. */
   ariaLabel: string;
@@ -27,6 +33,10 @@ interface ServerImagesStripProps {
   onOpenLightbox?: (imageSrc: string, imageAlt: string) => void;
   /** When true, used in 3-row area: no top border (no divider below previous row). */
   noTopBorder?: boolean;
+  /** Minimum number of image holder slots (pad with placeholders). Used for row 2 (Cat) only. */
+  minSlots?: number;
+  /** Center-align the strip content within the row. Used for row 2 (Cat) only. */
+  centerAlign?: boolean;
 }
 
 function ThumbButton({
@@ -82,10 +92,35 @@ export default function ServerImagesStrip({
   onHoverMainImage,
   onOpenLightbox,
   noTopBorder = false,
+  minSlots,
+  centerAlign = false,
 }: ServerImagesStripProps) {
+  const slots = minSlots != null ? padToMinSlots(filenames, minSlots) : filenames;
   const wrapperClass = noTopBorder
     ? "flex h-16 min-w-0 shrink-0 overflow-hidden bg-transparent p-2"
     : "flex h-16 min-w-0 shrink-0 overflow-hidden border-t border-green-200 bg-green-50 p-2";
+  const content = (
+    <div className="flex h-full w-max min-h-full items-center gap-1.5 py-1">
+      {slots.map((filename, index) =>
+        filename === null ? (
+          <div
+            key={`placeholder-${index}`}
+            aria-hidden
+            className={`${THUMB_CLASS} shrink-0 overflow-hidden rounded-xl border-4 border-green-300 bg-green-200`}
+          />
+        ) : (
+          <ThumbButton
+            key={filename}
+            filename={filename}
+            folder={folder}
+            onSetMainImage={onSetMainImage}
+            onHoverMainImage={onHoverMainImage}
+            onOpenLightbox={onOpenLightbox}
+          />
+        )
+      )}
+    </div>
+  );
   return (
     <div
       className={wrapperClass}
@@ -97,18 +132,13 @@ export default function ServerImagesStrip({
         role="region"
         aria-label={ariaLabel}
       >
-        <div className="flex h-full w-max min-h-full items-center gap-1.5 py-1">
-          {filenames.map((filename) => (
-            <ThumbButton
-              key={filename}
-              filename={filename}
-              folder={folder}
-              onSetMainImage={onSetMainImage}
-              onHoverMainImage={onHoverMainImage}
-              onOpenLightbox={onOpenLightbox}
-            />
-          ))}
-        </div>
+        {centerAlign ? (
+          <div className="flex h-full min-w-full justify-center">
+            {content}
+          </div>
+        ) : (
+          content
+        )}
       </div>
     </div>
   );

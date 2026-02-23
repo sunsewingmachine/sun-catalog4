@@ -1223,6 +1223,8 @@ export default function CatalogLayout({
                   onHoverMainImage={setMainImageHoverPreview}
                   onOpenLightbox={openLightbox}
                   noTopBorder
+                  minSlots={16}
+                  centerAlign
                 />
               </div>
             </div>
