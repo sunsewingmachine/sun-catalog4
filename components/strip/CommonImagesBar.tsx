@@ -140,7 +140,7 @@ function FlashMessageBar({
           width={20}
           height={20}
         />
-        <p id="pDisclaimerText" className="min-w-0 flex-1 text-[10px] leading-tight text-white whitespace-pre-line">
+        <p id="pDisclaimerText" className="min-w-0 flex-1 text-center text-[10px] leading-tight text-white whitespace-pre-line">
           {DISCLAIMER_TEXT}
         </p>
       </div>
