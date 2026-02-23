@@ -1186,12 +1186,12 @@ export default function CatalogLayout({
           </div>
           <div
             id="divBelowMainImageRows"
-            className="flex shrink-0 flex-col min-w-0 mb-6 rounded-2xl border border-green-200/80 bg-gradient-to-b from-green-50 via-emerald-50/80 to-green-100/60 shadow-lg shadow-green-900/10 ring-1 ring-green-100/50 overflow-hidden"
+            className="flex shrink-0 flex-col min-w-0 mb-6 rounded-2xl border border-green-100/90 bg-gradient-to-b from-green-50/90 via-emerald-50/60 to-green-50/80 shadow-lg shadow-green-900/5 ring-1 ring-green-100/40 overflow-hidden"
             aria-label="Image strips (Etc, Cat, Gen)"
             onMouseLeave={() => setMainImageHoverPreview(null)}
           >
-            <div id="divAdditionalImagesRow" className="flex min-w-0 shrink-0 items-stretch border-b border-green-200/60">
-              <span className="strip-label flex w-14 shrink-0 items-center justify-center border-r border-green-200/70 bg-gradient-to-r from-green-100/90 to-emerald-100/70 px-2 py-2.5 text-[0.7rem] font-bold uppercase tracking-widest text-green-800/90" aria-hidden>Etc</span>
+            <div id="divAdditionalImagesRow" className="flex min-w-0 shrink-0 items-stretch border-b border-green-100/80">
+              <span className="strip-label flex w-14 shrink-0 items-center justify-center border-r border-green-100/80 bg-gradient-to-r from-green-50/95 to-emerald-50/80 px-2 py-2.5 text-[0.7rem] font-bold uppercase tracking-widest text-green-800/90" aria-hidden>Etc</span>
               <div
                 id="divAdditionalImagesRowScroll"
                 ref={additionalScrollRef}
@@ -1207,8 +1207,8 @@ export default function CatalogLayout({
                 />
               </div>
             </div>
-            <div id="divCategoryImagesRow" className="flex min-w-0 shrink-0 items-stretch border-b border-green-200/60">
-              <span className="strip-label flex w-14 shrink-0 items-center justify-center border-r border-green-200/70 bg-gradient-to-r from-green-100/90 to-emerald-100/70 px-2 py-2.5 text-[0.7rem] font-bold uppercase tracking-widest text-green-800/90" aria-hidden>Cat</span>
+            <div id="divCategoryImagesRow" className="flex min-w-0 shrink-0 items-stretch border-b border-green-100/80">
+              <span className="strip-label flex w-14 shrink-0 items-center justify-center border-r border-green-100/80 bg-gradient-to-r from-green-50/95 to-emerald-50/80 px-2 py-2.5 text-[0.7rem] font-bold uppercase tracking-widest text-green-800/90" aria-hidden>Cat</span>
               <div
                 id="divCategoryImagesRowScroll"
                 ref={categoryScrollRef}
@@ -1229,7 +1229,7 @@ export default function CatalogLayout({
               </div>
             </div>
             <div id="divCommonImagesRow" className="flex min-w-0 shrink-0 items-stretch">
-              <span className="strip-label flex w-14 shrink-0 items-center justify-center border-r border-green-200/70 bg-gradient-to-r from-green-100/90 to-emerald-100/70 px-2 py-2.5 text-[0.7rem] font-bold uppercase tracking-widest text-green-800/90" aria-hidden>Gen</span>
+              <span className="strip-label flex w-14 shrink-0 items-center justify-center border-r border-green-100/80 bg-gradient-to-r from-green-50/95 to-emerald-50/80 px-2 py-2.5 text-[0.7rem] font-bold uppercase tracking-widest text-green-800/90" aria-hidden>Gen</span>
               <div
                 id="divCommonImagesRowScroll"
                 ref={commonScrollRef}

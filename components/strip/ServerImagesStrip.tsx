@@ -57,7 +57,7 @@ function ThumbButton({
   return (
     <button
       type="button"
-      className={`${THUMB_CLASS} shrink-0 overflow-hidden rounded-xl border-4 border-green-300 bg-green-200 shadow-md transition-all duration-200 hover:shadow-lg hover:border-green-300 hover:bg-green-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-1`}
+      className={`${THUMB_CLASS} shrink-0 overflow-hidden rounded-xl border-4 border-green-200 bg-green-100 shadow-md transition-all duration-200 hover:shadow-lg hover:border-green-200 hover:bg-green-100 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-1`}
       title="Click for full size; double-click to show in main"
       onClick={(e) => {
         e.preventDefault();
@@ -76,7 +76,7 @@ function ThumbButton({
           className="h-full w-full object-cover pointer-events-none"
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-green-200 text-xs text-slate-500 rounded-xl">
+        <div className="flex h-full w-full items-center justify-center bg-green-100 text-xs text-slate-500 rounded-xl">
           —
         </div>
       )}
@@ -98,7 +98,7 @@ export default function ServerImagesStrip({
   const slots = minSlots != null ? padToMinSlots(filenames, minSlots) : filenames;
   const wrapperClass = noTopBorder
     ? "flex h-16 min-w-0 shrink-0 overflow-hidden bg-transparent p-2"
-    : "flex h-16 min-w-0 shrink-0 overflow-hidden border-t border-green-200 bg-green-50 p-2";
+    : "flex h-16 min-w-0 shrink-0 overflow-hidden border-t border-green-100 bg-green-50/80 p-2";
   const content = (
     <div className="flex h-full w-max min-h-full items-center gap-1.5 py-1">
       {slots.map((filename, index) =>
@@ -106,7 +106,7 @@ export default function ServerImagesStrip({
           <div
             key={`placeholder-${index}`}
             aria-hidden
-            className={`${THUMB_CLASS} shrink-0 overflow-hidden rounded-xl border-4 border-green-300 bg-green-200`}
+            className={`${THUMB_CLASS} shrink-0 overflow-hidden rounded-xl border-4 border-green-200 bg-green-100`}
           />
         ) : (
           <ThumbButton
