@@ -72,6 +72,8 @@ const EXCHANGE_PRICE_SUBMENUS: (string | "---")[] = [
 ];
 
 const RECENTLY_VIEWED_KEY = "catalog_recently_viewed";
+/** Default selected product itmGroupName when the app opens (once on load, not on tab focus). */
+const DEFAULT_OPEN_ITM_GROUP_NAME = "Sv.Sun.Special";
 /** LocalStorage key for Wholesale price toggle (Info submenu). */
 const SHOW_WS_KEY = "catalog_show_ws";
 /** LocalStorage keys for Info menu: hide entire product info box (when off), hide price field, hide warranty field. */
@@ -147,6 +149,8 @@ export default function CatalogLayout({
   const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(
     null
   );
+  /** Set to true after applying default open selection (Sv.Sun.Special) once on app load; not on tab focus. */
+  const defaultOpenSelectionSetRef = React.useRef(false);
   /** True when current selection was made by clicking in section 2 (recently viewed). Used to avoid highlighting in section 2 when user clicked in section 1. */
   const [selectionFromRecentList, setSelectionFromRecentList] = React.useState(false);
   const [recentlyViewed, setRecentlyViewed] = React.useState<Product[]>([]);
@@ -592,8 +596,10 @@ export default function CatalogLayout({
     });
   }, []);
 
+  /** Set initial category when none selected (default-open effect may override via queueMicrotask). */
   React.useEffect(() => {
-    if (categories.length && !selectedCategory) setSelectedCategory(categories[0] ?? null);
+    if (categories.length === 0 || selectedCategory != null) return;
+    setSelectedCategory(categories[0] ?? null);
   }, [categories, selectedCategory]);
 
   // Sync main-list selection only when selection did not come from recent list (e.g. category change).
@@ -608,6 +614,18 @@ export default function CatalogLayout({
       setSelectionFromRecentList(false);
     }
   }, [filteredProducts, selectedProduct?.itmGroupName, selectionFromRecentList]);
+
+  /** On app load when products first available: select Sv.Sun.Special. Run after sync effect via queueMicrotask so selection is not overwritten. Once per mount. */
+  React.useEffect(() => {
+    if (products.length === 0 || defaultOpenSelectionSetRef.current) return;
+    const defaultProduct = products.find((p) => p.itmGroupName === DEFAULT_OPEN_ITM_GROUP_NAME);
+    if (!defaultProduct) return;
+    defaultOpenSelectionSetRef.current = true;
+    queueMicrotask(() => {
+      setSelectedCategory(defaultProduct.category);
+      setSelectedProduct(defaultProduct);
+    });
+  }, [products]);
 
   return (
     <div

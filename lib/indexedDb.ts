@@ -74,21 +74,13 @@ export async function getCatalogFromDb(): Promise<{
             const parsed = JSON.parse(raw) as unknown;
             if (Array.isArray(parsed) && parsed.length > 0) {
               rawItmGroupRows = parsed.map((r) => (Array.isArray(r) ? (r as string[]) : []));
-              console.warn("[ExchangePrice] IDB read: rawItmGroupRows from JSON string, length =", rawItmGroupRows.length);
-            } else {
-              console.warn("[ExchangePrice] IDB read: JSON parsed but not non-empty array", parsed?.constructor?.name, Array.isArray(parsed) ? parsed.length : "n/a");
             }
-          } catch (e) {
-            console.warn("[ExchangePrice] IDB read: JSON.parse failed", e);
+          } catch {
+            // ignore parse failure
           }
         } else if (Array.isArray(raw) && raw.length > 0) {
           rawItmGroupRows = raw.map((r) => (Array.isArray(r) ? r : [])) as string[][];
-          console.warn("[ExchangePrice] IDB read: rawItmGroupRows from array (legacy), length =", rawItmGroupRows.length);
-        } else {
-          console.warn("[ExchangePrice] IDB read: raw type =", typeof raw, Array.isArray(raw) ? "array length " + raw.length : "");
         }
-      } else {
-        console.warn("[ExchangePrice] IDB read: rawItmGroupRows key missing or null");
       }
       done++;
       check();

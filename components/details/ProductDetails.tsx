@@ -123,9 +123,6 @@ function ProductDetails({
   const hasRawRows = Array.isArray(rawItmGroupRows) && rawItmGroupRows.length > 0;
   const exchangeRows = exchangePriceMenu && hasRawRows ? getExchangePriceRows(rawItmGroupRows, exchangePriceMenu) : [];
   const exchangeItemHeader = exchangePriceMenu ? getExchangePriceItemHeaderLabel(exchangePriceMenu) : "Item";
-  if (exchangePriceMenu && typeof console !== "undefined" && console.warn) {
-    console.warn("[ExchangePrice] ProductDetails: rawItmGroupRows =", rawItmGroupRows == null ? "undefined" : Array.isArray(rawItmGroupRows) ? `array length ${rawItmGroupRows.length}` : typeof rawItmGroupRows, "hasRawRows =", hasRawRows, "exchangeRows.length =", exchangeRows.length, "exchangePriceMenu =", exchangePriceMenu);
-  }
   const exchangeNoDataReason = !hasRawRows
     ? "Exchange price data is not in cache. Use Settings → Refresh to load the sheet (including row 2 headers), then try again."
     : `No item names found. Check that row 2 has a header "ItmGroupName" and that data rows (row 3+) have values in that column.`;

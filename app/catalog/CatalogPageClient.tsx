@@ -329,9 +329,6 @@ export default function CatalogPageClient() {
       </div>
     );
   }
-  if (typeof console !== "undefined" && console.warn) {
-    console.warn("[ExchangePrice] CatalogPageClient render: rawItmGroupRows =", rawItmGroupRows == null ? "undefined" : `array length ${rawItmGroupRows.length}`);
-  }
   if (typeof performance !== "undefined" && performance.mark) {
     performance.mark("catalog-visible");
   }
