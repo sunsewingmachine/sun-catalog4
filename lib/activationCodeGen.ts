@@ -1,7 +1,11 @@
 /**
  * Shared logic for time-based 13-digit code (for your code generator).
  * Same formula as activationValidator so generated codes validate in the app.
+ * Also provides PCBC- (PC-based) and DTBC- (date-time based) activation codes.
  */
+
+const PCBC_PREFIX = "PCBC-";
+const DTBC_PREFIX = "DTBC-";
 
 function getTimeCodeForDate(date: Date): string {
   const minutes = date.getMinutes();
@@ -17,6 +21,45 @@ function getTimeCodeForDate(date: Date): string {
   const m = String(minutes).padStart(2, "0");
   const d = String(day).padStart(2, "0");
   return `${r1}${m}${r2}${d}${r3}`;
+}
+
+/**
+ * Deterministic "random" digits from date seed: length 3, 5, 7, or 4.
+ */
+function getDeterministicDigits(seedBase: string, length: 3 | 4 | 5 | 7): string {
+  let h = 0;
+  const seed = seedBase + length;
+  for (let i = 0; i < seed.length; i++)
+    h = (Math.imul(31, h) + seed.charCodeAt(i)) >>> 0;
+  const max = Math.pow(10, length);
+  const n = (h >>> 0) % max;
+  return String(n).padStart(length, "0");
+}
+
+/**
+ * Date-time based code (DTBC): DTBC-r3mmr5ddr7HHr4MMr4 — use when host name may not work.
+ */
+export function generateDateTimeBasedCode(date?: Date): string {
+  const d = date ?? new Date();
+  const salt = "SunCatalogDTBC";
+  const y = d.getFullYear();
+  const mo = d.getMonth();
+  const day = d.getDate();
+  const hh = d.getHours();
+  const mm = d.getMinutes();
+  const seedBase = `${salt}-${y}-${mo}-${day}-${hh}-${mm}`;
+
+  const mmStr = String(mm).padStart(2, "0");
+  const ddStr = String(day).padStart(2, "0");
+  const hhStr = String(hh).padStart(2, "0");
+
+  const r3 = getDeterministicDigits(seedBase + "r3", 3);
+  const r5 = getDeterministicDigits(seedBase + "r5", 5);
+  const r7 = getDeterministicDigits(seedBase + "r7", 7);
+  const r4a = getDeterministicDigits(seedBase + "r4a", 4);
+  const r4b = getDeterministicDigits(seedBase + "r4b", 4);
+
+  return `${DTBC_PREFIX}${r3}${mmStr}${r5}${ddStr}${r7}${hhStr}${r4a}${mmStr}${r4b}`;
 }
 
 /**
@@ -42,7 +85,7 @@ function buildPrefix(pcName: string): string {
 }
 
 /**
- * Full activation code for a PC at a given time: PREFIX + TIMECODE.
+ * Full activation code for a PC at a given time: PCBC- + PREFIX + TIMECODE.
  * PC name is normalized to uppercase so the generated code is always in capital.
  */
 export function generateActivationCode(
@@ -52,5 +95,7 @@ export function generateActivationCode(
   const normalizedName = (pcName ?? "").trim().toUpperCase();
   const prefix = buildPrefix(normalizedName);
   const timeCode = getTimeCode(date);
-  return prefix + timeCode;
+  return PCBC_PREFIX + prefix + timeCode;
 }
+
+export { PCBC_PREFIX, DTBC_PREFIX };

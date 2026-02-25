@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { generateActivationCode } from "@/lib/activationCodeGen";
+import { generateActivationCode, generateDateTimeBasedCode } from "@/lib/activationCodeGen";
 
 const ADMIN_SESSION_KEY = "catalog_admin_logged_in";
 const ALLOWED_ADMIN_PASSWORDS = ["salkal", "sxjllda"];
@@ -24,7 +24,9 @@ export default function AdminPage() {
   const [selectedSection, setSelectedSection] = useState<AdminSectionId>("activation-code");
   const [pcName, setPcName] = useState("");
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const [generatedDTBCCode, setGeneratedDTBCCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedDTBC, setCopiedDTBC] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -57,19 +59,21 @@ export default function AdminPage() {
     }
     setAuthenticated(false);
     setGeneratedCode(null);
+    setGeneratedDTBCCode(null);
     setPcName("");
   };
 
   const handleGenerateCode = (e: React.FormEvent) => {
     e.preventDefault();
     const name = (pcName ?? "").trim();
-    if (!name) {
+    if (name) {
+      setGeneratedCode(generateActivationCode(name));
+      setCopied(false);
+    } else {
       setGeneratedCode(null);
-      return;
     }
-    const code = generateActivationCode(name);
-    setGeneratedCode(code);
-    setCopied(false);
+    setGeneratedDTBCCode(generateDateTimeBasedCode());
+    setCopiedDTBC(false);
   };
 
   const handleCopyCode = async () => {
@@ -80,6 +84,17 @@ export default function AdminPage() {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
+    }
+  };
+
+  const handleCopyDTBCCode = async () => {
+    if (!generatedDTBCCode) return;
+    try {
+      await navigator.clipboard.writeText(generatedDTBCCode);
+      setCopiedDTBC(true);
+      setTimeout(() => setCopiedDTBC(false), 2000);
+    } catch {
+      setCopiedDTBC(false);
     }
   };
 
@@ -192,63 +207,102 @@ export default function AdminPage() {
           aria-label="Admin content"
         >
           {selectedSection === "activation-code" && (
-            <div
-              id="divAdminCodeGen"
-              className="max-w-md rounded-2xl border border-green-200 bg-white/95 p-6 shadow-md"
-            >
-              <h2 className="mb-4 text-lg font-semibold text-slate-900">Activation code</h2>
-              <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-slate-600" aria-label="Instructions">
-                <li>Enter the PC name for the machine you want to activate.</li>
-                <li>A one-time code will be generated.</li>
-                <li>Give this code to that PC; when entered on the activation screen, the app will activate.</li>
-                <li>Code is valid for 15 seconds only.</li>
+            <div id="divAdminCodeGen" className="max-w-2xl space-y-6">
+              <h2 className="text-lg font-semibold text-slate-900">Activation code</h2>
+              <ul className="list-disc space-y-1 pl-5 text-sm text-slate-600" aria-label="Instructions">
+                <li>Enter the PC name for the machine you want to activate (for PC-based code).</li>
+                <li>Generate codes; give either code to the PC — entering either one will activate the app.</li>
+                <li>Codes are valid for the current minute only.</li>
               </ul>
+
               <form onSubmit={handleGenerateCode}>
                 <label htmlFor="inputAdminPcName" className="mb-1 block text-sm font-medium text-slate-700">
-                  PC name
+                  PC name (for PCBC only)
                 </label>
-                <input
-                  id="inputAdminPcName"
-                  type="text"
-                  value={pcName}
-                  onChange={(e) => {
-                    setPcName(e.target.value);
-                    setGeneratedCode(null);
-                  }}
-                  placeholder="e.g. SHOWROOM-1"
-                  className="mb-4 w-full rounded-xl border border-green-200 bg-green-50/80 px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                  autoComplete="off"
-                />
-                <button
-                  type="submit"
-                  id="btnAdminGenerateCode"
-                  className="w-full rounded-xl bg-teal-600 px-4 py-2.5 font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
-                >
-                  Generate code
-                </button>
+                <div className="mb-4 flex gap-2">
+                  <input
+                    id="inputAdminPcName"
+                    type="text"
+                    value={pcName}
+                    onChange={(e) => {
+                      setPcName(e.target.value);
+                      setGeneratedCode(null);
+                    }}
+                    placeholder="e.g. SHOWROOM-1"
+                    className="min-w-0 flex-1 rounded-xl border border-green-200 bg-green-50/80 px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                    autoComplete="off"
+                  />
+                  <button
+                    type="submit"
+                    id="btnAdminGenerateCode"
+                    className="shrink-0 rounded-xl bg-teal-600 px-4 py-2.5 font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
+                  >
+                    Generate both
+                  </button>
+                </div>
               </form>
 
-              {generatedCode && (
-                <div id="divAdminGeneratedCode" className="mt-6 rounded-xl border border-green-200 bg-green-50/80 p-4">
-                  <p className="mb-2 text-sm font-medium text-slate-700">Activation code (valid for current minute):</p>
-                  <div className="flex items-start gap-2">
-                    <code
-                      id="outputAdminCode"
-                      className="min-w-0 flex-1 break-all rounded bg-white px-3 py-2 font-mono text-sm text-slate-800 select-all"
-                    >
-                      {generatedCode}
-                    </code>
-                    <button
-                      type="button"
-                      id="btnAdminCopyCode"
-                      onClick={handleCopyCode}
-                      className="shrink-0 rounded-lg border border-green-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-green-100"
-                    >
-                      {copied ? "Copied!" : "Copy"}
-                    </button>
-                  </div>
+              <div className="grid gap-6 sm:grid-cols-1">
+                <div
+                  id="divAdminPCBCCodeBox"
+                  className="rounded-2xl border border-green-200 bg-white/95 p-5 shadow-md"
+                >
+                  <h3 className="mb-1 text-base font-semibold text-slate-900" title="PC-based code. Use when host name works.">
+                    PCBC — PC-based code
+                  </h3>
+                  <p className="mb-3 text-xs text-slate-500">Use when host name works.</p>
+                  {generatedCode ? (
+                    <div className="flex flex-col gap-2">
+                      <code
+                        id="outputAdminCodePCBC"
+                        className="break-all rounded bg-green-50 px-3 py-2 font-mono text-sm text-slate-800 select-all"
+                      >
+                        {generatedCode}
+                      </code>
+                      <button
+                        type="button"
+                        id="btnAdminCopyCodePCBC"
+                        onClick={handleCopyCode}
+                        className="self-start rounded-lg border border-green-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-green-100"
+                      >
+                        {copied ? "Copied!" : "Copy"}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">Enter PC name and click Generate both.</p>
+                  )}
                 </div>
-              )}
+
+                <div
+                  id="divAdminDTBCCodeBox"
+                  className="rounded-2xl border border-green-200 bg-white/95 p-5 shadow-md"
+                >
+                  <h3 className="mb-1 text-base font-semibold text-slate-900" title="Date-time based code. Use when host name may not work.">
+                    DTBC — Date-time based code
+                  </h3>
+                  <p className="mb-3 text-xs text-slate-500">Use when host name may not work.</p>
+                  {generatedDTBCCode ? (
+                    <div className="flex flex-col gap-2">
+                      <code
+                        id="outputAdminCodeDTBC"
+                        className="break-all rounded bg-green-50 px-3 py-2 font-mono text-sm text-slate-800 select-all"
+                      >
+                        {generatedDTBCCode}
+                      </code>
+                      <button
+                        type="button"
+                        id="btnAdminCopyCodeDTBC"
+                        onClick={handleCopyDTBCCode}
+                        className="self-start rounded-lg border border-green-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-green-100"
+                      >
+                        {copiedDTBC ? "Copied!" : "Copy"}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">Click Generate both to create DTBC code.</p>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </main>

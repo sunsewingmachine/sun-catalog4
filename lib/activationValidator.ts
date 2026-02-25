@@ -1,10 +1,15 @@
 /**
- * Validates activation code: decode PC name from prefix (every 4th char), validate 13-digit time code.
- * No allowlist; secret/rule is in code only. If format valid and time matches, activate.
+ * Validates activation code: PCBC- (PC-based) or DTBC- (date-time based).
+ * PCBC: decode PC name from prefix (every 4th char), validate 13-digit time code.
+ * DTBC: compare with expected date-time based code for current minute.
+ * Entering either type activates the app.
  */
 
 import type { ActivationValidationResult } from "@/types/activation";
+import { generateDateTimeBasedCode } from "@/lib/activationCodeGen";
 
+const PCBC_PREFIX = "PCBC-";
+const DTBC_PREFIX = "DTBC-";
 const TIMECODE_LENGTH = 13;
 
 function decodePcNameFromPrefix(fullCode: string): string | null {
@@ -41,18 +46,17 @@ function getCurrentTimeCode(): string {
   return `${r1}${m}${r2}${d}${r3}`;
 }
 
-export function validateActivationCode(enteredCode: string): ActivationValidationResult {
-  const code = (enteredCode ?? "").replace(/\s/g, "").toUpperCase();
-  if (code.length < TIMECODE_LENGTH + 4) {
+function validatePCBCCode(codeWithoutPrefix: string): ActivationValidationResult {
+  if (codeWithoutPrefix.length < TIMECODE_LENGTH + 4) {
     return { valid: false, error: "Code too short" };
   }
 
-  const timeCode = extractTimeCode(code);
+  const timeCode = extractTimeCode(codeWithoutPrefix);
   if (!timeCode || timeCode.length !== TIMECODE_LENGTH || !/^\d{13}$/.test(timeCode)) {
     return { valid: false, error: "Invalid time code format" };
   }
 
-  const decodedPcName = decodePcNameFromPrefix(code);
+  const decodedPcName = decodePcNameFromPrefix(codeWithoutPrefix);
   if (!decodedPcName) {
     return { valid: false, error: "Invalid prefix" };
   }
@@ -63,4 +67,22 @@ export function validateActivationCode(enteredCode: string): ActivationValidatio
   }
 
   return { valid: true, decodedPcName };
+}
+
+function validateDTBCCode(enteredCode: string): ActivationValidationResult {
+  const expected = generateDateTimeBasedCode();
+  const normalized = (enteredCode ?? "").replace(/\s/g, "").toUpperCase();
+  if (normalized === expected) {
+    return { valid: true };
+  }
+  return { valid: false, error: "DTBC code expired or invalid" };
+}
+
+export function validateActivationCode(enteredCode: string): ActivationValidationResult {
+  const code = (enteredCode ?? "").replace(/\s/g, "").toUpperCase();
+  if (code.startsWith(DTBC_PREFIX)) {
+    return validateDTBCCode(code);
+  }
+  const codeWithoutPCBC = code.startsWith(PCBC_PREFIX) ? code.slice(PCBC_PREFIX.length) : code;
+  return validatePCBCCode(codeWithoutPCBC);
 }
