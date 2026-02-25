@@ -420,8 +420,22 @@ export default function CatalogLayout({
     }
   }, []);
 
+  /** F key toggles browser fullscreen (same as sidebar button). Ignored when focus is in input/textarea. */
   React.useEffect(() => {
-    if (!settingsMenuOpen) return;
+    if (!fullscreenSupported) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "f" && e.key !== "F") return;
+      const target = e.target as HTMLElement;
+      const tag = target.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea" || target.isContentEditable) return;
+      e.preventDefault();
+      toggleBrowserFullscreen();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [fullscreenSupported, toggleBrowserFullscreen]);
+
+  React.useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (settingsMenuRef.current && !settingsMenuRef.current.contains(e.target as Node)) {
         setSettingsMenuOpen(false);
@@ -754,7 +768,7 @@ export default function CatalogLayout({
                 id="btnExitBrowserFullscreen"
                 onClick={toggleBrowserFullscreen}
                 className="flex w-full items-center justify-center gap-1 rounded p-2 text-slate-600 transition-colors hover:bg-green-100 hover:text-slate-800"
-                title="Exit fullscreen (Esc)"
+                title="Exit fullscreen (Esc or F)"
                 aria-label="Exit fullscreen"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0" aria-hidden>
@@ -772,7 +786,7 @@ export default function CatalogLayout({
                     ? "text-slate-600 hover:bg-green-100 hover:text-slate-800"
                     : "cursor-not-allowed text-slate-400"
                 }`}
-                title={fullscreenSupported ? "Fullscreen (Esc to exit)" : "Fullscreen not available (use HTTPS, not in iframe)"}
+                title={fullscreenSupported ? "Fullscreen (F to toggle, Esc to exit)" : "Fullscreen not available (use HTTPS, not in iframe)"}
                 aria-label="Enter fullscreen"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0" aria-hidden>
