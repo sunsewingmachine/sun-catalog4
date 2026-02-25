@@ -38,15 +38,16 @@ function getDeterministicDigits(seedBase: string, length: 3 | 4 | 5 | 7): string
 
 /**
  * Date-time based code (DTBC): DTBC-r3mmr5ddr7HHr4MMr4 — use when host name may not work.
+ * Uses UTC so the same code validates on server and client regardless of timezone.
  */
 export function generateDateTimeBasedCode(date?: Date): string {
   const d = date ?? new Date();
   const salt = "SunCatalogDTBC";
-  const y = d.getFullYear();
-  const mo = d.getMonth();
-  const day = d.getDate();
-  const hh = d.getHours();
-  const mm = d.getMinutes();
+  const y = d.getUTCFullYear();
+  const mo = d.getUTCMonth();
+  const day = d.getUTCDate();
+  const hh = d.getUTCHours();
+  const mm = d.getUTCMinutes();
   const seedBase = `${salt}-${y}-${mo}-${day}-${hh}-${mm}`;
 
   const mmStr = String(mm).padStart(2, "0");

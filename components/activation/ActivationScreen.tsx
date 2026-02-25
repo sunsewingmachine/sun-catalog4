@@ -174,17 +174,34 @@ export default function ActivationScreen() {
           <label htmlFor="inputActivationCode" className="sr-only">
             Activation code
           </label>
-          <input
-            id="inputActivationCode"
-            type="password"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            onContextMenu={(e) => e.stopPropagation()}
-            placeholder="Enter code"
-            className="mb-4 w-full rounded-xl border border-green-200 bg-green-50/80 px-4 py-2.5 text-slate-800 placeholder-slate-400 transition-colors focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-            autoComplete="one-time-code"
-            disabled={submitting}
-          />
+          <div className="relative mb-4">
+            <input
+              id="inputActivationCode"
+              type="password"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              onContextMenu={(e) => e.stopPropagation()}
+              placeholder="Enter code"
+              className="w-full rounded-xl border border-green-200 bg-green-50/80 py-2.5 pl-4 pr-10 text-slate-800 placeholder-slate-400 transition-colors focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              autoComplete="one-time-code"
+              disabled={submitting}
+            />
+            {code.length > 0 && (
+              <button
+                type="button"
+                id="btnActivationCodeClear"
+                aria-label="Clear code"
+                onClick={() => {
+                  setCode("");
+                  setError(null);
+                }}
+                disabled={submitting}
+                className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-600 disabled:opacity-50"
+              >
+                <span aria-hidden>×</span>
+              </button>
+            )}
+          </div>
           {error && (
             <p className="mb-4 text-sm text-red-600" role="alert">
               {error}
