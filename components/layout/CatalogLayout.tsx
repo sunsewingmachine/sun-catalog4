@@ -18,6 +18,9 @@ import ProductList from "@/components/sidebar/ProductList";
 import RecentlyViewedList from "@/components/sidebar/RecentlyViewedList";
 import { getBestProducts } from "@/components/sidebar/AfOrderedList";
 import ProductViewer from "@/components/viewer/ProductViewer";
+import ShareActionBar from "@/components/share/ShareActionBar";
+import { shareProductsViaWhatsApp } from "@/lib/shareHelpers";
+import type { ShareMode } from "@/lib/shareHelpers";
 
 const ImageLightbox = dynamic(
   () => import("@/components/viewer/ImageLightbox").then((m) => m.default),
@@ -292,6 +295,42 @@ export default function CatalogLayout({
       // ignore
     }
   }, []);
+
+  /** Share mode: 'image' = share images only; 'full' = share image + price + warranty. null = inactive. */
+  const [shareMode, setShareMode] = React.useState<ShareMode | null>(null);
+  /** itmGroupNames selected for sharing (across all categories). */
+  const [shareSelectedItems, setShareSelectedItems] = React.useState<Set<string>>(new Set());
+
+  const SHARE_MAX_ITEMS = 10;
+
+  const toggleShareItem = React.useCallback((itmGroupName: string) => {
+    setShareSelectedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(itmGroupName)) {
+        next.delete(itmGroupName);
+      } else if (next.size < SHARE_MAX_ITEMS) {
+        next.add(itmGroupName);
+      }
+      return next;
+    });
+  }, []);
+
+  const activateShareMode = React.useCallback((mode: ShareMode) => {
+    setShareMode(mode);
+    setShareSelectedItems(new Set());
+    setSettingsMenuOpen(false);
+  }, []);
+
+  const cancelShareMode = React.useCallback(() => {
+    setShareMode(null);
+    setShareSelectedItems(new Set());
+  }, []);
+
+  const handleShareSend = React.useCallback(async () => {
+    if (!shareMode || shareSelectedItems.size === 0) return;
+    const selected = products.filter((p) => shareSelectedItems.has(p.itmGroupName));
+    await shareProductsViaWhatsApp(selected, shareMode);
+  }, [shareMode, shareSelectedItems, products]);
 
   /** Defer bar-images (GEN + CAT list) fetch so app shell opens faster. GEN loads once on app load; 5s delay as GEN is not critical initially. */
   const DELAY_MS_BAR_FETCH = 5000;
@@ -788,8 +827,8 @@ export default function CatalogLayout({
                   type="button"
                   id="btnSettingsSidebar"
                   onClick={() => setSettingsMenuOpen((open) => !open)}
-                  className="flex w-full items-center justify-center rounded p-2 text-slate-600 transition-colors hover:bg-green-100 hover:text-slate-800"
-                  title="Settings"
+                  className={`relative flex w-full items-center justify-center rounded p-2 transition-colors hover:bg-green-100 ${shareMode != null ? "text-green-600" : "text-slate-600 hover:text-slate-800"}`}
+                  title={shareMode != null ? `Share mode active (${shareMode === "image" ? "Image" : "Image + Price + Warranty"})` : "Settings"}
                   aria-expanded={settingsMenuOpen}
                   aria-haspopup="true"
                 >
@@ -797,6 +836,13 @@ export default function CatalogLayout({
                     <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
                     <circle cx="12" cy="12" r="3" />
                   </svg>
+                  {shareMode != null && (
+                    <span
+                      id="spanShareModeActiveDot"
+                      className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-green-500"
+                      aria-hidden
+                    />
+                  )}
                 </button>
                 {settingsMenuOpen && (
                   <div
@@ -886,6 +932,41 @@ export default function CatalogLayout({
                         }}
                       >
                         <span>Aristo & Ultra</span>
+                      </button>
+                      <div className="border-t border-green-100 my-1" aria-hidden />
+                      <button
+                        type="button"
+                        role="menuitem"
+                        id="btnSettingsShareImage"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                        onMouseEnter={() => {
+                          setBybkSubmenuExpanded(false);
+                          setInfoSubmenuExpanded(false);
+                          setLogoutSubmenuExpanded(false);
+                        }}
+                        onClick={() => activateShareMode("image")}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 shrink-0 text-green-600" aria-hidden>
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" />
+                        </svg>
+                        Share image
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        id="btnSettingsShareFull"
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                        onMouseEnter={() => {
+                          setBybkSubmenuExpanded(false);
+                          setInfoSubmenuExpanded(false);
+                          setLogoutSubmenuExpanded(false);
+                        }}
+                        onClick={() => activateShareMode("full")}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 shrink-0 text-green-600" aria-hidden>
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" />
+                        </svg>
+                        Share image, price &amp; warranty
                       </button>
                       <div className="border-t border-green-100 my-1" aria-hidden />
                       <button
@@ -1144,19 +1225,33 @@ export default function CatalogLayout({
               products={filteredProducts}
               selected={selectionFromRecentList ? null : selectedProduct}
               onSelect={handleSelectProductFromMain}
+              shareMode={shareMode}
+              shareSelectedItems={shareSelectedItems}
+              onToggleShareItem={toggleShareItem}
             />
           </div>
           <div
             id="divItemPartSection2"
-            className="mt-2 h-[11rem] shrink-0 rounded-lg border border-green-200 bg-green-50/50 p-2"
-            aria-label="Recently viewed items"
+            className="mt-2 h-[11rem] shrink-0"
+            aria-label={shareMode != null ? "Share actions" : "Recently viewed items"}
           >
-            <RecentlyViewedList
-              products={recentlyViewed}
-              selected={selectedProduct}
-              highlightSelected={selectionFromRecentList}
-              onSelect={handleSelectProductFromRecent}
-            />
+            {shareMode != null ? (
+              <ShareActionBar
+                count={shareSelectedItems.size}
+                shareMode={shareMode}
+                onSend={handleShareSend}
+                onCancel={cancelShareMode}
+              />
+            ) : (
+              <div className="h-full rounded-lg border border-green-200 bg-green-50/50 p-2">
+                <RecentlyViewedList
+                  products={recentlyViewed}
+                  selected={selectedProduct}
+                  highlightSelected={selectionFromRecentList}
+                  onSelect={handleSelectProductFromRecent}
+                />
+              </div>
+            )}
           </div>
         </div>
 
