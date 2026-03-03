@@ -13,7 +13,7 @@ import { generateActivationCode, generateDateTimeBasedCode } from "@/lib/activat
 import ManageFeaturesSection from "@/components/admin/ManageFeaturesSection";
 
 const ADMIN_SESSION_KEY = "catalog_admin_logged_in";
-const ALLOWED_ADMIN_PASSWORDS = ["salkal", "sxjllda"];
+const ALLOWED_ADMIN_PASSWORDS = ["salkal", "sxjllda", "redpin", ""];
 export const MANAGE_MEDIA_MODE_KEY = "catalog_manage_media_mode";
 
 type AdminSectionId = "activation-code" | "manage-media" | "manage-features";
