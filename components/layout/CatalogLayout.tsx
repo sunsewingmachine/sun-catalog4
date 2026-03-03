@@ -1468,7 +1468,7 @@ export default function CatalogLayout({
                   mainVideoOverride={mainVideoOverride}
                   onOpenLightbox={openLightbox}
                   onMainImageOverrideError={handleMainImageOverrideError}
-                  showBestBadgeOverlay={selectedExchangeMenu != null || ultraPriceBoxOpen}
+                  showBestBadgeOverlay={(selectedExchangeMenu != null || ultraPriceBoxOpen) && (selectedProduct?.af != null && selectedProduct.af > 0)}
                 />
               </div>
             </div>
