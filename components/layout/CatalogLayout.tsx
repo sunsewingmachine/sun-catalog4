@@ -1105,7 +1105,7 @@ export default function CatalogLayout({
                           }}
                           className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide rounded ${infoSubmenuExpanded ? "bg-green-50 text-green-800" : "text-slate-600 hover:bg-green-50"}`}
                         >
-                          <span id="pInfoMenuLabel">Info</span>
+                          <span id="pInfoMenuLabel">Show/Hide</span>
                           <span className="text-slate-400 shrink-0 ml-1" aria-hidden>›</span>
                         </button>
                       </div>
@@ -1255,33 +1255,11 @@ export default function CatalogLayout({
                       >
                         <div
                           role="menuitem"
-                          id="divInfoShowWs"
-                          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
-                          aria-label="Wholesale price"
-                        >
-                          <span>Wholesale</span>
-                          <button
-                            type="button"
-                            id="btnShowWsToggle"
-                            role="switch"
-                            aria-checked={showWs}
-                            onClick={() => setShowWsAndPersist(!showWs)}
-                            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border border-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${showWs ? "bg-green-600" : "bg-slate-200"}`}
-                          >
-                            <span
-                              className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${showWs ? "translate-x-5" : "translate-x-0.5"}`}
-                              style={{ marginTop: "2px" }}
-                              aria-hidden
-                            />
-                          </button>
-                        </div>
-                        <div
-                          role="menuitem"
                           id="divInfoAll"
                           className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
                           aria-label="Show product info box"
                         >
-                          <span>All</span>
+                          <span>All info</span>
                           <button
                             type="button"
                             id="btnHideAllToggle"
@@ -1336,6 +1314,28 @@ export default function CatalogLayout({
                           >
                             <span
                               className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${!hideWarranty ? "translate-x-5" : "translate-x-0.5"}`}
+                              style={{ marginTop: "2px" }}
+                              aria-hidden
+                            />
+                          </button>
+                        </div>
+                        <div
+                          role="menuitem"
+                          id="divInfoShowWs"
+                          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-green-50"
+                          aria-label="Wholesale price"
+                        >
+                          <span>Wholesale</span>
+                          <button
+                            type="button"
+                            id="btnShowWsToggle"
+                            role="switch"
+                            aria-checked={showWs}
+                            onClick={() => setShowWsAndPersist(!showWs)}
+                            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border border-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${showWs ? "bg-green-600" : "bg-slate-200"}`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-3.5 rounded-full bg-white shadow-sm transition-transform ${showWs ? "translate-x-5" : "translate-x-0.5"}`}
                               style={{ marginTop: "2px" }}
                               aria-hidden
                             />
