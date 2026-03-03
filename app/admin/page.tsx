@@ -156,6 +156,7 @@ export default function AdminPage() {
               placeholder="Password"
               className="mb-4 w-full rounded-xl border border-green-200 bg-green-50/80 px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
               autoComplete="current-password"
+              autoFocus
             />
             {loginError && (
               <p className="mb-4 text-sm text-red-600" role="alert">
