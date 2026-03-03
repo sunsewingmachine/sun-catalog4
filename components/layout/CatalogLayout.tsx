@@ -1251,7 +1251,7 @@ export default function CatalogLayout({
                         id="divInfoSubmenuFlyout"
                         role="menu"
                         aria-label="Info options"
-                        className="ml-1 min-w-[8rem] max-h-[70vh] overflow-y-auto overflow-x-hidden border border-green-200 bg-white py-1 shadow-lg rounded-lg"
+                        className="ml-1 w-44 max-h-[70vh] overflow-y-auto overflow-x-hidden border border-green-200 bg-white py-1 shadow-lg rounded-lg"
                       >
                         <div
                           role="menuitem"
