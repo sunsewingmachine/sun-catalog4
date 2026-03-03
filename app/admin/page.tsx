@@ -10,15 +10,17 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { generateActivationCode, generateDateTimeBasedCode } from "@/lib/activationCodeGen";
+import ManageFeaturesSection from "@/components/admin/ManageFeaturesSection";
 
 const ADMIN_SESSION_KEY = "catalog_admin_logged_in";
 const ALLOWED_ADMIN_PASSWORDS = ["salkal", "sxjllda"];
 export const MANAGE_MEDIA_MODE_KEY = "catalog_manage_media_mode";
 
-type AdminSectionId = "activation-code" | "manage-media";
+type AdminSectionId = "activation-code" | "manage-media" | "manage-features";
 const ADMIN_SECTIONS: { id: AdminSectionId; label: string }[] = [
   { id: "activation-code", label: "Activation code" },
-  { id: "manage-media", label: "Manage media" },
+  { id: "manage-media", label: "Manage images" },
+  { id: "manage-features", label: "Manage features" },
 ];
 
 export default function AdminPage() {
@@ -181,7 +183,7 @@ export default function AdminPage() {
   return (
     <div
       id="divAdminRoot"
-      className="flex min-h-screen flex-col bg-green-50 text-slate-800"
+      className="flex h-screen flex-col bg-green-50 text-slate-800 overflow-hidden"
     >
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-green-200 bg-green-200 px-5 py-3 shadow-sm">
         <h1 className="text-lg font-semibold text-slate-900">Admin</h1>
@@ -227,7 +229,7 @@ export default function AdminPage() {
 
         <main
           id="divAdminMain"
-          className="min-w-0 flex-1 overflow-auto p-6"
+          className={`min-w-0 flex-1 ${selectedSection === "manage-features" ? "overflow-hidden" : "overflow-auto p-6"}`}
           aria-label="Admin content"
         >
           {selectedSection === "manage-media" && (
@@ -286,6 +288,10 @@ export default function AdminPage() {
                 </div>
               )}
             </div>
+          )}
+
+          {selectedSection === "manage-features" && (
+            <ManageFeaturesSection />
           )}
 
           {selectedSection === "activation-code" && (
