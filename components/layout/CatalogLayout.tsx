@@ -3,6 +3,7 @@
 /**
  * Layout: left category strip (vertical buttons) | item part (section 1 + section 2) | viewer + strip | details.
  * "Best" category shows only items with a value in TargetSellingOrder (AF) column, ordered by that value.
+ * When MANAGE_MEDIA_MODE_KEY is set in localStorage (by admin page), shows a media management toolbar.
  */
 
 import React from "react";
@@ -13,6 +14,7 @@ import { getWholesaleStringThreeLines } from "@/lib/wholesalePriceHelper";
 import type { UltraRow } from "@/lib/ultraPriceHelper";
 import type { FeatureRecord } from "@/types/feature";
 import { ALLOWED_CATEGORIES } from "@/types/product";
+import { SETTINGS } from "@/lib/settings";
 import CategoryList from "@/components/sidebar/CategoryList";
 import ProductList from "@/components/sidebar/ProductList";
 import RecentlyViewedList from "@/components/sidebar/RecentlyViewedList";
@@ -79,6 +81,8 @@ const RECENTLY_VIEWED_KEY = "catalog_recently_viewed";
 const DEFAULT_OPEN_ITM_GROUP_NAME = "Sv.Sun.Special";
 /** LocalStorage key for Wholesale price toggle (Info submenu). */
 const SHOW_WS_KEY = "catalog_show_ws";
+/** LocalStorage key set by admin page to enable media management mode. */
+const MANAGE_MEDIA_MODE_KEY = "catalog_manage_media_mode";
 /** LocalStorage keys for Info menu: hide entire product info box (when off), hide price field, hide warranty field. */
 const HIDE_ALL_KEY = "catalog_hide_all";
 const HIDE_PRICE_KEY = "catalog_hide_price";
@@ -171,6 +175,8 @@ export default function CatalogLayout({
   const [isBrowserFullscreen, setIsBrowserFullscreen] = React.useState(false);
   /** Fullscreen API available (secure context, no blocking iframes). Set once on mount. */
   const [fullscreenSupported, setFullscreenSupported] = React.useState(false);
+  /** True when admin has enabled media management mode (set via MANAGE_MEDIA_MODE_KEY in localStorage). */
+  const [manageMediaMode, setManageMediaMode] = React.useState(false);
   const [settingsMenuOpen, setSettingsMenuOpen] = React.useState(false);
   const settingsMenuRef = React.useRef<HTMLDivElement>(null);
   /** Ref for the combined settings + Bybk fly-out area; used to close fly-out only when pointer leaves entire menu. */
@@ -416,6 +422,15 @@ export default function CatalogLayout({
     };
   }, []);
 
+  /** Read media management mode flag from localStorage on mount. */
+  React.useEffect(() => {
+    try {
+      setManageMediaMode(window.localStorage.getItem(MANAGE_MEDIA_MODE_KEY) === "1");
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const requestBrowserFullscreen = React.useCallback(() => {
     const root = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
     const req = root.requestFullscreen ?? root.webkitRequestFullscreen;
@@ -624,6 +639,31 @@ export default function CatalogLayout({
     const t = setTimeout(() => setDeferredProduct(selectedProduct), DELAY_MS_STRIP);
     return () => clearTimeout(t);
   }, [selectedProduct]);
+  /**
+   * Filenames deleted from the Etc (Items) row — persisted to localStorage so deleted images
+   * stay hidden across page restarts. Cleared per-filename only when re-uploaded.
+   */
+  const [deletedEtcFilenames, setDeletedEtcFilenames] = React.useState<Set<string>>(() => {
+    try {
+      const raw = window.localStorage.getItem(SETTINGS.deletedEtcFilenamesKey);
+      return raw ? new Set<string>(JSON.parse(raw) as string[]) : new Set<string>();
+    } catch {
+      return new Set<string>();
+    }
+  });
+  /** Persist deletedEtcFilenames to localStorage whenever it changes. */
+  React.useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        SETTINGS.deletedEtcFilenamesKey,
+        JSON.stringify([...deletedEtcFilenames])
+      );
+    } catch {
+      // ignore quota errors
+    }
+  }, [deletedEtcFilenames]);
+  /** Filenames uploaded to the Etc (Items) row this session (used to clear deletedEtcFilenames on re-upload). */
+  const [uploadedEtcFilenames, setUploadedEtcFilenames] = React.useState<Set<string>>(new Set());
   const forGroupFiltered = React.useMemo(() => {
     if (!deferredCategoryPrefix) return [];
     const lower = deferredCategoryPrefix.toLowerCase();
@@ -679,6 +719,146 @@ export default function CatalogLayout({
       setSelectedProduct(defaultProduct);
     });
   }, [products]);
+
+  /** Re-fetches bar-images list from server (used after media add/delete). */
+  const refreshBarImages = React.useCallback(async () => {
+    try {
+      const res = await fetch("/api/bar-images");
+      const data = (await res.json()) as { forAll?: string[]; forGroup?: string[]; _hint?: "r2_not_configured" };
+      setBarImages({
+        forAll: Array.isArray(data.forAll) ? data.forAll : [],
+        forGroup: Array.isArray(data.forGroup) ? data.forGroup : [],
+        hint: data._hint,
+      });
+    } catch {
+      // ignore — keep current state
+    }
+  }, []);
+
+  /**
+   * Delete a ForAll/ForGroup image from R2 + IndexedDB then refresh the bar-images list.
+   * Optimistically removes the filename from barImages state immediately so navigating
+   * away and back never re-shows the deleted image even before the server refresh returns.
+   */
+  const handleMediaDelete = React.useCallback(
+    async (folder: import("@/lib/r2ImageHelper").BarImageFolder, filename: string) => {
+      const { deleteCachedImage } = await import("@/lib/imageCacheManager");
+      const { getImageUrlForFolder } = await import("@/lib/r2ImageHelper");
+
+      // 1. Evict from IndexedDB so CachedImage never reads the stale blob again
+      const cdnUrl = getImageUrlForFolder(filename, folder);
+      if (cdnUrl) await deleteCachedImage(cdnUrl);
+
+      // 2. Clear main area if it is currently showing the deleted image
+      setMainImageOverride((prev) => (prev === cdnUrl ? null : prev));
+      setMainImageHoverPreview((prev) => (prev === cdnUrl ? null : prev));
+
+      // 3. Optimistically remove from barImages state so navigating away/back never re-shows it
+      setBarImages((prev) => ({
+        ...prev,
+        forAll: folder === "ForAll" ? prev.forAll.filter((f) => f !== filename) : prev.forAll,
+        forGroup: folder === "ForGroup" ? prev.forGroup.filter((f) => f !== filename) : prev.forGroup,
+      }));
+
+      // 4. Delete from R2
+      await fetch("/api/manage-media/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder, filename }),
+      });
+
+      // 5. Refresh filenames list from server to confirm final state
+      await refreshBarImages();
+    },
+    [refreshBarImages]
+  );
+
+  /**
+   * Delete an Etc (product additional) image from R2 + IndexedDB.
+   * Tracks deleted filename at layout level so navigating between products never re-shows it.
+   */
+  const handleItemsMediaDelete = React.useCallback(
+    async (_folder: "Items", filename: string) => {
+      const { deleteCachedImage } = await import("@/lib/imageCacheManager");
+      const { getImageUrl } = await import("@/lib/r2ImageHelper");
+
+      // 1. Optimistically mark as deleted at layout level (survives product navigation)
+      setDeletedEtcFilenames((prev) => new Set(prev).add(filename));
+
+      // 2. Evict from IndexedDB
+      const cdnUrl = getImageUrl(filename);
+      if (cdnUrl) await deleteCachedImage(cdnUrl);
+
+      // 3. Clear main area if it is currently showing the deleted image
+      setMainImageOverride((prev) => (prev === cdnUrl ? null : prev));
+      setMainImageHoverPreview((prev) => (prev === cdnUrl ? null : prev));
+
+      // 4. Delete from R2
+      try {
+        await fetch("/api/manage-media/delete", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folder: "Items", filename }),
+        });
+      } catch {
+        // If delete fails, restore the filename
+        setDeletedEtcFilenames((prev) => { const s = new Set(prev); s.delete(filename); return s; });
+      }
+    },
+    []
+  );
+
+  /**
+   * Upload an image to R2 then refresh the filenames list.
+   * Filename is derived from the original file name.
+   */
+  const handleMediaUpload = React.useCallback(
+    async (folder: import("@/lib/r2ImageHelper").BarImageFolder, file: File) => {
+      const formData = new FormData();
+      formData.append("folder", folder);
+      formData.append("filename", file.name);
+      formData.append("file", file);
+
+      const res = await fetch("/api/manage-media/upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = (await res.json()) as { error?: string };
+        throw new Error(err.error ?? "Upload failed");
+      }
+
+      // Refresh filenames list from server
+      await refreshBarImages();
+    },
+    [refreshBarImages]
+  );
+
+  /**
+   * Upload an Etc (product additional) image to R2 using the predetermined filename.
+   * Clears the filename from deletedEtcFilenames so the slot shows filled after re-upload.
+   */
+  const handleItemsMediaUpload = React.useCallback(
+    async (_folder: "Items", filename: string, file: File) => {
+      const formData = new FormData();
+      formData.append("folder", "Items");
+      formData.append("filename", filename);
+      formData.append("file", file);
+
+      const res = await fetch("/api/manage-media/upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = (await res.json()) as { error?: string };
+        throw new Error(err.error ?? "Upload failed");
+      }
+      // On successful upload, remove from deletedEtcFilenames and track as uploaded
+      setDeletedEtcFilenames((prev) => { const s = new Set(prev); s.delete(filename); return s; });
+      setUploadedEtcFilenames((prev) => new Set(prev).add(filename));
+    },
+    []
+  );
 
   return (
     <div
@@ -1313,6 +1493,11 @@ export default function CatalogLayout({
                   onHoverMainImage={setMainImageHoverPreview}
                   onOpenLightbox={openLightbox}
                   compact
+                  manageMediaMode={manageMediaMode}
+                  onMediaDelete={handleItemsMediaDelete}
+                  onMediaUpload={handleItemsMediaUpload}
+                  deletedFilenames={deletedEtcFilenames}
+                  uploadedFilenames={uploadedEtcFilenames}
                 />
               </div>
             </div>
@@ -1334,6 +1519,9 @@ export default function CatalogLayout({
                   noTopBorder
                   minSlots={16}
                   centerAlign
+                  manageMediaMode={manageMediaMode}
+                  onMediaDelete={handleMediaDelete}
+                  onMediaUpload={handleMediaUpload}
                 />
               </div>
             </div>
@@ -1353,6 +1541,9 @@ export default function CatalogLayout({
                   onHoverMainImage={setMainImageHoverPreview}
                   onOpenLightbox={openLightbox}
                   noTopBorder
+                  manageMediaMode={manageMediaMode}
+                  onMediaDelete={handleMediaDelete}
+                  onMediaUpload={handleMediaUpload}
                 />
               </div>
             </div>

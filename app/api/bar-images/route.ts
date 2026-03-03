@@ -31,7 +31,7 @@ export async function GET(): Promise<NextResponse<BarImagesResponse>> {
       listKeysByPrefix(getBarFolderListPrefix("ForAll")),
       listKeysByPrefix(getBarFolderListPrefix("ForGroup")),
     ]);
-    return NextResponse.json({ forAll, forGroup });
+    return NextResponse.json({ forAll, forGroup }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ forAll: [], forGroup: [] });
   }

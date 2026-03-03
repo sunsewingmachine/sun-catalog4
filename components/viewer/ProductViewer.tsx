@@ -7,9 +7,9 @@
 
 import React from "react";
 import type { Product } from "@/types/product";
-import { getImageUrl, getCdnBase } from "@/lib/r2ImageHelper";
-import Image from "next/image";
+import { getImageUrl } from "@/lib/r2ImageHelper";
 import { useImageDisplayUrl } from "@/hooks/useImageDisplayUrl";
+import { isImageUrlDeleted } from "@/lib/imageCacheManager";
 import { SETTINGS } from "@/lib/settings";
 /** Main image backbox: 16:9, max 1520px wide, height capped in .main-image-box-cap (globals.css). */
 
@@ -48,8 +48,10 @@ export default function ProductViewer({
   const { displayUrl: cachedMainUrl } = useImageDisplayUrl(
     displaySrc?.startsWith("http") ? displaySrc : ""
   );
-  const useSample = !displaySrc || mainImageError;
-  const productMainSrc = useSample ? SETTINGS.fallbackImagePath : (cachedMainUrl || displaySrc || SETTINGS.fallbackImagePath);
+  const isMainDeleted = !!displaySrc && isImageUrlDeleted(displaySrc);
+  const useSample = !displaySrc || mainImageError || isMainDeleted;
+  // If deleted this session, cachedMainUrl is "" — don't fall back to the raw CDN URL (browser HTTP cache)
+  const productMainSrc = useSample ? SETTINGS.fallbackImagePath : (cachedMainUrl || (!isMainDeleted ? displaySrc : "") || SETTINGS.fallbackImagePath);
   const mainSrc =
     mainImageHoverPreview != null && mainImageHoverPreview !== ""
       ? mainImageHoverPreview
@@ -141,14 +143,12 @@ export default function ProductViewer({
           onKeyDown={(e) => e.key === "Enter" && handleClickMainOpenLightbox()}
           aria-label="Click to open full size"
         >
-          <Image
+          <img
             id="imgMainProduct"
             src={SETTINGS.fallbackImagePath}
             alt="Default"
-            fill
-            className="pointer-events-none object-contain rounded-2xl"
-            sizes="(max-width: 800px) 100vw, 50vw"
-            loading="eager"
+            className="pointer-events-none h-full w-full object-contain rounded-2xl"
+            draggable={false}
           />
           {showBestBadgeOverlay && (
             <div id="divBestBadgeOverlay" className="absolute bottom-2 right-2 z-10 rounded-lg bg-white/90 p-1 shadow-md" aria-hidden>
@@ -240,14 +240,12 @@ export default function ProductViewer({
             draggable={false}
           />
         ) : (
-          <Image
+          <img
             key={effectiveMainSrc}
             id="imgMainProduct"
             src={effectiveMainSrc}
             alt={mainAlt}
-            fill
-            className="pointer-events-none object-contain rounded-2xl opacity-100"
-            sizes="(max-width: 800px) 100vw, 50vw"
+            className="pointer-events-none h-full w-full object-contain rounded-2xl opacity-100"
             loading="eager"
             onLoad={() => setMainImageLoaded(true)}
             onError={handleMainImageError}
@@ -257,27 +255,6 @@ export default function ProductViewer({
         {showBestBadgeOverlay && product && (
           <div id="divBestBadgeOverlay" className="absolute bottom-2 right-2 z-10 rounded-lg bg-white/90 p-1 shadow-md" aria-hidden>
             <img src="/used/best.png" alt="Best" className="h-12 w-auto object-contain md:h-14" width={56} height={56} />
-          </div>
-        )}
-        {useSample && product && !hasOverride && (
-          <div
-            id="divImageNotLoadingOverlay"
-            className="absolute bottom-0 left-0 right-0 z-10 flex flex-col gap-1 rounded-t-xl bg-slate-900/95 px-3 py-2 text-center text-amber-200 shadow-lg"
-            aria-live="polite"
-          >
-            <span className="text-xs font-medium">Main image not loading</span>
-            <code className="max-h-12 overflow-auto break-all text-[10px] text-slate-300 px-2 py-0.5 rounded bg-slate-800" title="URL">
-              {displaySrc}
-            </code>
-            {displaySrc.startsWith("/images/") && !getCdnBase() ? (
-              <span className="text-[10px] text-slate-400">
-                Set CDN base URL in your deployment env and redeploy (env is applied at build time).
-              </span>
-            ) : !displaySrc.includes("/items/") && getCdnBase() ? (
-              <span className="text-[10px] text-slate-400">
-                Add CDN image prefix in env and redeploy. R2 keys are case-sensitive.
-              </span>
-            ) : null}
           </div>
         )}
       </div>

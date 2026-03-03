@@ -1,23 +1,28 @@
 "use client";
 
 /**
- * Admin page: login; then left sidebar with sections (Activation code, more later) and main content.
- * Activation code section: PC name input → generate code for another PC (validated by /api/validate-activation).
+ * Admin page: login; then left sidebar with sections (Activation code, Manage media) and main content.
+ * Activation code section: PC name input → generate code for another PC.
+ * Manage media section: toggle to enable media management mode on the main catalog page.
  */
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { generateActivationCode, generateDateTimeBasedCode } from "@/lib/activationCodeGen";
 
 const ADMIN_SESSION_KEY = "catalog_admin_logged_in";
 const ALLOWED_ADMIN_PASSWORDS = ["salkal", "sxjllda"];
+export const MANAGE_MEDIA_MODE_KEY = "catalog_manage_media_mode";
 
-type AdminSectionId = "activation-code";
+type AdminSectionId = "activation-code" | "manage-media";
 const ADMIN_SECTIONS: { id: AdminSectionId; label: string }[] = [
   { id: "activation-code", label: "Activation code" },
+  { id: "manage-media", label: "Manage media" },
 ];
 
 export default function AdminPage() {
+  const router = useRouter();
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -28,6 +33,7 @@ export default function AdminPage() {
   const [copied, setCopied] = useState(false);
   const [copiedDTBC, setCopiedDTBC] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [manageMediaEnabled, setManageMediaEnabled] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -36,6 +42,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (!mounted || typeof window === "undefined") return;
     setAuthenticated(window.sessionStorage.getItem(ADMIN_SESSION_KEY) === "1");
+    setManageMediaEnabled(window.localStorage.getItem(MANAGE_MEDIA_MODE_KEY) === "1");
   }, [mounted]);
 
   const handleAdminLogin = (e: React.FormEvent) => {
@@ -56,11 +63,28 @@ export default function AdminPage() {
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       window.sessionStorage.removeItem(ADMIN_SESSION_KEY);
+      window.localStorage.removeItem(MANAGE_MEDIA_MODE_KEY);
     }
     setAuthenticated(false);
+    setManageMediaEnabled(false);
     setGeneratedCode(null);
     setGeneratedDTBCCode(null);
     setPcName("");
+  };
+
+  const handleToggleManageMedia = () => {
+    const next = !manageMediaEnabled;
+    setManageMediaEnabled(next);
+    if (typeof window !== "undefined") {
+      if (next) {
+        window.localStorage.setItem(MANAGE_MEDIA_MODE_KEY, "1");
+      } else {
+        window.localStorage.removeItem(MANAGE_MEDIA_MODE_KEY);
+      }
+    }
+    if (next) {
+      router.push("/catalog");
+    }
   };
 
   const handleGenerateCode = (e: React.FormEvent) => {
@@ -206,6 +230,64 @@ export default function AdminPage() {
           className="min-w-0 flex-1 overflow-auto p-6"
           aria-label="Admin content"
         >
+          {selectedSection === "manage-media" && (
+            <div id="divAdminManageMedia" className="max-w-xl space-y-6">
+              <h2 className="text-lg font-semibold text-slate-900">Manage media</h2>
+              <p className="text-sm text-slate-500">
+                Enable media management mode to add or delete images directly on the catalog page.
+                When turned on, you will be taken to the catalog to manage images.
+              </p>
+              <div
+                id="divManageMediaToggleRow"
+                className="flex items-center justify-between rounded-2xl border border-green-200 bg-white/95 p-5 shadow-md"
+              >
+                <div>
+                  <p className="text-sm font-medium text-slate-800">Media management mode</p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {manageMediaEnabled
+                      ? "Active — go to catalog to add/delete images."
+                      : "Off — catalog is in normal view mode."}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  id="btnToggleManageMedia"
+                  role="switch"
+                  aria-checked={manageMediaEnabled}
+                  onClick={handleToggleManageMedia}
+                  className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${
+                    manageMediaEnabled
+                      ? "border-teal-600 bg-teal-600"
+                      : "border-slate-300 bg-slate-200"
+                  }`}
+                >
+                  <span className="sr-only">Toggle media management mode</span>
+                  <span
+                    className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                      manageMediaEnabled ? "translate-x-5" : "translate-x-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+              {manageMediaEnabled && (
+                <div
+                  id="divManageMediaActiveNotice"
+                  className="flex items-center gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800"
+                >
+                  <svg className="h-4 w-4 shrink-0 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
+                  </svg>
+                  <span>
+                    Media mode is active.{" "}
+                    <Link href="/catalog" className="font-medium underline hover:text-teal-900">
+                      Go to catalog →
+                    </Link>
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           {selectedSection === "activation-code" && (
             <div id="divAdminCodeGen" className="max-w-2xl space-y-6">
               <h2 className="text-lg font-semibold text-slate-900">Activation code</h2>

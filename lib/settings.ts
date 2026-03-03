@@ -17,6 +17,8 @@ export const SETTINGS = {
   showAppVersion: true,
   /** LocalStorage key used for activation state */
   activationStorageKey: "catalog_activated",
+  /** LocalStorage key for persisting deleted Etc (Items) image filenames across restarts */
+  deletedEtcFilenamesKey: "catalog_deleted_etc_filenames",
   /** Messages shown one-by-one in the bottom bar (5s interval, smooth animation). Add more as needed. */
   displayMessages: [
     "We are No.1 in Tamilnadu",
@@ -28,8 +30,8 @@ export const SETTINGS = {
   ],
   /** Interval (ms) between switching to the next message in the bottom bar. */
   bottomBarMessageIntervalMs: 5000,
-  /** Fallback image when product/bar image is missing, wrong format, or fails to load (public/machines/Sample.jpg). */
-  fallbackImagePath: "/machines/Sample.jpg",
+  /** Fallback image when product/bar image is missing, wrong format, or fails to load (public/machines/Sample.jpg). Increment v= to bust browser cache after replacing the file. */
+  fallbackImagePath: "/machines/Sample.jpg?v=2",
 } as const;
 
 /** Env-derived config (set in .env.local; restart dev server after changes) */

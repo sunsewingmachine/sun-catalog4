@@ -56,9 +56,26 @@ function isVideoUrl(url: string): boolean {
   return /\.(mp4|webm|mov|ogg|m4v|avi|mn4)(\?|$)/i.test(url);
 }
 
+/**
+ * In-memory registry of CDN URLs deleted this session.
+ * Prevents browser HTTP cache from serving stale images after R2 deletion.
+ * Returns "" from getImageDisplayUrl so callers fall back to the placeholder.
+ */
+const deletedUrlRegistry = new Set<string>();
+
+export function markImageUrlDeleted(imageUrl: string): void {
+  if (imageUrl) deletedUrlRegistry.add(imageUrl);
+}
+
+export function isImageUrlDeleted(imageUrl: string): boolean {
+  return deletedUrlRegistry.has(imageUrl);
+}
+
 /** Returns object URL if cached, otherwise the original imageUrl (browser will fetch). For video URLs we skip cache so playback works. */
 export async function getImageDisplayUrl(imageUrl: string): Promise<string> {
   if (isVideoUrl(imageUrl)) return imageUrl;
+  // If deleted this session, return empty so callers show fallback instead of hitting HTTP cache
+  if (deletedUrlRegistry.has(imageUrl)) return "";
   const entry = await getCachedImageEntry(imageUrl);
   if (entry?.blob) return URL.createObjectURL(entry.blob);
   return imageUrl;
@@ -80,6 +97,32 @@ export async function setCachedImage(
     const store = tx.objectStore(STORE);
     store.put({ blob, lastModified }, imageUrl);
     tx.oncomplete = () => db.close();
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Removes a single image entry from IndexedDB and marks the URL as deleted
+ * so getImageDisplayUrl never falls back to the browser's HTTP cache for it.
+ */
+export async function deleteCachedImage(imageUrl: string): Promise<void> {
+  // Mark deleted immediately so any subsequent getImageDisplayUrl call returns ""
+  markImageUrlDeleted(imageUrl);
+  try {
+    const db = await openDb();
+    await new Promise<void>((resolve) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).delete(imageUrl);
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      tx.onerror = () => {
+        db.close();
+        resolve();
+      };
+    });
   } catch {
     // ignore
   }
