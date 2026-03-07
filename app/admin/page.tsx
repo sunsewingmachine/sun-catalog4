@@ -13,7 +13,9 @@ import { generateActivationCode, generateDateTimeBasedCode } from "@/lib/activat
 import ManageFeaturesSection from "@/components/admin/ManageFeaturesSection";
 
 const ADMIN_SESSION_KEY = "catalog_admin_logged_in";
+const ADMIN_SUPERADMIN_KEY = "catalog_admin_superadmin";
 const ALLOWED_ADMIN_PASSWORDS = ["salkal", "sxjllda", "redpin", ""];
+const SUPERADMIN_PASSWORDS = ["salkal", "sxjllda"];
 export const MANAGE_MEDIA_MODE_KEY = "catalog_manage_media_mode";
 
 type AdminSectionId = "activation-code" | "manage-media" | "manage-features";
@@ -36,6 +38,7 @@ export default function AdminPage() {
   const [copiedDTBC, setCopiedDTBC] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [manageMediaEnabled, setManageMediaEnabled] = useState(false);
+  const [canViewActivationCode, setCanViewActivationCode] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -45,6 +48,11 @@ export default function AdminPage() {
     if (!mounted || typeof window === "undefined") return;
     setAuthenticated(window.sessionStorage.getItem(ADMIN_SESSION_KEY) === "1");
     setManageMediaEnabled(window.localStorage.getItem(MANAGE_MEDIA_MODE_KEY) === "1");
+    const isSuperAdmin = window.sessionStorage.getItem(ADMIN_SUPERADMIN_KEY) === "1";
+    setCanViewActivationCode(isSuperAdmin);
+    if (!isSuperAdmin) {
+      setSelectedSection((prev) => (prev === "activation-code" ? "manage-media" : prev));
+    }
   }, [mounted]);
 
   const handleAdminLogin = (e: React.FormEvent) => {
@@ -54,6 +62,10 @@ export default function AdminPage() {
     if (ALLOWED_ADMIN_PASSWORDS.includes(trimmed)) {
       if (typeof window !== "undefined") {
         window.sessionStorage.setItem(ADMIN_SESSION_KEY, "1");
+        const isSuperAdmin = SUPERADMIN_PASSWORDS.includes(trimmed);
+        window.sessionStorage.setItem(ADMIN_SUPERADMIN_KEY, isSuperAdmin ? "1" : "0");
+        setCanViewActivationCode(isSuperAdmin);
+        setSelectedSection(isSuperAdmin ? "activation-code" : "manage-media");
       }
       setAuthenticated(true);
       setPassword("");
@@ -65,10 +77,12 @@ export default function AdminPage() {
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       window.sessionStorage.removeItem(ADMIN_SESSION_KEY);
+      window.sessionStorage.removeItem(ADMIN_SUPERADMIN_KEY);
       window.localStorage.removeItem(MANAGE_MEDIA_MODE_KEY);
     }
     setAuthenticated(false);
     setManageMediaEnabled(false);
+    setCanViewActivationCode(false);
     setGeneratedCode(null);
     setGeneratedDTBCCode(null);
     setPcName("");
@@ -210,7 +224,7 @@ export default function AdminPage() {
           aria-label="Admin sections"
         >
           <nav className="flex flex-col gap-0.5 px-2">
-            {ADMIN_SECTIONS.map((section) => (
+            {ADMIN_SECTIONS.filter((s) => s.id !== "activation-code" || canViewActivationCode).map((section) => (
               <button
                 key={section.id}
                 type="button"
