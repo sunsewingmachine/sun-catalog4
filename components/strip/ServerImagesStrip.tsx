@@ -7,10 +7,9 @@
  */
 
 import React from "react";
-import { getImageUrlForFolder } from "@/lib/r2ImageHelper";
+import { getImageUrlForFolder, getFallbackImageUrl } from "@/lib/r2ImageHelper";
 import type { BarImageFolder } from "@/lib/r2ImageHelper";
 import CachedImage from "@/components/shared/CachedImage";
-import { SETTINGS } from "@/lib/settings";
 
 const THUMB_WIDTH = 64;
 const THUMB_HEIGHT = 48;
@@ -66,7 +65,7 @@ function ThumbButton({
   onOpenLightbox: ServerImagesStripProps["onOpenLightbox"];
 }) {
   const src = getImageUrlForFolder(filename, folder);
-  const displaySrc = src || SETTINGS.fallbackImagePath;
+  const displaySrc = src || getFallbackImageUrl();
   return (
     <button
       type="button"
@@ -127,7 +126,7 @@ function MediaSlot({
 
   const isFilled = filename !== null && !localHidden;
   const src = isFilled ? getImageUrlForFolder(filename!, folder) : null;
-  const displaySrc = src || SETTINGS.fallbackImagePath;
+  const displaySrc = src || getFallbackImageUrl();
 
   const handleDelete = async () => {
     if (!filename || busy) return;

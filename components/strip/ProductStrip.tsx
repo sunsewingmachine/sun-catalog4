@@ -7,9 +7,9 @@
 
 import React from "react";
 import type { Product } from "@/types/product";
-import { getImageUrl } from "@/lib/r2ImageHelper";
+import { getImageUrl, getFallbackImageUrl } from "@/lib/r2ImageHelper";
 import CachedImage from "@/components/shared/CachedImage";
-import { SETTINGS } from "@/lib/settings";
+
 
 interface ProductStripProps {
   products: Product[];
@@ -36,7 +36,7 @@ export default function ProductStrip({
         const useLower = useLowercaseFor.has(p.itmGroupName);
         const src = getImageUrl(p.imageFilename, useLower);
         const isSelected = selected?.itmGroupName === p.itmGroupName;
-        const displaySrc = src || SETTINGS.fallbackImagePath;
+        const displaySrc = src || getFallbackImageUrl();
         return (
           <button
             key={`${p.itmGroupName}-${index}`}

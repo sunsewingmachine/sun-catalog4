@@ -7,7 +7,7 @@
 import React from "react";
 import Image from "next/image";
 import { useImageDisplayUrl } from "@/hooks/useImageDisplayUrl";
-import { SETTINGS } from "@/lib/settings";
+import { getFallbackImageUrl } from "@/lib/r2ImageHelper";
 
 export interface CachedImageProps
   extends Omit<
@@ -48,7 +48,7 @@ export default function CachedImage({
   if (showAsImg) {
     return (
       <img
-        src={effectiveSrc || SETTINGS.fallbackImagePath}
+        src={effectiveSrc || getFallbackImageUrl()}
         alt={alt}
         width={width}
         height={height}
@@ -62,7 +62,7 @@ export default function CachedImage({
   if (fill) {
     return (
       <Image
-        src={effectiveSrc || SETTINGS.fallbackImagePath}
+        src={effectiveSrc || getFallbackImageUrl()}
         alt={alt}
         fill
         sizes={sizes}
@@ -74,7 +74,7 @@ export default function CachedImage({
   }
   return (
     <Image
-      src={effectiveSrc || SETTINGS.fallbackImagePath}
+      src={effectiveSrc || getFallbackImageUrl()}
       alt={alt}
       width={width ?? 80}
       height={height ?? 64}

@@ -30,9 +30,8 @@ export const SETTINGS = {
   ],
   /** Interval (ms) between switching to the next message in the bottom bar. */
   bottomBarMessageIntervalMs: 5000,
-  /** Fallback image when product/bar image is missing, wrong format, or fails to load (public/machines/default_main.png). Increment v= to bust browser cache after replacing the file. */
-  fallbackImagePath: "/machines/default_main.png?v=1",
 } as const;
+// Fallback image is now served from R2 at Used/default_main.png. Use getFallbackImageUrl() from lib/r2ImageHelper.
 
 /** Env-derived config (set in .env.local; restart dev server after changes) */
 function getEnv(key: string, fallback = ""): string {

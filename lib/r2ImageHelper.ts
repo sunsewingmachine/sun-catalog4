@@ -91,6 +91,13 @@ export function getImageUrlForFolder(
   return `${base}/${path}`;
 }
 
+/** Fallback image stored in R2 at Used/default_main.png. Falls back to local path when CDN is not configured. */
+export function getFallbackImageUrl(): string {
+  const base = getCdnBase();
+  if (!base) return "/machines/default_main.png?v=1";
+  return `${base}/Used/default_main.png`;
+}
+
 /** Builds CDN URL for testimonials media (images/videos) in Cloudflare R2 testimonials folder (same path prefix as ForAll). */
 export function getTestimonialsMediaUrl(filename: string): string {
   if (!filename || !filename.trim()) return "";

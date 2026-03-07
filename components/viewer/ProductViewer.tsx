@@ -7,10 +7,9 @@
 
 import React from "react";
 import type { Product } from "@/types/product";
-import { getImageUrl } from "@/lib/r2ImageHelper";
+import { getImageUrl, getFallbackImageUrl } from "@/lib/r2ImageHelper";
 import { useImageDisplayUrl } from "@/hooks/useImageDisplayUrl";
 import { isImageUrlDeleted } from "@/lib/imageCacheManager";
-import { SETTINGS } from "@/lib/settings";
 /** Main image backbox: 16:9, max 1520px wide, height capped in .main-image-box-cap (globals.css). */
 
 interface ProductViewerProps {
@@ -51,7 +50,7 @@ export default function ProductViewer({
   const isMainDeleted = !!displaySrc && isImageUrlDeleted(displaySrc);
   const useSample = !displaySrc || mainImageError || isMainDeleted;
   // If deleted this session, cachedMainUrl is "" — don't fall back to the raw CDN URL (browser HTTP cache)
-  const productMainSrc = useSample ? SETTINGS.fallbackImagePath : (cachedMainUrl || (!isMainDeleted ? displaySrc : "") || SETTINGS.fallbackImagePath);
+  const productMainSrc = useSample ? getFallbackImageUrl() : (cachedMainUrl || (!isMainDeleted ? displaySrc : "") || getFallbackImageUrl());
   const mainSrc =
     mainImageHoverPreview != null && mainImageHoverPreview !== ""
       ? mainImageHoverPreview
@@ -145,7 +144,7 @@ export default function ProductViewer({
         >
           <img
             id="imgMainProduct"
-            src={SETTINGS.fallbackImagePath}
+            src={getFallbackImageUrl()}
             alt="Default"
             className="pointer-events-none h-full w-full object-contain rounded-2xl"
             draggable={false}

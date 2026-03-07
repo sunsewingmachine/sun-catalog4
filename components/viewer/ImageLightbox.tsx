@@ -8,7 +8,7 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
-import { SETTINGS } from "@/lib/settings";
+import { getFallbackImageUrl } from "@/lib/r2ImageHelper";
 
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 5;
@@ -40,7 +40,7 @@ export default function ImageLightbox({
   const unoptimized =
     imageSrc.startsWith("http") ||
     imageSrc.startsWith("blob:") ||
-    imageSrc === SETTINGS.fallbackImagePath;
+    imageSrc === getFallbackImageUrl();
 
   const handleImageLoad = React.useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -201,7 +201,7 @@ export default function ImageLightbox({
         >
           <img
             id="imgLightboxImage"
-            src={imageSrc || SETTINGS.fallbackImagePath}
+            src={imageSrc || getFallbackImageUrl()}
             alt={imageAlt}
             className="h-full w-full select-none object-contain"
             draggable={false}

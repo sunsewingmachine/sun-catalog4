@@ -8,9 +8,9 @@
 
 import React from "react";
 import type { Product } from "@/types/product";
-import { getImageUrl } from "@/lib/r2ImageHelper";
+import { getImageUrl, getFallbackImageUrl } from "@/lib/r2ImageHelper";
 import CachedImage from "@/components/shared/CachedImage";
-import { SETTINGS } from "@/lib/settings";
+
 
 const MAX_ADDITIONAL = 5;
 /** Minimum number of image holder slots to show in row 1 (Etc); pad with placeholders if fewer. */
@@ -88,7 +88,7 @@ function EtcMediaThumb({
   const [busy, setBusy] = React.useState(false);
 
   const src = getImageUrl(filename);
-  const displaySrc = src || SETTINGS.fallbackImagePath;
+  const displaySrc = src || getFallbackImageUrl();
 
   const handleDelete = async () => {
     if (busy) return;
@@ -318,7 +318,7 @@ export default function AdditionalImagesStrip({
                 );
               }
               const src = getImageUrl(filename);
-              const displaySrc = src || SETTINGS.fallbackImagePath;
+              const displaySrc = src || getFallbackImageUrl();
               return (
                 <button
                   key={filename}

@@ -7,7 +7,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import type { Product } from "@/types/product";
-import { getImageUrlForFolder } from "@/lib/r2ImageHelper";
+import { getImageUrlForFolder, getFallbackImageUrl } from "@/lib/r2ImageHelper";
 import Image from "next/image";
 import CachedImage from "@/components/shared/CachedImage";
 import { SETTINGS } from "@/lib/settings";
@@ -336,12 +336,12 @@ export default function CommonImagesBar({
                 title="Default image. Click for full size; double-click to show in main."
                 onClick={(e) => {
                   e.preventDefault();
-                  onOpenLightbox?.(SETTINGS.fallbackImagePath, "Default");
+                  onOpenLightbox?.(getFallbackImageUrl(), "Default");
                 }}
-                onDoubleClick={() => onSetMainImage?.(SETTINGS.fallbackImagePath)}
+                onDoubleClick={() => onSetMainImage?.(getFallbackImageUrl())}
               >
                 <Image
-                  src={SETTINGS.fallbackImagePath}
+                  src={getFallbackImageUrl()}
                   alt="Default"
                   width={48}
                   height={40}
@@ -358,12 +358,12 @@ export default function CommonImagesBar({
             <>
               {forAllFilenames.map((filename) => {
                 const src = getImageUrlForFolder(filename, "ForAll");
-                const displaySrc = src || SETTINGS.fallbackImagePath;
+                const displaySrc = src || getFallbackImageUrl();
                 return renderBarThumb(filename, src, displaySrc, onSetMainImage, onOpenLightbox);
               })}
               {forGroupFiltered.map((filename) => {
                 const src = getImageUrlForFolder(filename, "ForGroup");
-                const displaySrc = src || SETTINGS.fallbackImagePath;
+                const displaySrc = src || getFallbackImageUrl();
                 return renderBarThumb(filename, src, displaySrc, onSetMainImage, onOpenLightbox);
               })}
             </>
